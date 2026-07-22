@@ -68,7 +68,7 @@ window.CONFIG = {
       bookName: "Office Exp Book",
       prefix: "OFF",
       sheetName: "Office", 
-      requiredHeaders: ["NO", "DATE", "CATEGORY", "ID PID", "DESCRIPTION", "UNIT", "UNIT PRICE", "METHOD", "DEBIT", "CREDIT", "BALANCES", "LIABILITIES", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "UNIQUEID"]
+      requiredHeaders: ["NO", "DATE", "CATEGORY","DESCRIPTION", "UNIT", "UNIT PRICE", "METHOD", "DEBIT", "CREDIT", "BALANCES", "LIABILITIES", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "UNIQUEID"]
     },
     payroll: {
       bookName: "HR Payroll Exp Book",
