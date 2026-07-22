@@ -15,14 +15,54 @@ window.StaffState = {
 };
 
 /**
- * 💡 Switch Category (Full Time vs Part Time Staff)
+ * 💡 Dropdowns Populator from Config
+ */
+function populateDropdownsStaff() {
+  const def = (window.DROPDOWNS && window.DROPDOWNS.staffCommon) || {};
+
+  const eduSelect = document.getElementById('staff-education');
+  if (eduSelect && def.education) {
+    eduSelect.innerHTML = def.education.map(e => `<option value="${e}">${e}</option>`).join('');
+  }
+
+  const posSelect = document.getElementById('staff-position');
+  if (posSelect) {
+    const isFT = (window.StaffState.category === 'Full Time');
+    const positions = isFT ? def.fullTimePositions : def.partTimePositions;
+    if (positions) {
+      posSelect.innerHTML = positions.map(p => `<option value="${p}">${p}</option>`).join('');
+    }
+  }
+
+  const gradeSelect = document.getElementById('staff-grade');
+  if (gradeSelect && def.salaryGrades) {
+    gradeSelect.innerHTML = def.salaryGrades.map(g => `<option value="${g}">${g}</option>`).join('');
+  }
+}
+
+/**
+ * 💡 Switch Staff Category (Full Time vs Part Time)
  */
 function switchStaffCategory(category) {
   window.StaffState.category = category;
   window.StaffState.page = 1;
 
   const titleEl = document.getElementById('staff-page-title');
-  if (titleEl) titleEl.innerText = `${category} Staff List`;
+  if (titleEl) {
+    const prefix = (category === 'Full Time') ? 'FID' : 'PID';
+    titleEl.innerHTML = `<i class="fa-solid fa-users text-indigo-400"></i> ${category} Staff List (${prefix})`;
+  }
+
+  const btnFt = document.getElementById('staff-tab-ft');
+  const btnPt = document.getElementById('staff-tab-pt');
+
+  if (category === 'Full Time') {
+    if (btnFt) { btnFt.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-lg shadow-indigo-600/10"; }
+    if (btnPt) { btnPt.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white"; }
+  } else {
+    if (btnFt) { btnFt.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white"; }
+    if (btnPt) { btnPt.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-lg shadow-indigo-600/10"; }
+  }
 
   const ftFields = document.getElementById('staff-fulltime-fields');
   const ptFields = document.getElementById('staff-parttime-fields');
@@ -39,7 +79,7 @@ function switchStaffCategory(category) {
 }
 
 /**
- * 💡 Load Staff List Data from Server
+ * 💡 Load Staff Data
  */
 async function loadStaffData(isSilent = false) {
   if (!isSilent) toggleLoading(true);
@@ -68,47 +108,6 @@ async function loadStaffData(isSilent = false) {
   } catch (err) {
     if (!isSilent) toggleLoading(false);
     console.error("Error loading Staff List:", err);
-  }
-}
-
-/**
- * 💡 Load Payroll Settings (Grades A-J Rates)
- */
-async function loadPayrollSettingsStaff() {
-  try {
-    const res = await callApi('getPayrollSettings', {}, 'GET');
-    if (res && res.grades) {
-      window.StaffState.payrollSettings = res;
-    }
-  } catch (err) {
-    console.warn("Failed to load payroll settings:", err);
-  }
-}
-
-/**
- * 💡 Auto-fill Basic Salary on Grade Selection
- */
-function onSalaryGradeChangeStaff() {
-  const gradeSelect = document.getElementById('staff-grade');
-  if (!gradeSelect) return;
-
-  const key = gradeSelect.value.trim().toUpperCase();
-  const basicInput = document.getElementById('staff-basic');
-  const workingDaysInput = document.getElementById('staff-working-days');
-
-  if (key === "NON") {
-    if (basicInput) basicInput.value = 0;
-    if (workingDaysInput) workingDaysInput.value = 0;
-    return;
-  } else {
-    if (workingDaysInput && parseFloat(workingDaysInput.value) === 0) {
-      workingDaysInput.value = 26;
-    }
-  }
-
-  if (window.StaffState.payrollSettings && window.StaffState.payrollSettings.grades) {
-    const rate = window.StaffState.payrollSettings.grades[key] || 0;
-    if (basicInput) basicInput.value = rate;
   }
 }
 
@@ -163,7 +162,7 @@ function updateStatsStaff() {
 }
 
 /**
- * 💡 Render Table Grid Rows
+ * 💡 Render Staff Table Grid Rows
  */
 function renderStaffTable() {
   const tableBody = document.getElementById('staff-table-body');
@@ -177,7 +176,7 @@ function renderStaffTable() {
     return;
   }
 
-  const isViewer = (window.AppState.currentUserRole === "Viewer");
+  const isViewer = (window.AppState ? window.AppState.currentUserRole === "Viewer" : false);
 
   tableBody.innerHTML = data.map((row) => {
     let displayDate = row.joinDate || "";
@@ -255,6 +254,12 @@ function updatePaginationStaff() {
     const end = Math.min(state.page * state.limit, state.totalRows);
     info.innerHTML = `Showing <span class="text-indigo-400 font-extrabold">${start}</span> to <span class="text-indigo-400 font-extrabold">${end}</span> of <span class="text-indigo-400 font-extrabold">${state.totalRows}</span> entries`;
   }
+
+  const prevBtn = document.getElementById('staff-btn-prev');
+  if (prevBtn) prevBtn.disabled = (state.page === 1);
+
+  const nextBtn = document.getElementById('staff-btn-next');
+  if (nextBtn) nextBtn.disabled = (state.page * state.limit >= state.totalRows);
 }
 
 function changePageStaff(dir) {
@@ -280,8 +285,32 @@ function onSearchInputStaff() {
 }
 
 /**
- * 💡 Open Modal for New Staff
+ * 💡 Salary Grade Selected Auto Fill Basic Salary
  */
+function onSalaryGradeChangeStaff() {
+  const gradeSelect = document.getElementById('staff-grade');
+  if (!gradeSelect) return;
+
+  const key = gradeSelect.value.trim().toUpperCase();
+  const basicInput = document.getElementById('staff-basic');
+  const workingDaysInput = document.getElementById('staff-working-days');
+
+  if (key === "NON") {
+    if (basicInput) basicInput.value = 0;
+    if (workingDaysInput) workingDaysInput.value = 0;
+    return;
+  } else {
+    if (workingDaysInput && parseFloat(workingDaysInput.value) === 0) {
+      workingDaysInput.value = 26;
+    }
+  }
+
+  if (window.StaffState.payrollSettings && window.StaffState.payrollSettings.grades) {
+    const rate = window.StaffState.payrollSettings.grades[key] || 0;
+    if (basicInput) basicInput.value = rate;
+  }
+}
+
 function openAddModalStaff() {
   const form = document.getElementById('staff-form');
   if (form) form.reset();
@@ -294,12 +323,13 @@ function openAddModalStaff() {
   const dd = String(now.getDate()).padStart(2, '0');
   document.getElementById('staff-joindate').value = `${yyyy}-${mm}-${dd}`;
 
-  loadPayrollSettingsStaff();
+  populateDropdownsStaff();
   document.getElementById('staff-modal').classList.remove('hidden');
 }
 
 function closeStaffModal() {
-  document.getElementById('staff-modal').classList.add('hidden');
+  const modal = document.getElementById('staff-modal');
+  if (modal) modal.classList.add('hidden');
 }
 
 /**
@@ -334,23 +364,24 @@ async function saveStaffForm(e) {
 
   const action = isAdd ? 'saveStaffEntry' : 'updateStaffEntry';
   showToast("SUCCESS", "ဝန်ထမ်းအချက်အလက်အား သိမ်းဆည်းနေပါသည်...");
+  toggleLoading(true);
 
   try {
     const response = await callApi(action, entry);
+    toggleLoading(false);
+
     if (response && response.success) {
       showToast("SUCCESS", isAdd ? "ဝန်ထမ်းသစ်မှတ်တမ်း သိမ်းဆည်းပြီးပါပြီရှင်။" : "ဝန်ထမ်းမှတ်တမ်း ပြင်ဆင်ပြီးပါပြီရှင်။");
       loadStaffData(true);
     } else {
-      showToast("ERROR", "မအောင်မြင်ပါ: " + (response.message || ""));
+      showToast("ERROR", "မအောင်မြင်ပါ: " + (response ? response.message : ""));
     }
   } catch (err) {
+    toggleLoading(false);
     showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
   }
 }
 
-/**
- * 💡 Edit Staff Member
- */
 function editStaffEntry(uniqueId) {
   const row = window.StaffState.activeData.find(item => item.uniqueId === uniqueId);
   if (!row) {
@@ -381,33 +412,32 @@ function editStaffEntry(uniqueId) {
   }
 }
 
-/**
- * 💡 Delete Staff Member
- */
 async function deleteStaffEntry(uniqueId) {
   if (confirm("ဤဝန်ထမ်းမှတ်တမ်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလားရှင်?")) {
     showToast("SUCCESS", "မှတ်တမ်းကို ဖျက်သိမ်းနေပါသည်...");
+    toggleLoading(true);
+
     try {
       const response = await callApi('deleteStaffEntry', {
         uniqueId: uniqueId,
         category: window.StaffState.category
       });
 
+      toggleLoading(false);
+
       if (response && response.success) {
         showToast("SUCCESS", "ဝန်ထမ်းမှတ်တမ်းအား ဖျက်သိမ်းပြီးပါပြီရှင်။");
         loadStaffData(true);
       } else {
-        showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response.message || ""));
+        showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response ? response.message : ""));
       }
     } catch (err) {
+      toggleLoading(false);
       showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
     }
   }
 }
 
-/**
- * 💡 CSV Export
- */
 function exportToCSVStaff() {
   const data = window.StaffState.activeData;
   if (!data || data.length === 0) {
