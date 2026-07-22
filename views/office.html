@@ -3,44 +3,29 @@
 
   <!-- ၁။ Top KPI Stats Cards Grid -->
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-    <!-- Total Income -->
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
-      <div class="p-3.5 rounded-lg bg-emerald-500/10 text-emerald-400">
-        <i class="fa-solid fa-arrow-trend-up text-xl"></i>
-      </div>
+      <div class="p-3.5 rounded-lg bg-emerald-500/10 text-emerald-400"><i class="fa-solid fa-arrow-trend-up text-xl"></i></div>
       <div>
         <p class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Total Income</p>
         <h3 id="off-total-income" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
       </div>
     </div>
-
-    <!-- Total Expense -->
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
-      <div class="p-3.5 rounded-lg bg-rose-500/10 text-rose-400">
-        <i class="fa-solid fa-arrow-trend-down text-xl"></i>
-      </div>
+      <div class="p-3.5 rounded-lg bg-rose-500/10 text-rose-400"><i class="fa-solid fa-arrow-trend-down text-xl"></i></div>
       <div>
         <p class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Total Expense</p>
         <h3 id="off-total-expense" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
       </div>
     </div>
-
-    <!-- Balances -->
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
-      <div class="p-3.5 rounded-lg bg-indigo-500/10 text-indigo-400">
-        <i class="fa-solid fa-scale-balanced text-xl"></i>
-      </div>
+      <div class="p-3.5 rounded-lg bg-indigo-500/10 text-indigo-400"><i class="fa-solid fa-scale-balanced text-xl"></i></div>
       <div>
         <p class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Balances</p>
         <h3 id="off-balance" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
       </div>
     </div>
-
-    <!-- Total Entries -->
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
-      <div class="p-3.5 rounded-lg bg-sky-500/10 text-sky-400">
-        <i class="fa-solid fa-list-check text-xl"></i>
-      </div>
+      <div class="p-3.5 rounded-lg bg-sky-500/10 text-sky-400"><i class="fa-solid fa-list-check text-xl"></i></div>
       <div>
         <p class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Total Entries</p>
         <h3 id="off-entries-count" class="text-base font-extrabold text-white mt-1">0</h3>
@@ -50,15 +35,11 @@
 
   <!-- ၂။ Control Search & Action Bar -->
   <div class="flex flex-col md:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
-    <!-- Search Input -->
     <div class="relative w-full md:w-[500px]">
-      <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
-        <i class="fa-solid fa-magnifying-glass text-xs"></i>
-      </span>
-      <input type="text" id="office-search" oninput="onSearchInputOffice()" placeholder="Search description, category, product ID..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
+      <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+      <input type="text" id="office-search" oninput="onSearchInputOffice()" placeholder="Search description, category, product ID..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
     </div>
 
-    <!-- Action Buttons -->
     <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
       <button onclick="loadOfficeData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all" title="Refresh Data">
         <i class="fa-solid fa-rotate text-xs"></i> Refresh
@@ -107,7 +88,7 @@
   <!-- ၄။ Pagination Controller Tray -->
   <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-[#0c1322] border border-slate-800 px-6 py-3.5 rounded-xl">
     <div id="off-pagination-info" class="text-xs font-semibold text-slate-400 tracking-wide">
-      Showing <span class="text-indigo-400 font-bold">1</span> to <span class="text-indigo-400 font-bold">30</span> of <span class="text-indigo-400 font-bold">0</span> entries
+      Showing entries...
     </div>
     
     <div class="flex items-center gap-2">
@@ -122,7 +103,7 @@
 
 </div>
 
-<!-- ၅။ Add / Edit Office Entry Modal -->
+<!-- ၅။ DARK THEME ELEGANT FORM MODAL -->
 <div id="office-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
   <div class="bg-[#0c1322] border border-slate-800 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
     
@@ -140,54 +121,36 @@
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Date</label>
-          <input type="date" id="office-date" required class="w-full">
+          <input type="date" id="office-date" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Category</label>
-          <select id="office-category" onchange="onCategoryOrProductChangeOffice()" required class="w-full">
-            <option value="Non">Non</option>
-            <option value="Adv / Ref">Adv / Ref</option>
-            <option value="Liabilities">Liabilities</option>
-            <option value="Admin Exp">Admin Exp</option>
-            <option value="Vehicle Related Exp">Vehicle Related Exp</option>
-            <option value="Assets Materials">Assets Materials</option>
-            <option value="Donation & Social">Donation & Social</option>
-            <option value="HR Staff Benefit">HR Staff Benefit</option>
-            <option value="Construction">Construction</option>
-            <option value="Student Refund">Student Refund</option>
-            <option value="Drawing Account 1">Drawing Account 1</option>
-            <option value="Drawing Account 2">Drawing Account 2</option>
-            <option value="Adv Capital Snack Shop">Adv Capital Snack Shop</option>
-            <option value="Ferry Payment">Ferry Payment</option>
-            <option value="Advance Uniform">Advance Uniform</option>
-            <option value="Opening">Opening</option>
-            <option value="Income">Income</option>
-            <option value="Closing">Closing</option>
-            <option value="Transfer">Transfer</option>
+          <select id="office-category" onchange="onCategoryChangeOffice()" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
+            <!-- Dynamic Category Options from config.js -->
           </select>
         </div>
       </div>
 
-      <!-- Advance Uniform Product Selection Container (Conditionally Shown) -->
+      <!-- Advance Uniform Product Selection Container (Advance Uniform သာ ပွင့်မည်) -->
       <div id="office-product-container" class="space-y-1 hidden">
         <div class="flex justify-between items-center">
           <label class="font-bold text-amber-400 uppercase tracking-wide">Select Uniform Product ID</label>
           <span id="office-stock-badge" class="text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded hidden"></span>
         </div>
-        <select id="office-product-id" onchange="onCategoryOrProductChangeOffice()" class="w-full font-mono">
+        <select id="office-product-id" onchange="onProductChangeOffice()" class="w-full font-mono bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-amber-500">
           <option value="">-- Select Product ID --</option>
         </select>
       </div>
 
-      <!-- Row 2: QTY (UNIT) & UNIT PRICE -->
-      <div class="grid grid-cols-2 gap-4">
+      <!-- Row 2: QTY (UNIT) & UNIT PRICE (Advance Uniform သာ ပွင့်မည်) -->
+      <div id="office-qty-price-container" class="grid grid-cols-2 gap-4 hidden">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Qty (Unit / အရေအတွက်)</label>
-          <input type="number" id="office-unit" value="1" oninput="calculateDebitOffice()" class="w-full text-right font-bold text-slate-100">
+          <input type="number" id="office-unit" value="1" oninput="calculateDebitOffice()" class="w-full text-right font-bold text-slate-100 bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 outline-none focus:border-indigo-500">
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Unit Price (နှုန်းထား)</label>
-          <input type="number" id="office-unit-price" value="0" oninput="calculateDebitOffice()" class="w-full text-right font-bold text-slate-100">
+          <input type="number" id="office-unit-price" value="0" oninput="calculateDebitOffice()" class="w-full text-right font-bold text-slate-100 bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 outline-none focus:border-indigo-500">
         </div>
       </div>
 
@@ -195,17 +158,14 @@
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Method</label>
-          <select id="office-method" required class="w-full">
-            <option value="Cash">Cash</option>
-            <option value="Bank">Bank</option>
+          <select id="office-method" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
+            <!-- Dynamic Method Options from config.js -->
           </select>
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Transfer To</label>
-          <select id="office-transfer" class="w-full">
-            <option value="">-- No Transfer --</option>
-            <option value="Bank Book">Bank Book</option>
-            <option value="Cash Book">Cash Book</option>
+          <select id="office-transfer" class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
+            <!-- Dynamic Transfer Options from config.js -->
           </select>
         </div>
       </div>
@@ -214,24 +174,24 @@
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-emerald-400 uppercase tracking-wide">Debit (Inflow / ရရှိငွေ)</label>
-          <input type="number" step="0.01" id="office-debit" value="0" class="w-full text-right text-emerald-400 font-bold border border-emerald-500/20">
+          <input type="number" step="0.01" id="office-debit" value="0" class="w-full text-right text-emerald-400 font-bold bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 outline-none focus:border-emerald-500">
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-rose-400 uppercase tracking-wide">Credit (Expense / ထွက်ငွေ)</label>
-          <input type="number" step="0.01" id="office-credit" value="0" class="w-full text-right text-rose-400 font-bold border border-rose-500/20">
+          <input type="number" step="0.01" id="office-credit" value="0" class="w-full text-right text-rose-400 font-bold bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 outline-none focus:border-rose-500">
         </div>
       </div>
 
-      <!-- Row 5: LIABILITIES -->
-      <div class="flex flex-col gap-1">
+      <!-- Row 5: LIABILITIES (Liabilities ရွေးမှသာ ပွင့်မည်) -->
+      <div id="office-liabilities-container" class="flex flex-col gap-1">
         <label class="font-bold text-rose-400 uppercase tracking-wide">Liabilities (ပေးရန်ကျန်ငွေ)</label>
-        <input type="number" id="office-liabilities" value="0" class="w-full text-right font-bold text-rose-400 bg-rose-500/5 border border-rose-500/20">
+        <input type="text" id="office-liabilities" value="0" placeholder="e.g. -1000, 1000, (1000)" class="w-full text-right font-bold text-rose-400 bg-rose-500/5 border border-rose-500/20 rounded-lg p-2.5 outline-none focus:border-rose-500">
       </div>
 
       <!-- Row 6: DESCRIPTION -->
       <div class="flex flex-col gap-1">
         <label class="font-bold text-slate-400 uppercase tracking-wide">Description</label>
-        <textarea id="office-description" rows="3" required class="w-full" placeholder="အသေးစိတ် စာရင်းရှင်းလင်းချက်..."></textarea>
+        <textarea id="office-description" rows="3" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 placeholder-slate-500 rounded-lg p-2.5 outline-none focus:border-indigo-500" placeholder="အသေးစိတ် စာရင်းရှင်းလင်းချက် ရေးသွင်းရန်..."></textarea>
       </div>
 
       <!-- Actions Footer -->
