@@ -12,7 +12,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
-    /* Custom Scrollbar & UI Styles */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #090d16; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
@@ -41,6 +40,10 @@
       font-size: 0.8rem !important; white-space: nowrap !important;
     }
     table tbody tr:hover { background-color: rgba(30, 41, 59, 0.3); }
+
+    /* Single Page View Fade-in */
+    .view-panel { animation: fadeIn 0.2s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body class="bg-[#090d16] font-sans flex h-screen overflow-hidden text-slate-300">
@@ -106,58 +109,86 @@
       </div>
 
       <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto" id="sidebar-nav">
-        <button onclick="switchModule('dashboard')" id="nav-dashboard" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <!-- Dashboard -->
+        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
           <i class="fa-solid fa-gauge-high w-4 text-center text-indigo-400"></i> Home Dashboard
         </button>
 
-        <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Ledgers & Accounts</p>
-        <button onclick="switchModule('bank-cash-kit')" id="nav-bank-cash-kit" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
-          <i class="fa-solid fa-building-columns text-amber-400 w-4 text-center"></i> Bank / Cash / Kitchen
+        <!-- Main Books -->
+        <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Main Books</p>
+        <button onclick="switchTab('bank')" id="btn-bank" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+          <i class="fa-solid fa-building-columns text-amber-400 w-4 text-center"></i> Main Bank Book
         </button>
-        <button onclick="switchModule('income')" id="nav-income" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <button onclick="switchTab('cash')" id="btn-cash" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+          <i class="fa-solid fa-money-bill-wave text-emerald-400 w-4 text-center"></i> Main Cash Book
+        </button>
+        <button onclick="switchTab('income')" id="btn-income" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
           <i class="fa-solid fa-wallet text-sky-400 w-4 text-center"></i> Main Income Book
         </button>
 
-        <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Expenses</p>
-        <button onclick="switchModule('office')" id="nav-office" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <!-- Expense Book -->
+        <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Expense Book</p>
+        <button onclick="switchTab('office')" id="btn-office" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
           <i class="fa-solid fa-briefcase text-cyan-400 w-4 text-center"></i> Office Exp Book
         </button>
+        <button onclick="switchTab('kitchen')" id="btn-kitchen" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+          <i class="fa-solid fa-utensils text-rose-400 w-4 text-center"></i> Kitchen Exp Book
+        </button>
 
-        <!-- HR Section (Cashier များအတွက် မမြင်ရအောင် ကွယ်ထားမည်) -->
+        <!-- HR Section (Cashier ပိတ်မည်) -->
         <div id="nav-hr-section">
-          <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">HR & Payroll</p>
-          <button onclick="switchModule('hr')" id="nav-hr" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
-            <i class="fa-solid fa-money-check-dollar text-teal-400 w-4 text-center"></i> HR Payroll & Staff
+          <button onclick="switchTab('payroll')" id="btn-payroll" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+            <i class="fa-solid fa-money-check-dollar text-teal-400 w-4 text-center"></i> HR Payroll Exp Book
+          </button>
+          <button onclick="switchTab('fulltime')" id="btn-fulltime" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+            <i class="fa-solid fa-user-check text-blue-400 w-4 text-center"></i> Full Time Staff List
+          </button>
+          <button onclick="switchTab('parttime')" id="btn-parttime" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+            <i class="fa-solid fa-user-clock text-indigo-400 w-4 text-center"></i> Part Time Staff List
           </button>
         </div>
 
-        <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Student & Inventory</p>
-        <button onclick="switchModule('student')" id="nav-student" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <!-- List & Inventory -->
+        <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">List & Inventory</p>
+        <button onclick="switchTab('student')" id="btn-student" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
           <i class="fa-solid fa-user-graduate text-indigo-400 w-4 text-center"></i> Student List
         </button>
-        <button onclick="switchModule('promotion')" id="nav-promotion" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
-          <i class="fa-solid fa-coins text-yellow-400 w-4 text-center"></i> Promotion List
-        </button>
-        <button onclick="switchModule('uniform')" id="nav-uniform" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <button onclick="switchTab('uniform')" id="btn-uniform" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
           <i class="fa-solid fa-shirt text-amber-400 w-4 text-center"></i> Uniform Ledger
         </button>
-
-        <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Reporting</p>
-        <button onclick="switchModule('reports')" id="nav-reports" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
-          <i class="fa-solid fa-chart-pie text-emerald-400 w-4 text-center"></i> Reports & Statements
+        <button onclick="switchTab('promotion')" id="btn-promotion" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+          <i class="fa-solid fa-coins text-yellow-400 w-4 text-center"></i> Promotion List
         </button>
 
-        <!-- Settings Section (Cashier များအတွက် မမြင်ရအောင် ကွယ်ထားမည်) -->
+        <!-- Reports & Financial Statements -->
+        <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Reporting</p>
+        <button onclick="switchTab('report-financial')" id="btn-report-financial" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+          <i class="fa-solid fa-chart-pie text-emerald-400 w-4 text-center"></i> Financial Report
+        </button>
+        <button onclick="switchTab('report-in-detail')" id="btn-report-in-detail" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+          <i class="fa-solid fa-file-invoice-dollar text-sky-400 w-4 text-center"></i> Income Detail (InDetail)
+        </button>
+        <button onclick="switchTab('report-in-rep')" id="btn-report-in-rep" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+          <i class="fa-solid fa-calendar-check text-indigo-400 w-4 text-center"></i> Monthly Income (InRep)
+        </button>
+        <button onclick="switchTab('report-staff-fund')" id="btn-report-staff-fund" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+          <i class="fa-solid fa-hand-holding-dollar text-teal-400 w-4 text-center"></i> Staff Fund Report
+        </button>
+        <button onclick="switchTab('report-student')" id="btn-report-student" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+          <i class="fa-solid fa-users-rectangle text-amber-400 w-4 text-center"></i> Student Report
+        </button>
+
+        <!-- Settings (Cashier ပိတ်မည်) -->
         <div id="nav-settings-section">
           <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">System Controls</p>
-          <button onclick="switchModule('settings')" id="nav-settings" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
-            <i class="fa-solid fa-gears text-indigo-400 w-4 text-center"></i> System Settings
+          <button onclick="switchTab('settings')" id="btn-settings" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+            <i class="fa-solid fa-gears text-indigo-400 w-4 text-center"></i> System Settings & Controls
           </button>
         </div>
       </nav>
     </aside>
 
-    <!-- Main View Panel -->
+    <!-- Main View Area -->
     <div class="flex-1 flex flex-col overflow-hidden">
       <header class="bg-[#0c1322] border-b border-slate-800 h-[60px] px-6 flex justify-between items-center z-10 shrink-0">
         <h1 id="page-title" class="text-base md:text-lg font-extrabold text-white tracking-wide">Home Dashboard</h1>
@@ -167,8 +198,11 @@
         </div>
       </header>
 
-      <main id="main-content" class="p-6 overflow-y-auto flex-1 bg-[#090d16]">
-        <!-- Dynamic Views Target Area -->
+      <!-- All View Containers (Pre-loaded in DOM for 0ms Instant CSS Switching) -->
+      <main id="main-content" class="p-6 overflow-y-auto flex-1 bg-[#090d16] relative">
+        <div id="view-container">
+          <!-- Views HTML will be injected dynamically at startup -->
+        </div>
       </main>
     </div>
   </div>
@@ -181,11 +215,13 @@
 
   <div id="toast-container" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-2 pointer-events-none"></div>
 
+  <!-- JS Modules -->
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/bank-cash-kit.js"></script>
   <script src="js/office.js"></script>
   <script src="js/hr.js"></script>
+  <script src="js/staff.js"></script>
   <script src="js/income.js"></script>
   <script src="js/student.js"></script>
   <script src="js/promotion.js"></script>
