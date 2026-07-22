@@ -37,7 +37,7 @@
   <div class="flex flex-col md:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
     <div class="relative w-full md:w-[500px]">
       <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
-      <input type="text" id="bck-search" oninput="onSearchInputBankCashKit()" placeholder="Search description, category..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
+      <input type="text" id="bck-search" oninput="onSearchInputBankCashKit()" placeholder="Search description, category..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
     </div>
 
     <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
@@ -99,7 +99,7 @@
 
 </div>
 
-<!-- ၅။ DARK THEME ELEGANT MODAL POPUP -->
+<!-- ၅။ DARK THEME FORM MODAL POPUP -->
 <div id="bck-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
   <div class="bg-[#0c1322] border border-slate-800 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
     
@@ -113,6 +113,7 @@
     <form id="bck-form" onsubmit="saveBankCashKitForm(event)" class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
       <input type="hidden" id="bck-uniqueId">
       
+      <!-- Row 1: DATE & CATEGORY -->
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Date</label>
@@ -121,36 +122,28 @@
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Category</label>
           <select id="bck-category" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
-            <option value="Non">Non</option>
-            <option value="Opening">Opening</option>
-            <option value="Transfer">Transfer</option>
-            <option value="Bank Loan">Bank Loan</option>
-            <option value="Cash Loan">Cash Loan</option>
-            <option value="Income">Income</option>
-            <option value="Other Income">Other Income</option>
-            <option value="Closing">Closing</option>
+            <!-- Dynamically populated from config.js -->
           </select>
         </div>
       </div>
 
+      <!-- Row 2: METHOD & TRANSFER -->
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Method</label>
-          <input type="text" id="bck-method" readonly class="w-full bg-slate-950/60 text-slate-400 border border-slate-800 cursor-not-allowed font-bold rounded-lg p-2.5">
+          <select id="bck-method" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
+            <!-- Dynamically populated from config.js -->
+          </select>
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Transfer To (ငွေလွှဲပြောင်းမည့် စာအုပ်)</label>
           <select id="bck-transfer" class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
-            <option value="">-- No Transfer --</option>
-            <option value="Bank Book">Bank Book</option>
-            <option value="Cash Book">Cash Book</option>
-            <option value="Office Book">Office Book</option>
-            <option value="Kitchen Book">Kitchen Book</option>
-            <option value="Salary Book">Salary Book</option>
+            <!-- Dynamically populated from config.js -->
           </select>
         </div>
       </div>
 
+      <!-- Row 3: DEBIT & CREDIT -->
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-emerald-400 uppercase tracking-wide">Debit (Income / ဝင်ငွေ)</label>
@@ -162,11 +155,13 @@
         </div>
       </div>
 
+      <!-- Row 4: DESCRIPTION -->
       <div class="flex flex-col gap-1">
         <label class="font-bold text-slate-400 uppercase tracking-wide">Description</label>
         <textarea id="bck-description" rows="3" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 placeholder-slate-500 rounded-lg p-2.5 outline-none focus:border-indigo-500" placeholder="အသေးစိတ် စာရင်းရှင်းလင်းချက် ရေးသွင်းရန်..."></textarea>
       </div>
 
+      <!-- Footer Buttons -->
       <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-800">
         <button type="button" onclick="closeBankCashKitModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">Cancel</button>
         <button type="submit" class="px-5 py-2 rounded-lg text-xs font-black bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/10 transition-all">Confirm</button>
