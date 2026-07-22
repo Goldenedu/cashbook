@@ -1,0 +1,168 @@
+<!-- views/reports.html -->
+<div class="space-y-5">
+
+  <!-- Sub-Panel Selector Tabs -->
+  <div class="flex flex-wrap items-center gap-2 p-1.5 bg-[#0c1322] border border-slate-800 rounded-xl">
+    <button onclick="showReportPanel('panel-report-financial')"
+      class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all bg-emerald-600 text-white flex items-center gap-1.5">
+      <i class="fa-solid fa-chart-pie"></i> Financial Statement
+    </button>
+    <button onclick="showReportPanel('panel-report-income-detail')"
+      class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5">
+      <i class="fa-solid fa-file-invoice-dollar text-sky-400"></i> Income Detail (InDetail)
+    </button>
+    <button onclick="showReportPanel('panel-report-monthly-income')"
+      class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5">
+      <i class="fa-solid fa-calendar-check text-indigo-400"></i> Monthly Income (InRep)
+    </button>
+    <button onclick="showReportPanel('panel-report-staff-fund')"
+      class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5">
+      <i class="fa-solid fa-hand-holding-dollar text-teal-400"></i> Staff Fund Report
+    </button>
+    <button onclick="showReportPanel('panel-report-student')"
+      class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5">
+      <i class="fa-solid fa-users-rectangle text-amber-400"></i> Student Demographics
+    </button>
+  </div>
+
+  <!-- ============================================================================ -->
+  <!-- 1️⃣ FINANCIAL STATEMENT REPORT PANEL                                          -->
+  <!-- ============================================================================ -->
+  <div id="panel-report-financial" class="report-panel space-y-5">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      <!-- Income Side -->
+      <div class="space-y-5">
+        <div class="bg-[#0c1322] border border-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
+          <h3 class="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-graduation-cap"></i> (က) Income by Student Category
+          </h3>
+          <div class="overflow-x-auto table-container">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-500">
+                  <th class="py-2.5 w-12 text-center font-bold uppercase">NO</th>
+                  <th class="py-2.5 font-bold uppercase">Category</th>
+                  <th class="py-2.5 text-right font-bold uppercase">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="report-fin-inc-cat-body" class="divide-y divide-slate-800/40 text-slate-300"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-[#0c1322] border border-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
+          <h3 class="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-file-invoice-dollar"></i> (ခ) Income by Account Name
+          </h3>
+          <div class="overflow-x-auto table-container">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-500">
+                  <th class="py-2.5 w-12 text-center font-bold uppercase">NO</th>
+                  <th class="py-2.5 font-bold uppercase">Account Name</th>
+                  <th class="py-2.5 text-right font-bold uppercase">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="report-fin-inc-acc-body" class="divide-y divide-slate-800/40 text-slate-300"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Expense Side -->
+      <div class="bg-[#0c1322] border border-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
+        <h3 class="text-xs font-black text-rose-400 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-basket-shopping"></i> (ဂ) Expense Breakdown
+        </h3>
+        <div class="overflow-x-auto table-container">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-500">
+                <th class="py-2.5 w-12 text-center font-bold uppercase">NO</th>
+                <th class="py-2.5 font-bold uppercase">Expense Head</th>
+                <th class="py-2.5 text-right font-bold uppercase">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="report-fin-exp-body" class="divide-y divide-slate-800/40 text-slate-300"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================================ -->
+  <!-- 2️⃣ INCOME DETAIL MATRIX REPORT PANEL                                         -->
+  <!-- ============================================================================ -->
+  <div id="panel-report-income-detail" class="report-panel hidden space-y-5">
+    <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
+      <table class="w-full text-left border-collapse min-w-[200px]" id="report-income-detail-table"></table>
+    </div>
+  </div>
+
+  <!-- ============================================================================ -->
+  <!-- 3️⃣ MONTHLY INCOME REPORT PANEL                                               -->
+  <!-- ============================================================================ -->
+  <div id="panel-report-monthly-income" class="report-panel hidden space-y-5">
+    <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
+      <table class="w-full text-left border-collapse min-w-[1500px]" id="report-monthly-income-table"></table>
+    </div>
+  </div>
+
+  <!-- ============================================================================ -->
+  <!-- 4️⃣ STAFF FUND REPORT PANEL                                                   -->
+  <!-- ============================================================================ -->
+  <div id="panel-report-staff-fund" class="report-panel hidden space-y-5">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="stats-card p-5 rounded-xl flex items-start gap-4">
+        <div class="p-3.5 rounded-lg bg-emerald-500/10 text-emerald-400"><i class="fa-solid fa-gift text-xl"></i></div>
+        <div>
+          <p class="text-[10px] uppercase font-bold text-slate-500">Total Bonus Balance</p>
+          <h3 id="report-fund-total-bonus" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
+        </div>
+      </div>
+      <div class="stats-card p-5 rounded-xl flex items-start gap-4">
+        <div class="p-3.5 rounded-lg bg-teal-500/10 text-teal-400"><i class="fa-solid fa-piggy-bank text-xl"></i></div>
+        <div>
+          <p class="text-[10px] uppercase font-bold text-slate-500">Total Fund Balance</p>
+          <h3 id="report-fund-total-fund" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
+        </div>
+      </div>
+      <div class="stats-card p-5 rounded-xl flex items-start gap-4">
+        <div class="p-3.5 rounded-lg bg-indigo-500/10 text-indigo-400"><i class="fa-solid fa-wallet text-xl"></i></div>
+        <div>
+          <p class="text-[10px] uppercase font-bold text-slate-500">Grand Total Balances</p>
+          <h3 id="report-fund-total-all" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
+      <table class="w-full text-left border-collapse min-w-[1200px]">
+        <thead>
+          <tr class="bg-[#0e172a]">
+            <th scope="col" class="w-12 text-center text-slate-400 text-xs py-3">NO</th>
+            <th scope="col" class="w-28 text-center text-slate-400 text-xs py-3">FUND DATE</th>
+            <th scope="col" class="w-28 text-slate-400 text-xs py-3">STAFF ID</th>
+            <th scope="col" class="min-w-[200px] text-slate-400 text-xs py-3">NAME</th>
+            <th scope="col" class="w-32 text-right text-emerald-400 text-xs py-3">BONUS BALANCE</th>
+            <th scope="col" class="w-32 text-right text-teal-400 text-xs py-3">FUND BALANCE</th>
+            <th scope="col" class="w-36 text-right text-indigo-400 text-xs py-3 bg-indigo-500/5 pr-4">TOTAL BALANCES
+            </th>
+            <th scope="col" class="w-24 text-slate-400 text-xs py-3">STATUS</th>
+          </tr>
+        </thead>
+        <tbody id="report-staff-fund-table-body" class="divide-y divide-slate-800/40 text-slate-300"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================================================================ -->
+  <!-- 5️⃣ STUDENT DEMOGRAPHICS REPORT PANEL                                         -->
+  <!-- ============================================================================ -->
+  <div id="panel-report-student" class="report-panel hidden space-y-5">
+    <div id="report-student-container" class="space-y-6"></div>
+  </div>
+
+</div>
