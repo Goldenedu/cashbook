@@ -3,7 +3,6 @@
  * File: js/bank-cash-kit.js
  */
 
-// Module State
 window.BankCashKitState = {
   activeSubBook: 'bank', // 'bank', 'cash', or 'kitchen'
   page: 1,
@@ -20,31 +19,43 @@ const SUB_BOOK_MAP = {
   'kitchen': 'Kitchen Exp Book'
 };
 
-/**
- * 💡 Switch Sub-Book (Bank vs Cash vs Kitchen)
- */
 function switchSubBook(subBookKey) {
   window.BankCashKitState.activeSubBook = subBookKey;
   window.BankCashKitState.page = 1;
-  
-  // Highlight active sub-tab buttons in UI
-  document.querySelectorAll('.sub-tab-btn').forEach(btn => {
-    btn.classList.remove('bg-indigo-600', 'text-white');
-    btn.classList.add('bg-slate-800', 'text-slate-400');
-  });
-  
-  const activeBtn = document.getElementById(`sub-tab-${subBookKey}`);
-  if (activeBtn) {
-    activeBtn.classList.remove('bg-slate-800', 'text-slate-400');
-    activeBtn.classList.add('bg-indigo-600', 'text-white');
-  }
 
+  populateDropdownsBCK();
   loadBankCashKitData(false);
 }
 
 /**
- * 💡 Load Data from Cloudflare Worker API
+ * 💡 DYNAMIC DROPDOWN WIRING FROM CONFIG.JS
  */
+function populateDropdownsBCK() {
+  const subBook = window.BankCashKitState.activeSubBook;
+  const configKey = subBook === 'kitchen' ? 'kitchenExpBook' : (subBook === 'cash' ? 'cashBook' : 'bankBook');
+  const def = (window.DROPDOWNS && window.DROPDOWNS[configKey]) || {};
+
+  const catSelect = document.getElementById('bck-category');
+  if (catSelect && def.category) {
+    catSelect.innerHTML = def.category.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+
+  const methodSelect = document.getElementById('bck-method');
+  if (methodSelect && def.method) {
+    methodSelect.innerHTML = def.method.map(m => `<option value="${m}">${m}</option>`).join('');
+  }
+
+  const transSelect = document.getElementById('bck-transfer');
+  if (transSelect) {
+    if (def.transfer) {
+      transSelect.innerHTML = `<option value="">-- No Transfer --</option>` +
+        def.transfer.map(t => `<option value="${t}">${t}</option>`).join('');
+    } else {
+      transSelect.innerHTML = `<option value="">-- No Transfer --</option>`;
+    }
+  }
+}
+
 async function loadBankCashKitData(isSilent = false) {
   if (!isSilent) toggleLoading(true);
 
@@ -76,28 +87,16 @@ async function loadBankCashKitData(isSilent = false) {
   }
 }
 
-/**
- * 💡 Update Top KPI Stats Cards
- */
 function updateStatsBankCashKit() {
   const stats = window.BankCashKitState.stats;
-  
-  const incEl = document.getElementById('bck-total-income');
-  if (incEl) incEl.innerText = Number(stats.totalIncome || 0).toLocaleString('en-US') + " MMK";
+  const setT = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
-  const expEl = document.getElementById('bck-total-expense');
-  if (expEl) expEl.innerText = Number(stats.totalExpense || 0).toLocaleString('en-US') + " MMK";
-
-  const balEl = document.getElementById('bck-balance');
-  if (balEl) balEl.innerText = Number(stats.balance || 0).toLocaleString('en-US') + " MMK";
-
-  const countEl = document.getElementById('bck-entries-count');
-  if (countEl) countEl.innerText = window.BankCashKitState.totalRows.toLocaleString('en-US');
+  setT('bck-total-income', Number(stats.totalIncome || 0).toLocaleString('en-US') + " MMK");
+  setT('bck-total-expense', Number(stats.totalExpense || 0).toLocaleString('en-US') + " MMK");
+  setT('bck-balance', Number(stats.balance || 0).toLocaleString('en-US') + " MMK");
+  setT('bck-entries-count', window.BankCashKitState.totalRows.toLocaleString('en-US'));
 }
 
-/**
- * 💡 Render Table Grid Rows
- */
 function renderBankCashKitTable() {
   const tableBody = document.getElementById('bck-table-body');
   if (!tableBody) return;
@@ -109,7 +108,7 @@ function renderBankCashKitTable() {
     return;
   }
 
-  const isViewer = (window.AppState.currentUserRole === "Viewer");
+  const isViewer = (window.AppState ? window.AppState.currentUserRole === "Viewer" : false);
 
   tableBody.innerHTML = data.map((row) => {
     let displayDate = row.date || "";
@@ -150,9 +149,6 @@ function renderBankCashKitTable() {
   }).join('');
 }
 
-/**
- * 💡 Pagination Controls & UI Update
- */
 function updatePaginationBankCashKit() {
   const state = window.BankCashKitState;
   const info = document.getElementById('bck-pagination-info');
@@ -180,9 +176,6 @@ function changePageBankCashKit(dir) {
   }
 }
 
-/**
- * 💡 Search Debounce Handler
- */
 let searchTimeoutBCK;
 function onSearchInputBankCashKit() {
   clearTimeout(searchTimeoutBCK);
@@ -194,16 +187,12 @@ function onSearchInputBankCashKit() {
   }, 300);
 }
 
-/**
- * 💡 Open Add / Edit Record Modal
- */
 function openAddModalBankCashKit() {
   const form = document.getElementById('bck-form');
   if (form) form.reset();
 
   document.getElementById('bck-uniqueId').value = "";
-  
-  // Set default local today date YYYY-MM-DD
+
   const now = new Date();
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -214,12 +203,7 @@ function openAddModalBankCashKit() {
   const bookTitle = SUB_BOOK_MAP[currentBook] || 'Ledger';
   document.getElementById('bck-form-title').innerText = `Add ${bookTitle} Entry`;
 
-  // Set default method according to active sub-book
-  const methodInput = document.getElementById('bck-method');
-  if (methodInput) {
-    methodInput.value = (currentBook === 'bank') ? 'Bank' : 'Cash';
-  }
-
+  populateDropdownsBCK();
   document.getElementById('bck-modal').classList.remove('hidden');
 }
 
@@ -227,9 +211,6 @@ function closeBankCashKitModal() {
   document.getElementById('bck-modal').classList.add('hidden');
 }
 
-/**
- * 💡 Save / Update Form Entry
- */
 async function saveBankCashKitForm(e) {
   e.preventDefault();
   closeBankCashKitModal();
@@ -267,9 +248,6 @@ async function saveBankCashKitForm(e) {
   }
 }
 
-/**
- * 💡 Edit Record Population
- */
 function editBankCashKitEntry(uniqueId) {
   const row = window.BankCashKitState.activeData.find(item => item.uniqueId === uniqueId);
   if (!row) {
@@ -292,9 +270,6 @@ function editBankCashKitEntry(uniqueId) {
   document.getElementById('bck-form-title').innerText = `Edit ${bookTitle} Entry`;
 }
 
-/**
- * 💡 Delete Entry Handler
- */
 async function deleteBankCashKitEntry(uniqueId) {
   if (confirm("ဤစာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလားရှင်?\n(ငွေလွှဲဖြစ်ပါက တွဲဖက်စာအုပ်ရှိ စာရင်းပါ တပြိုင်နက်တည်း ပျက်သွားပါမည်)")) {
     showToast("SUCCESS", "စာရင်းကို ဖျက်သိမ်းနေပါသည်...");
@@ -316,9 +291,6 @@ async function deleteBankCashKitEntry(uniqueId) {
   }
 }
 
-/**
- * 💡 CSV Export
- */
 function exportToCSVBankCashKit() {
   const data = window.BankCashKitState.activeData;
   if (!data || data.length === 0) {
