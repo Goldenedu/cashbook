@@ -3,7 +3,7 @@
  * File: js/app.js
  */
 
-const TITLE_MAP = {
+window.TITLE_MAP = window.TITLE_MAP || {
   'dashboard': 'Home Dashboard',
   'bank': 'Main Bank Book',
   'cash': 'Main Cash Book',
@@ -29,9 +29,6 @@ const VIEW_FILES = [
   'income', 'student', 'promotion', 'uniform', 'reports', 'settings'
 ];
 
-/**
- * 💡 Pre-load All View HTML Templates into DOM at Startup
- */
 async function preloadAllViews() {
   const container = document.getElementById('view-container');
   if (!container) return;
@@ -52,28 +49,21 @@ async function preloadAllViews() {
     }
   }
 
-  // Show default dashboard view
   switchTab('dashboard');
 }
 
-/**
- * 💡 INSTANT 0ms ZERO-LATENCY TAB SWITCHER
- */
 function switchTab(tabId) {
-  window.AppState.currentModule = tabId;
+  if (window.AppState) window.AppState.currentModule = tabId;
 
-  // 1. Update Title & Active Nav UI
   const titleEl = document.getElementById('page-title');
-  if (titleEl) titleEl.innerText = TITLE_MAP[tabId] || 'ERP Module';
+  if (titleEl) titleEl.innerText = window.TITLE_MAP[tabId] || 'ERP Module';
 
   document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
   const activeBtn = document.getElementById(`btn-${tabId}`);
   if (activeBtn) activeBtn.classList.add('active');
 
-  // 2. Instant CSS Toggle for Views (0.00 seconds delay)
   document.querySelectorAll('.view-panel').forEach(panel => panel.classList.add('hidden'));
 
-  // Map sub-views to target view containers
   let targetViewId = tabId;
   if (['bank', 'cash', 'kitchen'].includes(tabId)) {
     targetViewId = 'bank-cash-kit';
@@ -90,13 +80,9 @@ function switchTab(tabId) {
     targetPanel.classList.remove('hidden');
   }
 
-  // 3. Trigger Module Specific Data Loading (SWR Background Sync)
   triggerModuleInit(tabId);
 }
 
-/**
- * 💡 Module Data Triggers
- */
 function triggerModuleInit(tabId) {
   if (tabId === 'dashboard') {
     if (typeof loadDashboardData === 'function') loadDashboardData(true, false);
@@ -131,9 +117,6 @@ function triggerModuleInit(tabId) {
   }
 }
 
-/**
- * 💡 Dashboard Data Reader
- */
 async function loadDashboardData(isSilent = true, forceRefresh = false) {
   try {
     const response = await callApi('getDashboardData', { forceRefresh: !!forceRefresh }, 'GET');
@@ -212,7 +195,7 @@ function updateClock() {
   let fyStart = (now.getMonth() < 3) ? year - 1 : year;
   let fyEnd = fyStart + 1;
 
-  const userDisplay = window.AppState.currentUser ? ` | User: ${window.AppState.currentUser.toUpperCase()} (${window.AppState.currentUserRole})` : '';
+  const userDisplay = (window.AppState && window.AppState.currentUser) ? ` | User: ${window.AppState.currentUser.toUpperCase()} (${window.AppState.currentUserRole})` : '';
   const clockEl = document.getElementById('live-metadata');
 
   if (clockEl) {
