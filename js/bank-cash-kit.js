@@ -1,6 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - BANK, CASH & KITCHEN LEDGER MODULE
  * File: js/bank-cash-kit.js
+ * 💡 Optimized with In-Memory Caching & Config Centralization
  */
 
 window.BankCashKitState = {
@@ -13,22 +14,26 @@ window.BankCashKitState = {
   stats: { totalIncome: 0, totalExpense: 0, balance: 0 }
 };
 
-const SUB_BOOK_MAP = {
-  'bank': 'Bank Book',
-  'cash': 'Cash Book',
-  'kitchen': 'Kitchen Exp Book'
+// 💡 IN-MEMORY DATA CACHE (0ms Instant Load)
+window.BankCache = {
+  bank: null,
+  cash: null,
+  kitchen: null
 };
 
+/**
+ * 💡 Switch Sub-Book (Bank vs Cash vs Kitchen) - Zero Latency
+ */
 function switchSubBook(subBookKey) {
   window.BankCashKitState.activeSubBook = subBookKey;
   window.BankCashKitState.page = 1;
 
   populateDropdownsBCK();
-  loadBankCashKitData(false);
+  loadBankCashKitData(false, false); // false = no spinner, false = use cache if available
 }
 
 /**
- * 💡 DYNAMIC DROPDOWN WIRING FROM CONFIG.JS
+ * 💡 Dynamic Dropdown Wiring using window.CONFIG
  */
 function populateDropdownsBCK() {
   const subBook = window.BankCashKitState.activeSubBook;
@@ -56,11 +61,30 @@ function populateDropdownsBCK() {
   }
 }
 
-async function loadBankCashKitData(isSilent = false) {
-  if (!isSilent) toggleLoading(true);
-
+/**
+ * 💡 High-Speed Data Reader with Memory Caching
+ */
+async function loadBankCashKitData(showSpinner = false, forceRefresh = false) {
   const state = window.BankCashKitState;
-  const bookName = SUB_BOOK_MAP[state.activeSubBook] || 'Bank Book';
+  const subBook = state.activeSubBook;
+  const sheetConfig = window.CONFIG && window.CONFIG.sheets ? window.CONFIG.sheets[subBook] : null;
+  const bookName = sheetConfig ? sheetConfig.bookName : 'Bank Book';
+
+  // 1. If Cache exists and search is empty & not forcing refresh -> Render INSTANTLY (0ms)
+  if (!forceRefresh && !state.searchVal && window.BankCache[subBook]) {
+    const cached = window.BankCache[subBook];
+    state.activeData = cached.data;
+    state.totalRows = cached.totalRows;
+    state.stats = cached.stats;
+
+    updateStatsBankCashKit();
+    renderBankCashKitTable();
+    updatePaginationBankCashKit();
+    return;
+  }
+
+  // 2. Otherwise Fetch from API
+  if (showSpinner) toggleLoading(true);
 
   try {
     const response = await callApi('getBankCashData', {
@@ -70,19 +94,28 @@ async function loadBankCashKitData(isSilent = false) {
       searchVal: state.searchVal
     }, 'GET');
 
-    if (!isSilent) toggleLoading(false);
+    if (showSpinner) toggleLoading(false);
 
     if (response && response.data) {
       state.activeData = response.data;
       state.totalRows = response.totalRows || 0;
       state.stats = response.stats || { totalIncome: 0, totalExpense: 0, balance: 0 };
 
+      // Store in memory cache if not a search query
+      if (!state.searchVal) {
+        window.BankCache[subBook] = {
+          data: response.data,
+          totalRows: response.totalRows,
+          stats: response.stats
+        };
+      }
+
       updateStatsBankCashKit();
       renderBankCashKitTable();
       updatePaginationBankCashKit();
     }
   } catch (err) {
-    if (!isSilent) toggleLoading(false);
+    if (showSpinner) toggleLoading(false);
     console.error("Error loading Bank/Cash/Kitchen data:", err);
   }
 }
@@ -169,10 +202,10 @@ function changePageBankCashKit(dir) {
   const state = window.BankCashKitState;
   if (dir === -1 && state.page > 1) {
     state.page--;
-    loadBankCashKitData(false);
+    loadBankCashKitData(true, true);
   } else if (dir === 1 && (state.page * state.limit) < state.totalRows) {
     state.page++;
-    loadBankCashKitData(false);
+    loadBankCashKitData(true, true);
   }
 }
 
@@ -183,7 +216,7 @@ function onSearchInputBankCashKit() {
     const searchInput = document.getElementById('bck-search');
     window.BankCashKitState.searchVal = searchInput ? searchInput.value.trim() : '';
     window.BankCashKitState.page = 1;
-    loadBankCashKitData(true);
+    loadBankCashKitData(false, true); // Search without blocking overlay
   }, 300);
 }
 
@@ -199,23 +232,32 @@ function openAddModalBankCashKit() {
   const dd = String(now.getDate()).padStart(2, '0');
   document.getElementById('bck-date').value = `${yyyy}-${mm}-${dd}`;
 
-  const currentBook = window.BankCashKitState.activeSubBook;
-  const bookTitle = SUB_BOOK_MAP[currentBook] || 'Ledger';
+  const subBook = window.BankCashKitState.activeSubBook;
+  const sheetConfig = window.CONFIG && window.CONFIG.sheets ? window.CONFIG.sheets[subBook] : null;
+  const bookTitle = sheetConfig ? sheetConfig.bookName : 'Ledger';
   document.getElementById('bck-form-title').innerText = `Add ${bookTitle} Entry`;
 
   populateDropdownsBCK();
-  document.getElementById('bck-modal').classList.remove('hidden');
+  document.getElementById('bck-[#bck-modal]') || document.getElementById('bck-modal').classList.remove('hidden');
 }
 
 function closeBankCashKitModal() {
-  document.getElementById('bck-modal').classList.add('hidden');
+  const modal = document.getElementById('bck-modal');
+  if (modal) modal.classList.add('hidden');
 }
 
+/**
+ * 💡 Save / Update Entry (Invalidates Cache Across All 3 Books for Transfer Safety)
+ */
 async function saveBankCashKitForm(e) {
   e.preventDefault();
   closeBankCashKitModal();
 
   const state = window.BankCashKitState;
+  const subBook = state.activeSubBook;
+  const sheetConfig = window.CONFIG && window.CONFIG.sheets ? window.CONFIG.sheets[subBook] : null;
+  const bookName = sheetConfig ? sheetConfig.bookName : 'Bank Book';
+
   const uniqueId = document.getElementById('bck-uniqueId').value;
   const isAdd = (!uniqueId);
 
@@ -228,22 +270,30 @@ async function saveBankCashKitForm(e) {
     debit: parseFloat(document.getElementById('bck-debit').value) || 0,
     credit: parseFloat(document.getElementById('bck-credit').value) || 0,
     description: document.getElementById('bck-description').value,
-    bookName: SUB_BOOK_MAP[state.activeSubBook],
+    bookName: bookName,
     createdBy: window.AppState.currentUser || "System"
   };
 
   const action = isAdd ? 'saveBankCashEntry' : 'updateBankCashEntry';
-  showToast("SUCCESS", "စာရင်းအား ဆာဗာတွင် သိမ်းဆည်းနေပါသည်...");
+  showToast("SUCCESS", "စာရင်းအား သိမ်းဆည်းနေပါသည်...");
+  toggleLoading(true);
 
   try {
     const response = await callApi(action, entry);
+    toggleLoading(false);
+
     if (response && response.success) {
-      showToast("SUCCESS", isAdd ? "စာရင်းသစ် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီရှင်။" : "စာရင်း အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီရှင်။");
-      loadBankCashKitData(true);
+      showToast("SUCCESS", isAdd ? "စာရင်းသစ် သိမ်းဆည်းပြီးပါပြီရှင်။" : "စာရင်း ပြင်ဆင်ပြီးပါပြီရှင်။");
+
+      // Invalidate memory cache across all books so transfers reflect instantly
+      window.BankCache = { bank: null, cash: null, kitchen: null };
+
+      loadBankCashKitData(false, true);
     } else {
-      showToast("ERROR", "မအောင်မြင်ပါ: " + (response.message || "Unknown error"));
+      showToast("ERROR", "မအောင်မြင်ပါ: " + (response ? response.message : ""));
     }
   } catch (err) {
+    toggleLoading(false);
     showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
   }
 }
@@ -266,26 +316,38 @@ function editBankCashKitEntry(uniqueId) {
   document.getElementById('bck-credit').value = row.credit || 0;
   document.getElementById('bck-description').value = row.description || "";
 
-  const bookTitle = SUB_BOOK_MAP[window.BankCashKitState.activeSubBook] || 'Ledger';
+  const subBook = window.BankCashKitState.activeSubBook;
+  const sheetConfig = window.CONFIG && window.CONFIG.sheets ? window.CONFIG.sheets[subBook] : null;
+  const bookTitle = sheetConfig ? sheetConfig.bookName : 'Ledger';
   document.getElementById('bck-form-title').innerText = `Edit ${bookTitle} Entry`;
 }
 
 async function deleteBankCashKitEntry(uniqueId) {
   if (confirm("ဤစာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလားရှင်?\n(ငွေလွှဲဖြစ်ပါက တွဲဖက်စာအုပ်ရှိ စာရင်းပါ တပြိုင်နက်တည်း ပျက်သွားပါမည်)")) {
     showToast("SUCCESS", "စာရင်းကို ဖျက်သိမ်းနေပါသည်...");
+    toggleLoading(true);
+
     try {
+      const subBook = window.BankCashKitState.activeSubBook;
+      const sheetConfig = window.CONFIG && window.CONFIG.sheets ? window.CONFIG.sheets[subBook] : null;
+      const bookName = sheetConfig ? sheetConfig.bookName : 'Bank Book';
+
       const response = await callApi('deleteBankCashEntry', {
         uniqueId: uniqueId,
-        bookName: SUB_BOOK_MAP[window.BankCashKitState.activeSubBook]
+        bookName: bookName
       });
+
+      toggleLoading(false);
 
       if (response && response.success) {
         showToast("SUCCESS", "စာရင်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။");
-        loadBankCashKitData(true);
+        window.BankCache = { bank: null, cash: null, kitchen: null };
+        loadBankCashKitData(false, true);
       } else {
-        showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response.message || ""));
+        showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response ? response.message : ""));
       }
     } catch (err) {
+      toggleLoading(false);
       showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
     }
   }
