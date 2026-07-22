@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - GLOBAL CONFIGURATION & CONSTANTS
  * File: js/config.js
- * 💡 Centralized Single Source of Truth
+ * 💡 Payroll & Office Schemas updated (ID PID removed - 19 columns each)
  */
 
 window.START_ROW = 6;
@@ -68,13 +68,15 @@ window.CONFIG = {
       bookName: "Office Exp Book",
       prefix: "OFF",
       sheetName: "Office", 
-      requiredHeaders: ["NO", "DATE", "CATEGORY","DESCRIPTION", "UNIT", "UNIT PRICE", "METHOD", "DEBIT", "CREDIT", "BALANCES", "LIABILITIES", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "UNIQUEID"]
+      // 💡 ID PID column removed (19 columns total)
+      requiredHeaders: ["NO", "DATE", "CATEGORY", "DESCRIPTION", "UNIT", "UNIT PRICE", "METHOD", "DEBIT", "CREDIT", "BALANCES", "LIABILITIES", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "UNIQUEID"]
     },
     payroll: {
       bookName: "HR Payroll Exp Book",
       prefix: "SAL",
       sheetName: "Payroll", 
-      requiredHeaders: ["NO", "DATE", "CATEGORY", "ID PID", "DESCRIPTION", "METHOD", "DEBIT", "CREDIT", "BALANCES", "UNPAID BONUS", "UNPAID FUND", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT","SEND MAIL", "UNIQUEID"]
+      // 💡 ID PID column removed as requested (19 columns total)
+      requiredHeaders: ["NO", "DATE", "CATEGORY", "DESCRIPTION", "METHOD", "DEBIT", "CREDIT", "BALANCES", "UNPAID BONUS", "UNPAID FUND", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT","SEND MAIL", "UNIQUEID"]
     },
     staffFullTime: {
       bookName: "Full Time Staff List",
