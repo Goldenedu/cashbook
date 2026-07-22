@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - GLOBAL CONFIGURATION & CONSTANTS
  * File: js/config.js
- * 💡 Direct 1-to-1 Conversion from 02_Config.gs (100% Complete)
+ * 💡 Centralized Single Source of Truth
  */
 
 window.START_ROW = 6;
@@ -18,8 +18,10 @@ window.BOOK_MAP = {
   "Office Book": "office",
   "Kitchen Book": "kitchen",
   "Salary Book": "payroll",
-  "office": "office",
+  "bank": "bank",
+  "cash": "cash",
   "kitchen": "kitchen",
+  "office": "office",
   "payroll": "payroll"
 };
 
@@ -27,14 +29,14 @@ window.BOOK_MAP = {
 // MAGIC NUMBERS CONFIGURATION
 // ==========================================
 window.MAGIC_NUMBERS = {
-  TRANSACTION_LOCK_DAYS: 7,           // ရှေးဟောင်း transactions များကို ပြင်ဆင်ခွင့်ပိတ်ရန် ရက်အရေအတွက်
-  SESSION_EXPIRY_HOURS: 8,            // Session သက်တမ်း (နာရီ)
-  DASHBOARD_CACHE_TTL_SECONDS: 180,   // Dashboard cache သက်တမ်း (စက္ကန့်) - 3 မိနစ်
-  LOGIN_LOCK_TTL_SECONDS: 300,        // Login attempt lock သက်တမ်း (စက္ကန့်) - 5 မိနစ်
-  AUDIT_LOG_MAX_ROWS: 5000,           // Audit log အများဆုံး မှတ်တမ်းအရေအတွက်
-  PASSWORD_HASH_ITERATIONS: 1000,     // SHA-256 hash iterations
-  LOCK_TIMEOUT_MS: 15000,             // LockService timeout (မီလီစက္ကန့်)
-  PROMO_CACHE_TTL_SECONDS: 600        // Promotion cache သက်တမ်း (စက္ကန့်) - 10 မိနစ်
+  TRANSACTION_LOCK_DAYS: 7,
+  SESSION_EXPIRY_HOURS: 8,
+  DASHBOARD_CACHE_TTL_SECONDS: 180,
+  LOGIN_LOCK_TTL_SECONDS: 300,
+  AUDIT_LOG_MAX_ROWS: 5000,
+  PASSWORD_HASH_ITERATIONS: 1000,
+  LOCK_TIMEOUT_MS: 15000,
+  PROMO_CACHE_TTL_SECONDS: 600
 };
 
 // ==========================================
@@ -120,7 +122,7 @@ window.CONFIG = {
 };
 
 // ==========================================
-// DROPDOWNS CONFIGURATION (EXACT MATCH)
+// DROPDOWNS CONFIGURATION
 // ==========================================
 window.DROPDOWNS = {
   bankBook: {
