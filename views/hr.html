@@ -18,7 +18,6 @@
   <!-- SECTION A: HR PAYROLL EXP BOOK SECTION                                       -->
   <!-- ============================================================================ -->
   <div id="hr-payroll-section" class="space-y-5">
-    <!-- Top KPI Cards Grid -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div class="stats-card p-5 rounded-xl flex items-start gap-4">
         <div class="p-3.5 rounded-lg bg-emerald-500/10 text-emerald-400"><i class="fa-solid fa-arrow-trend-up text-xl"></i></div>
@@ -50,7 +49,6 @@
       </div>
     </div>
 
-    <!-- Control Actions Bar -->
     <div class="flex flex-col md:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
       <div class="relative w-full md:w-[450px]">
         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
@@ -66,7 +64,7 @@
           <i class="fa-solid fa-file-export text-xs"></i> Export CSV
         </button>
 
-        <button onclick="sendMonthlyPayslipsToStaff()" class="p-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-lg shadow-teal-600/10" title="Send Payslip Email to Staff via Resend API">
+        <button onclick="sendMonthlyPayslipsToStaff()" class="p-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-lg shadow-teal-600/10">
           <i class="fa-solid fa-paper-plane text-xs"></i> Send Payslips
         </button>
 
@@ -76,7 +74,6 @@
       </div>
     </div>
 
-    <!-- Table Grid -->
     <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
       <table class="w-full text-left border-collapse min-w-[1600px]">
         <thead>
@@ -104,12 +101,11 @@
       </table>
     </div>
 
-    <!-- Pagination -->
+    <!-- Payroll Pagination Tray -->
     <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-[#0c1322] border border-slate-800 px-6 py-3.5 rounded-xl">
       <div id="hr-pay-pagination-info" class="text-xs font-semibold text-slate-400 tracking-wide">
         Showing entries...
       </div>
-      
       <div class="flex items-center gap-2">
         <button onclick="changePageHrPayroll(-1)" id="hr-pay-btn-prev" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold transition-all disabled:opacity-30 disabled:pointer-events-none text-xs">
           <i class="fa-solid fa-chevron-left text-[10px]"></i> Previous
@@ -125,16 +121,13 @@
   <!-- SECTION B: STAFF LIST SECTION (FULL TIME / PART TIME)                        -->
   <!-- ============================================================================ -->
   <div id="hr-staff-section" class="space-y-5 hidden">
-    <!-- Dynamic Staff KPI Grid (4 Cards) -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="staff-kpi-grid">
-      <!-- Injected by js/staff.js or js/hr.js -->
-    </div>
+    <!-- Dynamic Staff KPI Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="staff-kpi-grid"></div>
 
-    <!-- Control Actions Bar -->
     <div class="flex flex-col md:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
       <div class="relative w-full md:w-[450px]">
         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
-        <input type="text" id="staff-search-input" oninput="onSearchInputStaff()" placeholder="Search staff name, position, phone, NRC..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
+        <input type="text" id="staff-search-input" oninput="onSearchInputStaff()" placeholder="Search staff name, position, phone..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
       </div>
 
       <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
@@ -188,10 +181,18 @@
       </table>
     </div>
 
-    <!-- Pagination -->
+    <!-- Staff Pagination Tray -->
     <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-[#0c1322] border border-slate-800 px-6 py-3.5 rounded-xl">
       <div id="staff-pagination-info" class="text-xs font-semibold text-slate-400 tracking-wide">
         Showing entries...
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="changePageStaff(-1)" id="staff-btn-prev" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold transition-all disabled:opacity-30 disabled:pointer-events-none text-xs">
+          <i class="fa-solid fa-chevron-left text-[10px]"></i> Previous
+        </button>
+        <button onclick="changePageStaff(1)" id="staff-btn-next" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold transition-all disabled:opacity-30 disabled:pointer-events-none text-xs">
+          Next <i class="fa-solid fa-chevron-right text-[10px]"></i>
+        </button>
       </div>
     </div>
   </div>
@@ -325,22 +326,38 @@
           </div>
           <div class="flex flex-col gap-1">
             <label class="font-bold text-slate-400 uppercase tracking-wide">Working Days</label>
-            <input type="number" id="staff-working-days" value="26" class="w-full text-right font-bold text-slate-100 bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 outline-none focus:border-indigo-500">
+            <input type="number" id="staff-working-days" value="26" oninput="calculateLiveStaffSalary()" class="w-full text-right font-bold text-slate-100 bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 outline-none focus:border-indigo-500">
           </div>
           <div class="flex flex-col gap-1">
             <label class="font-bold text-slate-400 uppercase tracking-wide">Basic Amt</label>
-            <input type="number" id="staff-basic" value="0" class="w-full text-right text-emerald-400 font-extrabold bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 outline-none focus:border-emerald-500">
+            <input type="number" id="staff-basic" value="0" oninput="calculateLiveStaffSalary()" class="w-full text-right text-emerald-400 font-extrabold bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 outline-none focus:border-emerald-500">
           </div>
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Extra Amt (Allowances/Deductions)</label>
-          <input type="number" id="staff-extra" value="0" class="w-full text-right text-rose-400 font-bold bg-rose-500/5 border border-rose-500/20 rounded-lg p-2.5 outline-none focus:border-rose-500">
+          <input type="number" id="staff-extra" value="0" oninput="calculateLiveStaffSalary()" class="w-full text-right text-rose-400 font-bold bg-rose-500/5 border border-rose-500/20 rounded-lg p-2.5 outline-none focus:border-rose-500">
+        </div>
+
+        <!-- 💡 LIVE SALARY BREAKDOWN PREVIEW BOX -->
+        <div id="staff-salary-preview-box" class="p-3.5 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+          <div class="text-[10px] font-black text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-calculator"></i> Live Salary Breakdown Preview (ရရှိမည့် လစာအသေးစိတ်):
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-[11px]">
+            <div><span class="text-slate-500">Total Salary:</span> <br><span id="preview-total-salary" class="font-bold text-slate-200">0 MMK</span></div>
+            <div><span class="text-slate-500">Bonus:</span> <br><span id="preview-bonus" class="font-bold text-emerald-400">0 MMK</span></div>
+            <div><span class="text-slate-500">Fund (5%):</span> <br><span id="preview-fund" class="font-bold text-teal-400">0 MMK</span></div>
+          </div>
+          <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-xs">
+            <span class="font-extrabold text-slate-300 uppercase">Total Net Amount:</span>
+            <span id="preview-total-net" class="font-black text-indigo-400 text-sm">0 MMK</span>
+          </div>
         </div>
       </div>
 
       <!-- Part Time Block -->
       <div id="staff-parttime-fields" class="flex flex-col gap-1 hidden">
-        <label class="font-bold text-indigo-400 uppercase tracking-wide">Part Time Salary (Total Net)</label>
+        <label class="font-bold text-indigo-400 uppercase tracking-wide">Part Time Salary (Total Net / စုစုပေါင်းလစာ)</label>
         <input type="number" id="staff-total-salary" value="0" class="w-full text-right text-indigo-400 font-extrabold bg-indigo-500/5 border border-indigo-500/20 rounded-lg p-2.5 outline-none focus:border-indigo-500">
       </div>
 
@@ -368,7 +385,7 @@
 
       <div class="flex flex-col gap-1">
         <label class="font-bold text-rose-400 uppercase tracking-wide">Resigned Date (နုတ်ထွက်ပါက ဖြည့်ရန်)</label>
-        <input type="date" id="staff-resigned" class="w-full text-rose-400 bg-rose-500/5 border border-rose-500/20 rounded-lg p-2.5 outline-none focus:border-rose-500">
+        <input type="date" id="staff-resigned" onchange="calculateLiveStaffSalary()" class="w-full text-rose-400 bg-rose-500/5 border border-rose-500/20 rounded-lg p-2.5 outline-none focus:border-rose-500">
       </div>
 
       <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-800">
