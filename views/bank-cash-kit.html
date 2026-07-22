@@ -1,59 +1,31 @@
 <!-- views/bank-cash-kit.html -->
 <div class="space-y-5">
 
-  <!-- ၁။ Sub-Tabs Navigation Bar (Bank / Cash / Kitchen) -->
-  <div class="flex items-center gap-2 p-1.5 bg-[#0c1322] border border-slate-800 rounded-xl w-fit">
-    <button onclick="switchSubBook('bank')" id="sub-tab-bank" class="sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white flex items-center gap-2">
-      <i class="fa-solid fa-building-columns text-amber-400"></i> Main Bank Book
-    </button>
-    <button onclick="switchSubBook('cash')" id="sub-tab-cash" class="sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
-      <i class="fa-solid fa-money-bill-wave text-emerald-400"></i> Main Cash Book
-    </button>
-    <button onclick="switchSubBook('kitchen')" id="sub-tab-kitchen" class="sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
-      <i class="fa-solid fa-utensils text-rose-400"></i> Kitchen Exp Book
-    </button>
-  </div>
-
-  <!-- ၂။ Top KPI Stats Cards Grid -->
+  <!-- ၁။ Top KPI Stats Cards Grid -->
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-    <!-- Total Income -->
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
-      <div class="p-3.5 rounded-lg bg-emerald-500/10 text-emerald-400">
-        <i class="fa-solid fa-arrow-trend-up text-xl"></i>
-      </div>
+      <div class="p-3.5 rounded-lg bg-emerald-500/10 text-emerald-400"><i class="fa-solid fa-arrow-trend-up text-xl"></i></div>
       <div>
         <p class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Total Income</p>
         <h3 id="bck-total-income" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
       </div>
     </div>
-
-    <!-- Total Expense -->
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
-      <div class="p-3.5 rounded-lg bg-rose-500/10 text-rose-400">
-        <i class="fa-solid fa-arrow-trend-down text-xl"></i>
-      </div>
+      <div class="p-3.5 rounded-lg bg-rose-500/10 text-rose-400"><i class="fa-solid fa-arrow-trend-down text-xl"></i></div>
       <div>
         <p class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Total Expense</p>
         <h3 id="bck-total-expense" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
       </div>
     </div>
-
-    <!-- Running Balance -->
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
-      <div class="p-3.5 rounded-lg bg-indigo-500/10 text-indigo-400">
-        <i class="fa-solid fa-scale-balanced text-xl"></i>
-      </div>
+      <div class="p-3.5 rounded-lg bg-indigo-500/10 text-indigo-400"><i class="fa-solid fa-scale-balanced text-xl"></i></div>
       <div>
         <p class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Balances</p>
         <h3 id="bck-balance" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
       </div>
     </div>
-
-    <!-- Total Entries -->
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
-      <div class="p-3.5 rounded-lg bg-sky-500/10 text-sky-400">
-        <i class="fa-solid fa-list-check text-xl"></i>
-      </div>
+      <div class="p-3.5 rounded-lg bg-sky-500/10 text-sky-400"><i class="fa-solid fa-list-check text-xl"></i></div>
       <div>
         <p class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Total Entries</p>
         <h3 id="bck-entries-count" class="text-base font-extrabold text-white mt-1">0</h3>
@@ -61,19 +33,15 @@
     </div>
   </div>
 
-  <!-- ၃။ Control Search & Action Bar -->
+  <!-- ၂။ Control Search & Action Bar -->
   <div class="flex flex-col md:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
-    <!-- Real-time Typing Search Input -->
     <div class="relative w-full md:w-[500px]">
-      <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
-        <i class="fa-solid fa-magnifying-glass text-xs"></i>
-      </span>
+      <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
       <input type="text" id="bck-search" oninput="onSearchInputBankCashKit()" placeholder="Search description, category..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
     </div>
 
-    <!-- Action Buttons -->
     <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
-      <button onclick="loadBankCashKitData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all" title="Refresh Data">
+      <button onclick="loadBankCashKitData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all">
         <i class="fa-solid fa-rotate text-xs"></i> Refresh
       </button>
 
@@ -87,7 +55,7 @@
     </div>
   </div>
 
-  <!-- ၄။ Data Grid Table -->
+  <!-- ၃။ 16-Column Data Grid Table -->
   <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
     <table class="w-full text-left border-collapse min-w-[1350px]">
       <thead>
@@ -113,10 +81,10 @@
     </table>
   </div>
 
-  <!-- ၅။ Pagination Controller Tray -->
+  <!-- ၄။ Pagination Controller Tray -->
   <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-[#0c1322] border border-slate-800 px-6 py-3.5 rounded-xl">
     <div id="bck-pagination-info" class="text-xs font-semibold text-slate-400 tracking-wide">
-      Showing <span class="text-indigo-400 font-bold">1</span> to <span class="text-indigo-400 font-bold">30</span> of <span class="text-indigo-400 font-bold">0</span> entries
+      Showing entries...
     </div>
     
     <div class="flex items-center gap-2">
@@ -131,7 +99,7 @@
 
 </div>
 
-<!-- ၆။ Add / Edit Record Overlay Form Modal -->
+<!-- ၅။ DARK THEME ELEGANT MODAL POPUP -->
 <div id="bck-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
   <div class="bg-[#0c1322] border border-slate-800 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
     
@@ -145,15 +113,14 @@
     <form id="bck-form" onsubmit="saveBankCashKitForm(event)" class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
       <input type="hidden" id="bck-uniqueId">
       
-      <!-- Row 1: DATE & CATEGORY -->
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Date</label>
-          <input type="date" id="bck-date" required class="w-full">
+          <input type="date" id="bck-date" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Category</label>
-          <select id="bck-category" required class="w-full">
+          <select id="bck-category" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
             <option value="Non">Non</option>
             <option value="Opening">Opening</option>
             <option value="Transfer">Transfer</option>
@@ -166,15 +133,14 @@
         </div>
       </div>
 
-      <!-- Row 2: METHOD & TRANSFER -->
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Method</label>
-          <input type="text" id="bck-method" readonly class="w-full bg-slate-950/40 text-slate-400 border border-slate-800 cursor-not-allowed font-bold">
+          <input type="text" id="bck-method" readonly class="w-full bg-slate-950/60 text-slate-400 border border-slate-800 cursor-not-allowed font-bold rounded-lg p-2.5">
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Transfer To (ငွေလွှဲပြောင်းမည့် စာအုပ်)</label>
-          <select id="bck-transfer" class="w-full">
+          <select id="bck-transfer" class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
             <option value="">-- No Transfer --</option>
             <option value="Bank Book">Bank Book</option>
             <option value="Cash Book">Cash Book</option>
@@ -185,25 +151,22 @@
         </div>
       </div>
 
-      <!-- Row 3: DEBIT & CREDIT -->
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-emerald-400 uppercase tracking-wide">Debit (Income / ဝင်ငွေ)</label>
-          <input type="number" step="0.01" id="bck-debit" value="0" class="w-full text-right text-emerald-400 font-bold">
+          <input type="number" step="0.01" id="bck-debit" value="0" class="w-full text-right text-emerald-400 font-bold bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 outline-none focus:border-emerald-500">
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-rose-400 uppercase tracking-wide">Credit (Expense / ထွက်ငွေ)</label>
-          <input type="number" step="0.01" id="bck-credit" value="0" class="w-full text-right text-rose-400 font-bold">
+          <input type="number" step="0.01" id="bck-credit" value="0" class="w-full text-right text-rose-400 font-bold bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 outline-none focus:border-rose-500">
         </div>
       </div>
 
-      <!-- Row 4: DESCRIPTION -->
       <div class="flex flex-col gap-1">
         <label class="font-bold text-slate-400 uppercase tracking-wide">Description</label>
-        <textarea id="bck-description" rows="3" required class="w-full" placeholder="အသေးစိတ် စာရင်းရှင်းလင်းချက်..."></textarea>
+        <textarea id="bck-description" rows="3" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 placeholder-slate-500 rounded-lg p-2.5 outline-none focus:border-indigo-500" placeholder="အသေးစိတ် စာရင်းရှင်းလင်းချက် ရေးသွင်းရန်..."></textarea>
       </div>
 
-      <!-- Footer Buttons -->
       <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-800">
         <button type="button" onclick="closeBankCashKitModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">Cancel</button>
         <button type="submit" class="px-5 py-2 rounded-lg text-xs font-black bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/10 transition-all">Confirm</button>
