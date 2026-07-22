@@ -41,7 +41,7 @@
     </div>
 
     <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
-      <button onclick="loadBankCashKitData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all">
+      <button onclick="loadBankCashKitData(false, true)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all" title="Refresh Data">
         <i class="fa-solid fa-rotate text-xs"></i> Refresh
       </button>
 
@@ -121,7 +121,7 @@
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Category</label>
-          <select id="bck-category" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
+          <select id="bck-category" onchange="onCategoryChangeBCK()" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
             <!-- Dynamically populated from config.js -->
           </select>
         </div>
@@ -137,7 +137,7 @@
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Transfer To (ငွေလွှဲပြောင်းမည့် စာအုပ်)</label>
-          <select id="bck-transfer" class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
+          <select id="bck-transfer" onchange="onTransferTargetChangeBCK()" class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
             <!-- Dynamically populated from config.js -->
           </select>
         </div>
