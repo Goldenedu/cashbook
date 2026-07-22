@@ -1,11 +1,11 @@
 /**
  * GOLDEN ERP SYSTEM - BANK, CASH & KITCHEN LEDGER MODULE
  * File: js/bank-cash-kit.js
- * 💡 Optimized with In-Memory Caching & Config Centralization
+ * 💡 Auto Description, Debit Lock on Transfer, and In-Memory Caching
  */
 
 window.BankCashKitState = {
-  activeSubBook: 'bank', // 'bank', 'cash', or 'kitchen'
+  activeSubBook: 'bank',
   page: 1,
   limit: 30,
   totalRows: 0,
@@ -14,27 +14,16 @@ window.BankCashKitState = {
   stats: { totalIncome: 0, totalExpense: 0, balance: 0 }
 };
 
-// 💡 IN-MEMORY DATA CACHE (0ms Instant Load)
-window.BankCache = {
-  bank: null,
-  cash: null,
-  kitchen: null
-};
+window.BankCache = { bank: null, cash: null, kitchen: null };
 
-/**
- * 💡 Switch Sub-Book (Bank vs Cash vs Kitchen) - Zero Latency
- */
 function switchSubBook(subBookKey) {
   window.BankCashKitState.activeSubBook = subBookKey;
   window.BankCashKitState.page = 1;
 
   populateDropdownsBCK();
-  loadBankCashKitData(false, false); // false = no spinner, false = use cache if available
+  loadBankCashKitData(false, false);
 }
 
-/**
- * 💡 Dynamic Dropdown Wiring using window.CONFIG
- */
 function populateDropdownsBCK() {
   const subBook = window.BankCashKitState.activeSubBook;
   const configKey = subBook === 'kitchen' ? 'kitchenExpBook' : (subBook === 'cash' ? 'cashBook' : 'bankBook');
@@ -59,18 +48,63 @@ function populateDropdownsBCK() {
       transSelect.innerHTML = `<option value="">-- No Transfer --</option>`;
     }
   }
+
+  onCategoryChangeBCK();
 }
 
 /**
- * 💡 High-Speed Data Reader with Memory Caching
+ * 💡 Category === "Transfer" ဖြစ်ပါက Form အား Auto Lock & Auto Description ပြုလုပ်ပေးသည့် စနစ်
  */
+function onCategoryChangeBCK() {
+  const catVal = document.getElementById('bck-category') ? document.getElementById('bck-category').value : '';
+  const debitInput = document.getElementById('bck-debit');
+  const descInput = document.getElementById('bck-description');
+  const transSelect = document.getElementById('bck-transfer');
+
+  if (catVal === "Transfer") {
+    if (debitInput) {
+      debitInput.value = 0;
+      debitInput.disabled = true;
+    }
+    if (transSelect) {
+      transSelect.required = true;
+    }
+    if (descInput) {
+      descInput.readOnly = true;
+      onTransferTargetChangeBCK();
+    }
+  } else {
+    if (debitInput) debitInput.disabled = false;
+    if (transSelect) transSelect.required = false;
+    if (descInput) descInput.readOnly = false;
+  }
+}
+
+/**
+ * 💡 Transfer To စာအုပ် ရွေးချယ်မှုအလိုက် Auto Description ရေးပေးခြင်း
+ */
+function onTransferTargetChangeBCK() {
+  const catVal = document.getElementById('bck-category') ? document.getElementById('bck-category').value : '';
+  if (catVal !== "Transfer") return;
+
+  const subBook = window.BankCashKitState.activeSubBook;
+  const sheetConfig = window.CONFIG && window.CONFIG.sheets ? window.CONFIG.sheets[subBook] : null;
+  const currentBookName = sheetConfig ? sheetConfig.bookName : 'Main Book';
+
+  const transVal = document.getElementById('bck-transfer') ? document.getElementById('bck-transfer').value : '';
+  const descInput = document.getElementById('bck-description');
+
+  if (descInput && transVal) {
+    descInput.value = `${currentBookName} Transfer to ${transVal}`;
+  }
+}
+
 async function loadBankCashKitData(showSpinner = false, forceRefresh = false) {
   const state = window.BankCashKitState;
   const subBook = state.activeSubBook;
   const sheetConfig = window.CONFIG && window.CONFIG.sheets ? window.CONFIG.sheets[subBook] : null;
   const bookName = sheetConfig ? sheetConfig.bookName : 'Bank Book';
 
-  // 1. If Cache exists and search is empty & not forcing refresh -> Render INSTANTLY (0ms)
   if (!forceRefresh && !state.searchVal && window.BankCache[subBook]) {
     const cached = window.BankCache[subBook];
     state.activeData = cached.data;
@@ -83,7 +117,6 @@ async function loadBankCashKitData(showSpinner = false, forceRefresh = false) {
     return;
   }
 
-  // 2. Otherwise Fetch from API
   if (showSpinner) toggleLoading(true);
 
   try {
@@ -91,7 +124,8 @@ async function loadBankCashKitData(showSpinner = false, forceRefresh = false) {
       bookName: bookName,
       page: state.page,
       limit: state.limit,
-      searchVal: state.searchVal
+      searchVal: state.searchVal,
+      role: window.AppState.currentUserRole
     }, 'GET');
 
     if (showSpinner) toggleLoading(false);
@@ -101,7 +135,6 @@ async function loadBankCashKitData(showSpinner = false, forceRefresh = false) {
       state.totalRows = response.totalRows || 0;
       state.stats = response.stats || { totalIncome: 0, totalExpense: 0, balance: 0 };
 
-      // Store in memory cache if not a search query
       if (!state.searchVal) {
         window.BankCache[subBook] = {
           data: response.data,
@@ -150,8 +183,9 @@ function renderBankCashKitTable() {
       if (parts.length === 3) displayDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
 
+    // 💡 Lock Received Transfer on Counterpart Side
     const lockClass = (row.isLocked && window.AppState.currentUserRole !== "Admin") ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
-    const lockTitle = row.isLocked ? "Locked (Older than 7 days)" : "";
+    const lockTitle = row.isLocked ? "Received Transfer Entry (Locked - Edit from Source Book Only)" : "";
 
     return `
       <tr class="hover:bg-slate-800/20 text-slate-300">
@@ -164,7 +198,7 @@ function renderBankCashKitTable() {
         <td class="text-right text-rose-400 font-semibold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US', {minimumFractionDigits: 2}) : '-'}</td>
         <td class="text-right text-slate-400 font-bold">${Number(row.balances).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
         <td>${escapeHtml(row.transfer) || '-'}</td>
-        <td>${escapeHtml(row.vrNo || '-')}</td>
+        <td class="font-mono text-indigo-300">${escapeHtml(row.vrNo || '-')}</td>
         <td>${escapeHtml(row.my || '-')}</td>
         <td>${escapeHtml(row.fy || '-')}</td>
         <td class="right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg text-center">
@@ -216,7 +250,7 @@ function onSearchInputBankCashKit() {
     const searchInput = document.getElementById('bck-search');
     window.BankCashKitState.searchVal = searchInput ? searchInput.value.trim() : '';
     window.BankCashKitState.page = 1;
-    loadBankCashKitData(false, true); // Search without blocking overlay
+    loadBankCashKitData(false, true);
   }, 300);
 }
 
@@ -238,7 +272,7 @@ function openAddModalBankCashKit() {
   document.getElementById('bck-form-title').innerText = `Add ${bookTitle} Entry`;
 
   populateDropdownsBCK();
-  document.getElementById('bck-[#bck-modal]') || document.getElementById('bck-modal').classList.remove('hidden');
+  document.getElementById('bck-modal').classList.remove('hidden');
 }
 
 function closeBankCashKitModal() {
@@ -246,9 +280,6 @@ function closeBankCashKitModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-/**
- * 💡 Save / Update Entry (Invalidates Cache Across All 3 Books for Transfer Safety)
- */
 async function saveBankCashKitForm(e) {
   e.preventDefault();
   closeBankCashKitModal();
@@ -285,9 +316,7 @@ async function saveBankCashKitForm(e) {
     if (response && response.success) {
       showToast("SUCCESS", isAdd ? "စာရင်းသစ် သိမ်းဆည်းပြီးပါပြီရှင်။" : "စာရင်း ပြင်ဆင်ပြီးပါပြီရှင်။");
 
-      // Invalidate memory cache across all books so transfers reflect instantly
       window.BankCache = { bank: null, cash: null, kitchen: null };
-
       loadBankCashKitData(false, true);
     } else {
       showToast("ERROR", "မအောင်မြင်ပါ: " + (response ? response.message : ""));
@@ -315,6 +344,8 @@ function editBankCashKitEntry(uniqueId) {
   document.getElementById('bck-debit').value = row.debit || 0;
   document.getElementById('bck-credit').value = row.credit || 0;
   document.getElementById('bck-description').value = row.description || "";
+
+  onCategoryChangeBCK();
 
   const subBook = window.BankCashKitState.activeSubBook;
   const sheetConfig = window.CONFIG && window.CONFIG.sheets ? window.CONFIG.sheets[subBook] : null;
