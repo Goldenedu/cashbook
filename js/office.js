@@ -1,6 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - OFFICE EXPENSE & INVENTORY MODULE
  * File: js/office.js
+ * 💡 19-Column Schema (ID PID Removed) + Uniform Profit Preview & Description Formatting (- 4Nos)
  */
 
 window.OfficeState = {
@@ -49,6 +50,7 @@ function onCategoryChangeOffice() {
   const category = document.getElementById('office-category') ? document.getElementById('office-category').value : '';
 
   const prodContainer = document.getElementById('office-product-container');
+  const profitPreviewContainer = document.getElementById('office-profit-preview-container');
   const qtyPriceContainer = document.getElementById('office-qty-price-container');
   const liabilitiesContainer = document.getElementById('office-liabilities-container');
 
@@ -64,6 +66,7 @@ function onCategoryChangeOffice() {
   // 1. Advance Uniform စည်းမျဉ်း
   if (isUniform) {
     if (prodContainer) prodContainer.classList.remove('hidden');
+    if (profitPreviewContainer) profitPreviewContainer.classList.remove('hidden');
     if (qtyPriceContainer) qtyPriceContainer.classList.remove('hidden');
     if (liabilitiesContainer) liabilitiesContainer.classList.add('hidden');
 
@@ -73,10 +76,12 @@ function onCategoryChangeOffice() {
     if (transSelect) transSelect.disabled = false;
 
     fetchUniformProductsListOffice();
+    onProductChangeOffice();
   } 
   // 2. Liabilities (ပေးရန်ကျန်) စည်းမျဉ်း
   else if (isLiabilities) {
     if (prodContainer) prodContainer.classList.add('hidden');
+    if (profitPreviewContainer) profitPreviewContainer.classList.add('hidden');
     if (qtyPriceContainer) qtyPriceContainer.classList.add('hidden');
     if (liabilitiesContainer) liabilitiesContainer.classList.remove('hidden');
 
@@ -89,6 +94,7 @@ function onCategoryChangeOffice() {
   // 3. အခြား Standard Categories
   else {
     if (prodContainer) prodContainer.classList.add('hidden');
+    if (profitPreviewContainer) profitPreviewContainer.classList.add('hidden');
     if (qtyPriceContainer) qtyPriceContainer.classList.add('hidden');
     if (liabilitiesContainer) liabilitiesContainer.classList.add('hidden');
 
@@ -101,22 +107,25 @@ function onCategoryChangeOffice() {
 }
 
 /**
- * 💡 Uniform Product ID ရွေးချယ်ပါက အသေးစိတ် Auto ဖြည့်ပေးခြင်း
+ * 💡 Uniform Product ID ရွေးချယ်ပါက Auto Description (- 4Nos) နှင့် Profit Preview Auto တွက်ပေးခြင်း
  */
 function onProductChangeOffice() {
   const productId = document.getElementById('office-product-id') ? document.getElementById('office-product-id').value : '';
   const stockBadge = document.getElementById('office-stock-badge');
+  const unit = parseFloat(document.getElementById('office-unit').value) || 1;
 
   if (productId && window.OfficeState.uniformProducts) {
     const prod = window.OfficeState.uniformProducts.find(p => p.productId === productId);
     if (prod) {
-      document.getElementById('office-description').value = `${prod.productId} ${prod.productName} ${prod.type} ${prod.size}`;
+      // Auto Description with Qty suffix: e.g. "PID 003 Basic Class Pair-Female S - 4Nos"
+      document.getElementById('office-description').value = `${prod.productId} ${prod.productName} ${prod.type} ${prod.size} - ${unit}Nos`;
       document.getElementById('office-unit-price').value = prod.unitPrice || 0;
 
       if (stockBadge) {
         stockBadge.innerText = `Stock: ${prod.currentQty}`;
         stockBadge.classList.remove('hidden');
       }
+
       calculateDebitOffice();
     }
   } else {
@@ -125,23 +134,43 @@ function onProductChangeOffice() {
 }
 
 /**
- * 💡 Debit Amount Auto တွက်ချက်ပေးခြင်း
+ * 💡 Debit & Profit Preview Amount Auto တွက်ချက်ပေးခြင်း
  */
 function calculateDebitOffice() {
   const category = document.getElementById('office-category').value;
   if (category === "Advance Uniform" || category === "Advance Unifrom") {
+    const productId = document.getElementById('office-product-id') ? document.getElementById('office-product-id').value : '';
     const unit = parseFloat(document.getElementById('office-unit').value) || 0;
     const unitPrice = parseFloat(document.getElementById('office-unit-price').value) || 0;
     const creditVal = parseFloat(document.getElementById('office-credit').value) || 0;
 
+    // Debit (Cost) Auto Calculate
     if (creditVal === 0) {
       document.getElementById('office-debit').value = unit * unitPrice;
+    }
+
+    // Auto Update Description with Qty
+    if (productId && window.OfficeState.uniformProducts) {
+      const prod = window.OfficeState.uniformProducts.find(p => p.productId === productId);
+      if (prod) {
+        document.getElementById('office-description').value = `${prod.productId} ${prod.productName} ${prod.type} ${prod.size} - ${unit}Nos`;
+        
+        // Calculate Profit Preview: unit * (sellingPrice - unitPrice)
+        const sellingPrice = prod.sellingPrice || 0;
+        const profitPerUnit = sellingPrice - unitPrice;
+        const totalProfit = unit * profitPerUnit;
+
+        const profitDisplayEl = document.getElementById('office-calculated-profit');
+        if (profitDisplayEl) {
+          profitDisplayEl.innerText = Number(totalProfit || 0).toLocaleString('en-US') + " MMK";
+        }
+      }
     }
   }
 }
 
 /**
- * 💡 Fetch Uniform Products List
+ * 💡 Fetch Uniform Product List
  */
 async function fetchUniformProductsListOffice() {
   if (window.OfficeState.uniformProducts.length > 0) return;
@@ -204,6 +233,9 @@ function updateStatsOffice() {
   setT('off-entries-count', window.OfficeState.totalRows.toLocaleString('en-US'));
 }
 
+/**
+ * 💡 Render Office Table (16 Visual Columns - ID PID Removed)
+ */
 function renderOfficeTable() {
   const tableBody = document.getElementById('office-table-body');
   if (!tableBody) return;
@@ -211,7 +243,7 @@ function renderOfficeTable() {
   const data = window.OfficeState.activeData;
 
   if (!data || data.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="17" class="text-center py-8 text-slate-500 font-bold">No office expense records found.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="16" class="text-center py-8 text-slate-500 font-bold">No office expense records found.</td></tr>`;
     return;
   }
 
@@ -232,8 +264,7 @@ function renderOfficeTable() {
         <td class="text-center font-semibold text-slate-500">${row.no}</td>
         <td>${escapeHtml(displayDate)}</td>
         <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">${escapeHtml(row.category)}</span></td>
-        <td class="font-bold text-slate-200">${escapeHtml(row.id) || '-'}</td>
-        <td class="min-w-[250px] max-w-md truncate" title="${escapeHtml(row.description)}">${escapeHtml(row.description)}</td>
+        <td class="min-w-[280px] max-w-md truncate" title="${escapeHtml(row.description)}">${escapeHtml(row.description)}</td>
         <td class="text-right">${row.unit || '0'}</td>
         <td class="text-right">${Number(row.unitPrice || 0).toLocaleString('en-US')}</td>
         <td class="font-bold">${escapeHtml(row.method) || '-'}</td>
@@ -320,9 +351,6 @@ function closeOfficeModal() {
   document.getElementById('office-modal').classList.add('hidden');
 }
 
-/**
- * 💡 Liabilities အနှုတ်ဂဏန်း Parsing Helper (e.g. -1000 or (1000))
- */
 function parseLiabilityAmount(val) {
   if (!val) return 0;
   let str = String(val).trim();
@@ -333,7 +361,7 @@ function parseLiabilityAmount(val) {
 }
 
 /**
- * 💡 Save / Update Office Entry
+ * 💡 Save / Update Office Entry (Invalidates Cache Across Books)
  */
 async function saveOfficeForm(e) {
   e.preventDefault();
@@ -360,7 +388,7 @@ async function saveOfficeForm(e) {
   };
 
   const action = isAdd ? 'saveExpenseEntry' : 'updateExpenseEntry';
-  showToast("SUCCESS", "စာရင်းအား ဆာဗာတွင် သိမ်းဆည်းနေပါသည်...");
+  showToast("SUCCESS", "စာရင်းအား သိမ်းဆည်းနေပါသည်...");
   toggleLoading(true);
 
   try {
@@ -369,6 +397,8 @@ async function saveOfficeForm(e) {
 
     if (response && response.success) {
       showToast("SUCCESS", isAdd ? "Office Expense စာရင်းသစ် သိမ်းဆည်းပြီးပါပြီရှင်။" : "Office Expense စာရင်း ပြင်ဆင်ပြီးပါပြီရှင်။");
+      
+      if (window.BankCache) window.BankCache = { bank: null, cash: null, kitchen: null };
       loadOfficeData(true);
     } else {
       showToast("ERROR", "မအောင်မြင်ပါ: " + (response ? response.message : ""));
@@ -423,6 +453,7 @@ async function deleteOfficeEntry(uniqueId) {
 
       if (response && response.success) {
         showToast("SUCCESS", "စာရင်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။");
+        if (window.BankCache) window.BankCache = { bank: null, cash: null, kitchen: null };
         loadOfficeData(true);
       } else {
         showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response ? response.message : ""));
@@ -441,10 +472,10 @@ function exportToCSVOffice() {
     return;
   }
 
-  let csv = "NO,DATE,CATEGORY,ID PID,DESCRIPTION,UNIT,UNIT PRICE,METHOD,DEBIT,CREDIT,BALANCES,LIABILITIES,TRANSFER,VR NO,MY,FY,UNIQUEID\n";
+  let csv = "NO,DATE,CATEGORY,DESCRIPTION,UNIT,UNIT PRICE,METHOD,DEBIT,CREDIT,BALANCES,LIABILITIES,TRANSFER,VR NO,MY,FY,UNIQUEID\n";
   data.forEach(row => {
     let desc = `"${(row.description || '').replace(/"/g, '""')}"`;
-    csv += `${row.no},${row.date},${row.category},${row.id || ''},${desc},${row.unit || 0},${row.unitPrice || 0},${row.method},${row.debit},${row.credit},${row.balances},${row.liabilities || 0},${row.transfer || ''},${row.vrNo || ''},${row.my || ''},${row.fy || ''},${row.uniqueId}\n`;
+    csv += `${row.no},${row.date},${row.category},${desc},${row.unit || 0},${row.unitPrice || 0},${row.method},${row.debit},${row.credit},${row.balances},${row.liabilities || 0},${row.transfer || ''},${row.vrNo || ''},${row.my || ''},${row.fy || ''},${row.uniqueId}\n`;
   });
 
   const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
