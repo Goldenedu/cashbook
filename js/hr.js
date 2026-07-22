@@ -12,7 +12,13 @@ window.HrState = {
   staffPage: 1, staffLimit: 50, staffTotalRows: 0, staffData: [],
   staffStats: {},
 
-  payrollSettings: { grades: {}, bonus: 46000, fundRate: 0.05 },
+  payrollSettings: {
+    grades: {
+      "GRADE A": 1000000, "GRADE B": 800000, "GRADE C": 600000, "GRADE D": 500000,
+      "GRADE E": 400000, "GRADE F": 350000, "GRADE G": 300000, "GRADE H": 250000
+    },
+    bonus: 46000, fundRate: 0.05
+  },
   fullTimeCache: [], partTimeCache: []
 };
 
@@ -157,6 +163,35 @@ function updatePaginationHrPayroll() {
     const end = Math.min(state.payrollPage * state.payrollLimit, state.payrollTotalRows);
     info.innerHTML = `Showing <span class="text-indigo-400 font-extrabold">${start}</span> to <span class="text-indigo-400 font-extrabold">${end}</span> of <span class="text-indigo-400 font-extrabold">${state.payrollTotalRows}</span> entries`;
   }
+
+  const prevBtn = document.getElementById('hr-pay-btn-prev');
+  if (prevBtn) prevBtn.disabled = (state.payrollPage === 1);
+
+  const nextBtn = document.getElementById('hr-pay-btn-next');
+  if (nextBtn) nextBtn.disabled = (state.payrollPage * state.payrollLimit >= state.payrollTotalRows);
+}
+
+// 💡 FIX: Added missing changePageHrPayroll function
+function changePageHrPayroll(dir) {
+  const state = window.HrState;
+  if (dir === -1 && state.payrollPage > 1) {
+    state.payrollPage--;
+    loadHrPayrollData(false);
+  } else if (dir === 1 && (state.payrollPage * state.payrollLimit) < state.payrollTotalRows) {
+    state.payrollPage++;
+    loadHrPayrollData(false);
+  }
+}
+
+let searchTimeoutHrPay;
+function onSearchInputHrPayroll() {
+  clearTimeout(searchTimeoutHrPay);
+  searchTimeoutHrPay = setTimeout(() => {
+    const input = document.getElementById('hr-payroll-search');
+    window.HrState.searchVal = input ? input.value.trim() : '';
+    window.HrState.payrollPage = 1;
+    loadHrPayrollData(true);
+  }, 300);
 }
 
 async function loadStaffData(isSilent = false) {
@@ -329,164 +364,39 @@ function updatePaginationStaff() {
     const end = Math.min(state.staffPage * state.staffLimit, state.staffTotalRows);
     info.innerHTML = `Showing <span class="text-indigo-400 font-extrabold">${start}</span> to <span class="text-indigo-400 font-extrabold">${end}</span> of <span class="text-indigo-400 font-extrabold">${state.staffTotalRows}</span> entries`;
   }
+
+  const prevBtn = document.getElementById('staff-btn-prev');
+  if (prevBtn) prevBtn.disabled = (state.staffPage === 1);
+
+  const nextBtn = document.getElementById('staff-btn-next');
+  if (nextBtn) nextBtn.disabled = (state.staffPage * state.staffLimit >= state.staffTotalRows);
+}
+
+function changePageStaff(dir) {
+  const state = window.HrState;
+  if (dir === -1 && state.staffPage > 1) {
+    state.staffPage--;
+    loadStaffData(false);
+  } else if (dir === 1 && (state.staffPage * state.staffLimit) < state.staffTotalRows) {
+    state.staffPage++;
+    loadStaffData(false);
+  }
+}
+
+let searchTimeoutStaff;
+function onSearchInputStaff() {
+  clearTimeout(searchTimeoutStaff);
+  searchTimeoutStaff = setTimeout(() => {
+    const input = document.getElementById('staff-search-input');
+    window.HrState.searchVal = input ? input.value.trim() : '';
+    window.HrState.staffPage = 1;
+    loadStaffData(true);
+  }, 300);
 }
 
 /**
- * 💡 AUTO-FILL SALARY, BONUS, FUND & DESCRIPTION ON STAFF ID / CATEGORY CHANGE
+ * 💡 SALARY GRADE AUTO FILL & LIVE CALCULATION ENGINE
  */
-async function onStaffIdChangePayroll() {
-  const staffIdRaw = document.getElementById('hr-pay-staff-id') ? document.getElementById('hr-pay-staff-id').value.trim() : '';
-  const category = document.getElementById('hr-pay-category') ? document.getElementById('hr-pay-category').value : '';
-  const dateVal = document.getElementById('hr-pay-date') ? document.getElementById('hr-pay-date').value : '';
-
-  if (!staffIdRaw) return;
-
-  const parsedId = parseInt(staffIdRaw.replace(/[^\d]/g, ""), 10);
-  if (isNaN(parsedId)) return;
-
-  let mySuffix = "MMM-yy";
-  if (dateVal) {
-    const d = new Date(dateVal);
-    if (!isNaN(d.getTime())) {
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      mySuffix = `${months[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
-    }
-  }
-
-  if (window.HrState.fullTimeCache.length === 0 || window.HrState.partTimeCache.length === 0) {
-    try {
-      const ftRes = await callApi('getStaffData', { category: 'Full Time', page: 1, limit: 1000 }, 'GET');
-      if (ftRes && ftRes.data) window.HrState.fullTimeCache = ftRes.data;
-
-      const ptRes = await callApi('getStaffData', { category: 'Part Time', page: 1, limit: 1000 }, 'GET');
-      if (ptRes && ptRes.data) window.HrState.partTimeCache = ptRes.data;
-    } catch (e) { console.warn("Staff Cache Fetch Error:", e); }
-  }
-
-  const creditInput = document.getElementById('hr-pay-credit');
-  const bonusInput = document.getElementById('hr-pay-unpaid-bonus');
-  const fundInput = document.getElementById('hr-pay-unpaid-fund');
-  const descInput = document.getElementById('hr-pay-description');
-
-  if (category === "Full Time Salary") {
-    const staff = window.HrState.fullTimeCache.find(s => parseInt(String(s.staffId).replace(/[^\d]/g, ""), 10) === parsedId);
-    if (staff) {
-      if (creditInput) creditInput.value = staff.totalSalary || 0;
-      if (bonusInput) bonusInput.value = staff.bonus || 0;
-      if (fundInput) fundInput.value = staff.fund || 0;
-      if (descInput) descInput.value = `${staff.staffIdName}, Salary ${mySuffix}`;
-    }
-  } else if (category === "Part Time Salary") {
-    const staff = window.HrState.partTimeCache.find(s => parseInt(String(s.staffId).replace(/[^\d]/g, ""), 10) === parsedId);
-    if (staff) {
-      if (creditInput) creditInput.value = staff.totalSalary || 0;
-      if (bonusInput) bonusInput.value = 0;
-      if (fundInput) fundInput.value = 0;
-      if (descInput) descInput.value = `${staff.staffIdName}, Salary ${mySuffix}`;
-    }
-  } else if (category === "Full Time Bonus") {
-    const staff = window.HrState.fullTimeCache.find(s => parseInt(String(s.staffId).replace(/[^\d]/g, ""), 10) === parsedId);
-    if (staff) {
-      if (creditInput) creditInput.value = staff.unpaidBonus || 0;
-      if (bonusInput) bonusInput.value = staff.unpaidBonus || 0;
-      if (fundInput) fundInput.value = 0;
-      if (descInput) descInput.value = `${staff.staffIdName}, Bonus ${mySuffix}`;
-    }
-  } else if (category === "Full Time Fund") {
-    const staff = window.HrState.fullTimeCache.find(s => parseInt(String(s.staffId).replace(/[^\d]/g, ""), 10) === parsedId);
-    if (staff) {
-      if (creditInput) creditInput.value = staff.unpaidFund || 0;
-      if (bonusInput) bonusInput.value = 0;
-      if (fundInput) fundInput.value = staff.unpaidFund || 0;
-      if (descInput) descInput.value = `${staff.staffIdName}, Fund ${mySuffix}`;
-    }
-  }
-}
-
-function openAddModalHrPayroll() {
-  const form = document.getElementById('hr-payroll-form');
-  if (form) form.reset();
-
-  document.getElementById('hr-pay-uniqueId').value = "";
-
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  document.getElementById('hr-pay-date').value = `${yyyy}-${mm}-${dd}`;
-
-  document.getElementById('hr-payroll-modal').classList.remove('hidden');
-}
-
-function closeHrPayrollModal() {
-  document.getElementById('hr-payroll-modal').classList.add('hidden');
-}
-
-async function saveHrPayrollForm(e) {
-  e.preventDefault();
-  closeHrPayrollModal();
-
-  const uniqueId = document.getElementById('hr-pay-uniqueId').value;
-  const isAdd = (!uniqueId);
-
-  const entry = {
-    uniqueId: uniqueId,
-    date: document.getElementById('hr-pay-date').value,
-    category: document.getElementById('hr-pay-category').value,
-    id: document.getElementById('hr-pay-staff-id').value,
-    method: document.getElementById('hr-pay-method').value,
-    debit: parseFloat(document.getElementById('hr-pay-debit').value) || 0,
-    credit: parseFloat(document.getElementById('hr-pay-credit').value) || 0,
-    unpaidBonus: parseFloat(document.getElementById('hr-pay-unpaid-bonus').value) || 0,
-    unpaidFund: parseFloat(document.getElementById('hr-pay-unpaid-fund').value) || 0,
-    description: document.getElementById('hr-pay-description').value,
-    bookName: 'HR Payroll Exp Book',
-    createdBy: window.AppState.currentUser || "System"
-  };
-
-  const action = isAdd ? 'saveExpenseEntry' : 'updateExpenseEntry';
-  showToast("SUCCESS", "လစာစာရင်းအား သိမ်းဆည်းနေပါသည်...");
-  toggleLoading(true);
-
-  try {
-    const response = await callApi(action, entry);
-    toggleLoading(false);
-
-    if (response && response.success) {
-      showToast("SUCCESS", isAdd ? "HR Payroll စာရင်းသစ် သိမ်းဆည်းပြီးပါပြီရှင်။" : "HR Payroll စာရင်း ပြင်ဆင်ပြီးပါပြီရှင်။");
-      loadHrPayrollData(true);
-    } else {
-      showToast("ERROR", "မအောင်မြင်ပါ: " + (response ? response.message : ""));
-    }
-  } catch (err) {
-    toggleLoading(false);
-    showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
-  }
-}
-
-function populateDropdownsStaff() {
-  const def = (window.DROPDOWNS && window.DROPDOWNS.staffCommon) || {};
-
-  const eduSelect = document.getElementById('staff-education');
-  if (eduSelect && def.education) {
-    eduSelect.innerHTML = def.education.map(e => `<option value="${e}">${e}</option>`).join('');
-  }
-
-  const posSelect = document.getElementById('staff-position');
-  if (posSelect) {
-    const isFT = (window.HrState.staffCategory === 'Full Time');
-    const positions = isFT ? def.fullTimePositions : def.partTimePositions;
-    if (positions) {
-      posSelect.innerHTML = positions.map(p => `<option value="${p}">${p}</option>`).join('');
-    }
-  }
-
-  const gradeSelect = document.getElementById('staff-grade');
-  if (gradeSelect && def.salaryGrades) {
-    gradeSelect.innerHTML = def.salaryGrades.map(g => `<option value="${g}">${g}</option>`).join('');
-  }
-}
-
 function onSalaryGradeChangeStaff() {
   const gradeSelect = document.getElementById('staff-grade');
   if (!gradeSelect) return;
@@ -498,17 +408,43 @@ function onSalaryGradeChangeStaff() {
   if (key === "NON") {
     if (basicInput) basicInput.value = 0;
     if (workingDaysInput) workingDaysInput.value = 0;
-    return;
   } else {
     if (workingDaysInput && parseFloat(workingDaysInput.value) === 0) {
       workingDaysInput.value = 26;
     }
+
+    if (window.HrState.payrollSettings && window.HrState.payrollSettings.grades) {
+      const rate = window.HrState.payrollSettings.grades[key] || 0;
+      if (basicInput) basicInput.value = rate;
+    }
   }
 
-  if (window.HrState.payrollSettings && window.HrState.payrollSettings.grades) {
-    const rate = window.HrState.payrollSettings.grades[key] || 0;
-    if (basicInput) basicInput.value = rate;
-  }
+  calculateLiveStaffSalary();
+}
+
+/**
+ * 💡 LIVE SALARY BREAKDOWN PREVIEW CALCULATOR
+ */
+function calculateLiveStaffSalary() {
+  const gradeVal = document.getElementById('staff-grade') ? document.getElementById('staff-grade').value.trim() : '';
+  const isNonGrade = (gradeVal.toLowerCase() === 'non');
+  const isResigned = document.getElementById('staff-resigned') ? (document.getElementById('staff-resigned').value.trim() !== '') : false;
+
+  const basicAmt = parseFloat(document.getElementById('staff-basic') ? document.getElementById('staff-basic').value : 0) || 0;
+  const extraAmt = parseFloat(document.getElementById('staff-extra') ? document.getElementById('staff-extra').value : 0) || 0;
+  const workingDays = parseFloat(document.getElementById('staff-working-days') ? document.getElementById('staff-working-days').value : 26) || 26;
+
+  const totalSalary = (isResigned || isNonGrade) ? 0 : Math.round((basicAmt + extraAmt) * (workingDays / 26));
+  const bonus = (isResigned || isNonGrade) ? 0 : 46000;
+  const fund = (isResigned || isNonGrade) ? 0 : Math.round(totalSalary * 0.05);
+  const totalNetAmt = totalSalary + bonus + fund;
+
+  const setP = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+
+  setP('preview-total-salary', Number(totalSalary).toLocaleString('en-US') + " MMK");
+  setP('preview-bonus', Number(bonus).toLocaleString('en-US') + " MMK");
+  setP('preview-fund', Number(fund).toLocaleString('en-US') + " MMK");
+  setP('preview-total-net', Number(totalNetAmt).toLocaleString('en-US') + " MMK");
 }
 
 function openAddModalStaff() {
@@ -524,11 +460,13 @@ function openAddModalStaff() {
   document.getElementById('staff-joindate').value = `${yyyy}-${mm}-${dd}`;
 
   populateDropdownsStaff();
+  calculateLiveStaffSalary();
   document.getElementById('staff-modal').classList.remove('hidden');
 }
 
 function closeStaffModal() {
-  document.getElementById('staff-modal').classList.add('hidden');
+  const modal = document.getElementById('staff-modal');
+  if (modal) modal.classList.add('hidden');
 }
 
 async function saveStaffForm(e) {
@@ -606,6 +544,8 @@ function editStaffEntry(uniqueId) {
   } else {
     if (document.getElementById('staff-total-salary')) document.getElementById('staff-total-salary').value = row.totalSalary || 0;
   }
+
+  calculateLiveStaffSalary();
 }
 
 async function deleteStaffEntry(uniqueId) {
