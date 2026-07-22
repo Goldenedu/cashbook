@@ -14,7 +14,154 @@ window.OfficeState = {
 };
 
 /**
- * 💡 Load Office Expense Data & Uniform Stock List
+ * 💡 Dropdown Options များကို Config.js မှ Dynamic ဖြည့်ပေးခြင်း
+ */
+function populateDropdownsOffice() {
+  const def = (window.DROPDOWNS && window.DROPDOWNS.officeExpBook) || {};
+
+  const catSelect = document.getElementById('office-category');
+  if (catSelect && def.category) {
+    catSelect.innerHTML = def.category.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+
+  const methodSelect = document.getElementById('office-method');
+  if (methodSelect && def.method) {
+    methodSelect.innerHTML = def.method.map(m => `<option value="${m}">${m}</option>`).join('');
+  }
+
+  const transSelect = document.getElementById('office-transfer');
+  if (transSelect) {
+    if (def.transfer) {
+      transSelect.innerHTML = `<option value="">-- No Transfer --</option>` +
+        def.transfer.map(t => `<option value="${t}">${t}</option>`).join('');
+    } else {
+      transSelect.innerHTML = `<option value="">-- No Transfer --</option>`;
+    }
+  }
+
+  onCategoryChangeOffice();
+}
+
+/**
+ * 💡 Category ပြောင်းလဲမှုပေါ် မူတည်၍ Form Controls များကို Dynamic ပိတ်/ဖွင့် လုပ်ပေးခြင်း
+ */
+function onCategoryChangeOffice() {
+  const category = document.getElementById('office-category') ? document.getElementById('office-category').value : '';
+
+  const prodContainer = document.getElementById('office-product-container');
+  const qtyPriceContainer = document.getElementById('office-qty-price-container');
+  const liabilitiesContainer = document.getElementById('office-liabilities-container');
+
+  const debitInput = document.getElementById('office-debit');
+  const creditInput = document.getElementById('office-credit');
+  const methodSelect = document.getElementById('office-method');
+  const transSelect = document.getElementById('office-transfer');
+  const liabilitiesInput = document.getElementById('office-liabilities');
+
+  const isUniform = (category === "Advance Uniform" || category === "Advance Unifrom");
+  const isLiabilities = (category === "Liabilities");
+
+  // 1. Advance Uniform စည်းမျဉ်း
+  if (isUniform) {
+    if (prodContainer) prodContainer.classList.remove('hidden');
+    if (qtyPriceContainer) qtyPriceContainer.classList.remove('hidden');
+    if (liabilitiesContainer) liabilitiesContainer.classList.add('hidden');
+
+    if (debitInput) debitInput.disabled = false;
+    if (creditInput) creditInput.disabled = false;
+    if (methodSelect) methodSelect.disabled = false;
+    if (transSelect) transSelect.disabled = false;
+
+    fetchUniformProductsListOffice();
+  } 
+  // 2. Liabilities (ပေးရန်ကျန်) စည်းမျဉ်း
+  else if (isLiabilities) {
+    if (prodContainer) prodContainer.classList.add('hidden');
+    if (qtyPriceContainer) qtyPriceContainer.classList.add('hidden');
+    if (liabilitiesContainer) liabilitiesContainer.classList.remove('hidden');
+
+    // Liabilities Box မှလွဲ၍ ကျန်တာ အားလုံး ပိတ်မည်
+    if (debitInput) { debitInput.value = 0; debitInput.disabled = true; }
+    if (creditInput) { creditInput.value = 0; creditInput.disabled = true; }
+    if (methodSelect) methodSelect.disabled = true;
+    if (transSelect) { transSelect.value = ""; transSelect.disabled = true; }
+  } 
+  // 3. အခြား Standard Categories
+  else {
+    if (prodContainer) prodContainer.classList.add('hidden');
+    if (qtyPriceContainer) qtyPriceContainer.classList.add('hidden');
+    if (liabilitiesContainer) liabilitiesContainer.classList.add('hidden');
+
+    if (debitInput) debitInput.disabled = false;
+    if (creditInput) creditInput.disabled = false;
+    if (methodSelect) methodSelect.disabled = false;
+    if (transSelect) transSelect.disabled = false;
+    if (liabilitiesInput) liabilitiesInput.value = 0;
+  }
+}
+
+/**
+ * 💡 Uniform Product ID ရွေးချယ်ပါက အသေးစိတ် Auto ဖြည့်ပေးခြင်း
+ */
+function onProductChangeOffice() {
+  const productId = document.getElementById('office-product-id') ? document.getElementById('office-product-id').value : '';
+  const stockBadge = document.getElementById('office-stock-badge');
+
+  if (productId && window.OfficeState.uniformProducts) {
+    const prod = window.OfficeState.uniformProducts.find(p => p.productId === productId);
+    if (prod) {
+      document.getElementById('office-description').value = `${prod.productId} ${prod.productName} ${prod.type} ${prod.size}`;
+      document.getElementById('office-unit-price').value = prod.unitPrice || 0;
+
+      if (stockBadge) {
+        stockBadge.innerText = `Stock: ${prod.currentQty}`;
+        stockBadge.classList.remove('hidden');
+      }
+      calculateDebitOffice();
+    }
+  } else {
+    if (stockBadge) stockBadge.classList.add('hidden');
+  }
+}
+
+/**
+ * 💡 Debit Amount Auto တွက်ချက်ပေးခြင်း
+ */
+function calculateDebitOffice() {
+  const category = document.getElementById('office-category').value;
+  if (category === "Advance Uniform" || category === "Advance Unifrom") {
+    const unit = parseFloat(document.getElementById('office-unit').value) || 0;
+    const unitPrice = parseFloat(document.getElementById('office-unit-price').value) || 0;
+    const creditVal = parseFloat(document.getElementById('office-credit').value) || 0;
+
+    if (creditVal === 0) {
+      document.getElementById('office-debit').value = unit * unitPrice;
+    }
+  }
+}
+
+/**
+ * 💡 Fetch Uniform Products List
+ */
+async function fetchUniformProductsListOffice() {
+  if (window.OfficeState.uniformProducts.length > 0) return;
+  try {
+    const res = await callApi('getUniformData', { page: 1, limit: 1000 }, 'GET');
+    if (res && res.data) {
+      window.OfficeState.uniformProducts = res.data;
+      const select = document.getElementById('office-product-id');
+      if (select) {
+        select.innerHTML = `<option value="">-- Select Product ID --</option>` +
+          res.data.map(p => `<option value="${p.productId}">${p.productId} - ${p.productName} (${p.size})</option>`).join('');
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to fetch uniform products:", err);
+  }
+}
+
+/**
+ * 💡 Load Office Expense Data
  */
 async function loadOfficeData(isSilent = false) {
   if (!isSilent) toggleLoading(true);
@@ -26,7 +173,8 @@ async function loadOfficeData(isSilent = false) {
       bookName: 'Office Exp Book',
       page: state.page,
       limit: state.limit,
-      searchVal: state.searchVal
+      searchVal: state.searchVal,
+      role: window.AppState.currentUserRole
     }, 'GET');
 
     if (!isSilent) toggleLoading(false);
@@ -46,52 +194,16 @@ async function loadOfficeData(isSilent = false) {
   }
 }
 
-/**
- * 💡 Fetch Uniform Products List for Dropdown Selection
- */
-async function fetchUniformProductsList() {
-  try {
-    const res = await callApi('getUniformData', { page: 1, limit: 1000 }, 'GET');
-    if (res && res.data) {
-      window.OfficeState.uniformProducts = res.data;
-      populateProductDropdownOffice();
-    }
-  } catch (err) {
-    console.warn("Failed to prefetch uniform products:", err);
-  }
-}
-
-function populateProductDropdownOffice() {
-  const select = document.getElementById('office-product-id');
-  if (!select) return;
-
-  const prods = window.OfficeState.uniformProducts || [];
-  select.innerHTML = `<option value="">-- Select Product ID --</option>` +
-    prods.map(p => `<option value="${p.productId}">${p.productId} - ${p.productName} (${p.size})</option>`).join('');
-}
-
-/**
- * 💡 Update Stats Cards
- */
 function updateStatsOffice() {
   const stats = window.OfficeState.stats;
-  
-  const incEl = document.getElementById('off-total-income');
-  if (incEl) incEl.innerText = Number(stats.totalIncome || 0).toLocaleString('en-US') + " MMK";
+  const setT = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
-  const expEl = document.getElementById('off-total-expense');
-  if (expEl) expEl.innerText = Number(stats.totalExpense || 0).toLocaleString('en-US') + " MMK";
-
-  const balEl = document.getElementById('off-balance');
-  if (balEl) balEl.innerText = Number(stats.balance || 0).toLocaleString('en-US') + " MMK";
-
-  const countEl = document.getElementById('off-entries-count');
-  if (countEl) countEl.innerText = window.OfficeState.totalRows.toLocaleString('en-US');
+  setT('off-total-income', Number(stats.totalIncome || 0).toLocaleString('en-US') + " MMK");
+  setT('off-total-expense', Number(stats.totalExpense || 0).toLocaleString('en-US') + " MMK");
+  setT('off-balance', Number(stats.balance || 0).toLocaleString('en-US') + " MMK");
+  setT('off-entries-count', window.OfficeState.totalRows.toLocaleString('en-US'));
 }
 
-/**
- * 💡 Render Office Table
- */
 function renderOfficeTable() {
   const tableBody = document.getElementById('office-table-body');
   if (!tableBody) return;
@@ -103,7 +215,7 @@ function renderOfficeTable() {
     return;
   }
 
-  const isViewer = (window.AppState.currentUserRole === "Viewer");
+  const isViewer = (window.AppState ? window.AppState.currentUserRole === "Viewer" : false);
 
   tableBody.innerHTML = data.map((row) => {
     let displayDate = row.date || "";
@@ -148,9 +260,6 @@ function renderOfficeTable() {
   }).join('');
 }
 
-/**
- * 💡 Pagination Logic
- */
 function updatePaginationOffice() {
   const state = window.OfficeState;
   const info = document.getElementById('off-pagination-info');
@@ -189,54 +298,6 @@ function onSearchInputOffice() {
   }, 300);
 }
 
-/**
- * 💡 Auto-fill details on Advance Uniform Selection
- */
-function onCategoryOrProductChangeOffice() {
-  const category = document.getElementById('office-category') ? document.getElementById('office-category').value : '';
-  const productId = document.getElementById('office-product-id') ? document.getElementById('office-product-id').value : '';
-
-  const prodContainer = document.getElementById('office-product-container');
-  const stockBadge = document.getElementById('office-stock-badge');
-
-  if (category === "Advance Unifrom" || category === "Advance Uniform") {
-    if (prodContainer) prodContainer.classList.remove('hidden');
-
-    if (productId) {
-      const prod = window.OfficeState.uniformProducts.find(p => p.productId === productId);
-      if (prod) {
-        document.getElementById('office-description').value = `${prod.productId} ${prod.productName} ${prod.type} ${prod.size}`;
-        document.getElementById('office-unit-price').value = prod.unitPrice || 0;
-        
-        if (stockBadge) {
-          stockBadge.innerText = `Available Stock: ${prod.currentQty}`;
-          stockBadge.classList.remove('hidden');
-        }
-        calculateDebitOffice();
-      }
-    }
-  } else {
-    if (prodContainer) prodContainer.classList.add('hidden');
-    if (stockBadge) stockBadge.classList.add('hidden');
-  }
-}
-
-function calculateDebitOffice() {
-  const category = document.getElementById('office-category').value;
-  if (category === "Advance Unifrom" || category === "Advance Uniform") {
-    const unit = parseFloat(document.getElementById('office-unit').value) || 0;
-    const unitPrice = parseFloat(document.getElementById('office-unit-price').value) || 0;
-    const creditVal = parseFloat(document.getElementById('office-credit').value) || 0;
-
-    if (creditVal === 0) {
-      document.getElementById('office-debit').value = unit * unitPrice;
-    }
-  }
-}
-
-/**
- * 💡 Modal Form Controls
- */
 function openAddModalOffice() {
   const form = document.getElementById('office-form');
   if (form) form.reset();
@@ -251,12 +312,24 @@ function openAddModalOffice() {
 
   document.getElementById('office-form-title').innerText = "Add Office Expense Entry";
 
-  fetchUniformProductsList();
+  populateDropdownsOffice();
   document.getElementById('office-modal').classList.remove('hidden');
 }
 
 function closeOfficeModal() {
   document.getElementById('office-modal').classList.add('hidden');
+}
+
+/**
+ * 💡 Liabilities အနှုတ်ဂဏန်း Parsing Helper (e.g. -1000 or (1000))
+ */
+function parseLiabilityAmount(val) {
+  if (!val) return 0;
+  let str = String(val).trim();
+  let isNeg = (str.includes('(') && str.includes(')')) || str.startsWith('-');
+  let num = parseFloat(str.replace(/[^\d.]/g, ''));
+  if (isNaN(num)) return 0;
+  return isNeg ? -num : num;
 }
 
 /**
@@ -279,7 +352,7 @@ async function saveOfficeForm(e) {
     method: document.getElementById('office-method').value,
     debit: parseFloat(document.getElementById('office-debit').value) || 0,
     credit: parseFloat(document.getElementById('office-credit').value) || 0,
-    liabilities: parseFloat(document.getElementById('office-liabilities').value) || 0,
+    liabilities: parseLiabilityAmount(document.getElementById('office-liabilities').value),
     transfer: document.getElementById('office-transfer').value,
     description: document.getElementById('office-description').value,
     bookName: 'Office Exp Book',
@@ -288,23 +361,24 @@ async function saveOfficeForm(e) {
 
   const action = isAdd ? 'saveExpenseEntry' : 'updateExpenseEntry';
   showToast("SUCCESS", "စာရင်းအား ဆာဗာတွင် သိမ်းဆည်းနေပါသည်...");
+  toggleLoading(true);
 
   try {
     const response = await callApi(action, entry);
+    toggleLoading(false);
+
     if (response && response.success) {
       showToast("SUCCESS", isAdd ? "Office Expense စာရင်းသစ် သိမ်းဆည်းပြီးပါပြီရှင်။" : "Office Expense စာရင်း ပြင်ဆင်ပြီးပါပြီရှင်။");
       loadOfficeData(true);
     } else {
-      showToast("ERROR", "မအောင်မြင်ပါ: " + (response.message || ""));
+      showToast("ERROR", "မအောင်မြင်ပါ: " + (response ? response.message : ""));
     }
   } catch (err) {
+    toggleLoading(false);
     showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
   }
 }
 
-/**
- * 💡 Edit Record Population
- */
 function editOfficeEntry(uniqueId) {
   const row = window.OfficeState.activeData.find(item => item.uniqueId === uniqueId);
   if (!row) {
@@ -317,9 +391,14 @@ function editOfficeEntry(uniqueId) {
   document.getElementById('office-uniqueId').value = row.uniqueId;
   document.getElementById('office-date').value = row.date;
   document.getElementById('office-category').value = row.category;
+  
+  onCategoryChangeOffice();
+
+  if (document.getElementById('office-product-id')) document.getElementById('office-product-id').value = row.id || "";
+  if (document.getElementById('office-unit')) document.getElementById('office-unit').value = row.unit || 1;
+  if (document.getElementById('office-unit-price')) document.getElementById('office-unit-price').value = row.unitPrice || 0;
+  
   document.getElementById('office-method').value = row.method || "Cash";
-  document.getElementById('office-unit').value = row.unit || 1;
-  document.getElementById('office-unit-price').value = row.unitPrice || 0;
   document.getElementById('office-debit').value = row.debit || 0;
   document.getElementById('office-credit').value = row.credit || 0;
   document.getElementById('office-liabilities').value = row.liabilities || 0;
@@ -329,33 +408,32 @@ function editOfficeEntry(uniqueId) {
   document.getElementById('office-form-title').innerText = "Edit Office Expense Entry";
 }
 
-/**
- * 💡 Delete Entry Handler
- */
 async function deleteOfficeEntry(uniqueId) {
   if (confirm("ဤ Office Expense စာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလားရှင်?")) {
     showToast("SUCCESS", "စာရင်းကို ဖျက်သိမ်းနေပါသည်...");
+    toggleLoading(true);
+
     try {
       const response = await callApi('deleteExpenseEntry', {
         uniqueId: uniqueId,
         bookName: 'Office Exp Book'
       });
 
+      toggleLoading(false);
+
       if (response && response.success) {
         showToast("SUCCESS", "စာရင်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။");
         loadOfficeData(true);
       } else {
-        showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response.message || ""));
+        showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response ? response.message : ""));
       }
     } catch (err) {
+      toggleLoading(false);
       showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
     }
   }
 }
 
-/**
- * 💡 CSV Export
- */
 function exportToCSVOffice() {
   const data = window.OfficeState.activeData;
   if (!data || data.length === 0) {
