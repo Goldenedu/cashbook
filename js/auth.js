@@ -116,7 +116,3 @@ function checkExistingSession() {
     }
   }
 }
-
-document.addEventListener("DOMContentLoaded", function () {
-  checkExistingSession();
-});
