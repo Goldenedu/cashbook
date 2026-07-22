@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="my">
+<html lang="my" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +12,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
+    /* Force Browser Elements Dark Scheme */
+    :root { color-scheme: dark; }
+
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #090d16; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
@@ -41,16 +44,29 @@
     }
     table tbody tr:hover { background-color: rgba(30, 41, 59, 0.3); }
 
-    /* Single Page View Fade-in */
+    /* Dark Mode Forms Overrides */
+    input, select, textarea {
+      background-color: #0f172a !important;
+      border: 1px solid #1e293b !important;
+      color: #f8fafc !important;
+      font-size: 0.75rem !important;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #6366f1 !important;
+      outline: none !important;
+    }
+    textarea::placeholder, input::placeholder {
+      color: #64748b !important;
+      opacity: 1 !important;
+    }
+
     .view-panel { animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body class="bg-[#090d16] font-sans flex h-screen overflow-hidden text-slate-300">
 
-  <!-- ========================================== -->
-  <!-- ၁။ LOGIN OVERLAY                           -->
-  <!-- ========================================== -->
+  <!-- LOGIN OVERLAY -->
   <div id="login-overlay" class="fixed inset-0 bg-[#090d16] z-[100] flex items-center justify-center p-4">
     <div class="w-full max-w-sm bg-[#0c1322] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 text-slate-300">
       
@@ -65,7 +81,7 @@
       <form id="login-form" onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs">
         <div>
           <label class="block font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Username</label>
-          <select id="login-username" required class="w-full p-2.5 bg-[#111c44]/40 border border-slate-800 rounded-lg text-xs text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500">
+          <select id="login-username" required class="w-full p-2.5 bg-[#0f172a] border border-slate-800 rounded-lg text-xs text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500">
             <option value="">Select user role...</option>
             <option value="Owner">Owner</option>
             <option value="Admin">Admin</option>
@@ -79,7 +95,7 @@
 
         <div>
           <label class="block font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Password</label>
-          <input type="password" id="login-password" required placeholder="••••••••" class="w-full p-2.5 bg-[#111c44]/40 border border-slate-800 rounded-lg text-xs text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500">
+          <input type="password" id="login-password" required placeholder="••••••••" class="w-full p-2.5 bg-[#0f172a] border border-slate-800 rounded-lg text-xs text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500">
         </div>
 
         <div id="login-error" class="hidden text-rose-400 font-semibold text-[11px] bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg text-center"></div>
@@ -91,12 +107,9 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- ၂။ MAIN ERP WORKSPACE                      -->
-  <!-- ========================================== -->
+  <!-- MAIN ERP WORKSPACE -->
   <div id="erp-workspace" class="hidden flex h-full w-full">
 
-    <!-- Sidebar Navigation -->
     <aside class="w-64 bg-[#0c1322] border-r border-slate-800 flex flex-col h-full shadow-2xl shrink-0">
       <div class="h-[60px] px-4 border-b border-slate-800 flex items-center justify-between text-white bg-[#0e172a]">
         <div class="flex items-center gap-2.5 font-extrabold text-sm tracking-wide">
@@ -135,16 +148,10 @@
           <i class="fa-solid fa-utensils text-rose-400 w-4 text-center"></i> Kitchen Exp Book
         </button>
 
-        <!-- HR Section (Cashier ပိတ်မည်) -->
+        <!-- HR Section (Cashier ပိတ်မည် - Clean Single HR & Staff Button) -->
         <div id="nav-hr-section">
-          <button onclick="switchTab('payroll')" id="btn-payroll" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
-            <i class="fa-solid fa-money-check-dollar text-teal-400 w-4 text-center"></i> HR Payroll Exp Book
-          </button>
-          <button onclick="switchTab('fulltime')" id="btn-fulltime" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
-            <i class="fa-solid fa-user-check text-blue-400 w-4 text-center"></i> Full Time Staff List
-          </button>
-          <button onclick="switchTab('parttime')" id="btn-parttime" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
-            <i class="fa-solid fa-user-clock text-indigo-400 w-4 text-center"></i> Part Time Staff List
+          <button onclick="switchTab('hr')" id="btn-hr" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+            <i class="fa-solid fa-money-check-dollar text-teal-400 w-4 text-center"></i> HR Payroll & Staff
           </button>
         </div>
 
@@ -178,7 +185,6 @@
           <i class="fa-solid fa-users-rectangle text-amber-400 w-4 text-center"></i> Student Report
         </button>
 
-        <!-- Settings (Cashier ပိတ်မည်) -->
         <div id="nav-settings-section">
           <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">System Controls</p>
           <button onclick="switchTab('settings')" id="btn-settings" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
@@ -188,7 +194,6 @@
       </nav>
     </aside>
 
-    <!-- Main View Area -->
     <div class="flex-1 flex flex-col overflow-hidden">
       <header class="bg-[#0c1322] border-b border-slate-800 h-[60px] px-6 flex justify-between items-center z-10 shrink-0">
         <h1 id="page-title" class="text-base md:text-lg font-extrabold text-white tracking-wide">Home Dashboard</h1>
@@ -198,16 +203,12 @@
         </div>
       </header>
 
-      <!-- All View Containers (Pre-loaded in DOM for 0ms Instant CSS Switching) -->
       <main id="main-content" class="p-6 overflow-y-auto flex-1 bg-[#090d16] relative">
-        <div id="view-container">
-          <!-- Views HTML will be injected dynamically at startup -->
-        </div>
+        <div id="view-container"></div>
       </main>
     </div>
   </div>
 
-  <!-- Loading Overlay -->
   <div id="loading-overlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[150] flex flex-col items-center justify-center hidden">
     <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500 mb-3"></div>
     <p class="text-xs font-bold text-slate-200 tracking-wide">Processing, please wait...</p>
@@ -222,7 +223,6 @@
   <script src="js/bank-cash-kit.js"></script>
   <script src="js/office.js"></script>
   <script src="js/hr.js"></script>
-  <script src="js/staff.js"></script>
   <script src="js/income.js"></script>
   <script src="js/student.js"></script>
   <script src="js/promotion.js"></script>
