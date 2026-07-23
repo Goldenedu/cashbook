@@ -1,6 +1,6 @@
 /**
  * GOLDEN ERP SYSTEM - HR PAYROLL MODULE
- * File: js/hr.js
+ * File: js/hr.js  
  */
 
 let gHrSubTab = 'payroll';
