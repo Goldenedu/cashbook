@@ -1,6 +1,6 @@
 /**
- * GOLDEN ERP SYSTEM - HR PAYROLL MODULE 
- * File: js/hr.js  
+ * GOLDEN ERP SYSTEM - HR PAYROLL MODULE
+ * File: js/hr.js
  */
 
 let gHrSubTab = 'payroll';
@@ -9,7 +9,6 @@ let gPayrollLimit = 30;
 let gPayrollSearch = '';
 let gPayrollData = [];
 
-// 💡 Sidebar မှ HR Payroll & Staff နှိပ်လိုက်သည်နှင့် HR Payroll Exp Book တန်းပွင့်ပြီး ဒေတာ တန်းဖတ်မည်
 function initHrPage() {
   switchHrSubTab('payroll');
 }
@@ -277,6 +276,27 @@ function exportToCSVHrPayroll() {
   a.click();
 }
 
-function sendMonthlyPayslipsToStaff() {
-  showToast("SUCCESS", "Resend API ဖြင့် မေးလ်ပို့ဆောင်ခြင်း စတင်နေပါပြီ...");
+/**
+ * 💡 [REAL API DISPATCHER] HR Payroll Exp Book ထဲမှ အီးမေးလ် ပေးပို့မှု Engine အစစ်
+ */
+async function sendMonthlyPayslipsToStaff() {
+  if (!confirm("Active ဝန်ထမ်းများထံသို့ ယခုလ လစာဖြတ်ပိုင်း အီးမေးလ်များ ပေးပို့ရန် သေချာပါသလားရှင်?")) return;
+
+  try {
+    if (typeof toggleLoading === 'function') toggleLoading(true);
+    showToast("SUCCESS", "လစာဖြတ်ပိုင်းများကို စိစစ်ပေးပို့နေပါသည်...");
+
+    const res = await callApi('sendMonthlyPayslipsToStaff', {});
+
+    if (res && res.success) {
+      showToast("SUCCESS", res.message || "လစာဖြတ်ပိုင်း အီးမေးလ်များ အောင်မြင်စွာ ပေးပို့ပြီးပါပြီ။");
+      loadHrPayrollData(false);
+    } else {
+      showToast("ERROR", "မအောင်မြင်ပါ: " + (res.message || "အီးမေးလ် ပေးပို့၍ မရပါ"));
+    }
+  } catch (err) {
+    showToast("ERROR", "Payslips Dispatch Error: " + err.message);
+  } finally {
+    if (typeof toggleLoading === 'function') toggleLoading(false);
+  }
 }
