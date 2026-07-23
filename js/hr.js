@@ -3,31 +3,6 @@
  * File: js/hr.js
  */
 
-// 💡 Loading & Toast Safe Guards
-if (typeof window.showLoading !== 'function') {
-  window.showLoading = function(show) {
-    const el = document.getElementById('loading-overlay');
-    if (el) el.classList.toggle('hidden', !show);
-  };
-}
-
-if (typeof window.showToast !== 'function') {
-  window.showToast = function(msg, type = 'info') {
-    const container = document.getElementById('toast-container');
-    if (container) {
-      const toast = document.createElement('div');
-      toast.className = `p-3 rounded-lg text-xs font-bold text-white shadow-xl ${
-        type === 'error' ? 'bg-rose-600' : type === 'success' ? 'bg-emerald-600' : 'bg-indigo-600'
-      }`;
-      toast.textContent = msg;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    } else {
-      console.log(`[Toast - ${type}]: ${msg}`);
-    }
-  };
-}
-
 let gHrSubTab = 'payroll';
 let gPayrollPage = 1;
 let gPayrollLimit = 30;
@@ -77,9 +52,8 @@ function switchHrSubTab(subTab) {
 
 async function loadHrPayrollData(useCache = false) {
   try {
-    showLoading(true);
-    const res = await callApi({
-      action: 'getExpenseData',
+    if (typeof toggleLoading === 'function') toggleLoading(true);
+    const res = await callApi('getExpenseData', {
       bookName: 'HR Payroll Exp Book',
       page: gPayrollPage,
       limit: gPayrollLimit,
@@ -92,12 +66,12 @@ async function loadHrPayrollData(useCache = false) {
       renderHrPayrollTable(gPayrollData);
       renderHrPayrollPagination(res.totalRows || 0);
     } else {
-      showToast(res.message || "Payroll ဒေတာ ရယူ၍ မရပါ", "error");
+      showToast("ERROR", res.message || "Payroll ဒေတာ ရယူ၍ မရပါ");
     }
   } catch (err) {
-    showToast("Error loading Payroll data: " + err.message, "error");
+    showToast("ERROR", "Error loading Payroll data: " + err.message);
   } finally {
-    showLoading(false);
+    if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
@@ -211,7 +185,7 @@ async function onStaffIdChangePayroll() {
   const staffCat = isFT ? 'Full Time' : 'Part Time';
 
   try {
-    const res = await callApi({ action: 'getStaffData', category: staffCat, page: 1, limit: 1000 });
+    const res = await callApi('getStaffData', { category: staffCat, page: 1, limit: 1000 });
     if (res && res.data) {
       const staffObj = res.data.find(s => parseInt(s.staffId, 10) === staffId);
       if (staffObj) {
@@ -252,8 +226,9 @@ async function saveHrPayrollForm(event) {
   event.preventDefault();
   
   const uid = document.getElementById('hr-pay-uniqueId')?.value || '';
+  const actionName = uid ? 'updateExpenseEntry' : 'saveExpenseEntry';
+
   const payload = {
-    action: uid ? 'updateExpenseEntry' : 'saveExpenseEntry',
     bookName: 'HR Payroll Exp Book',
     uniqueId: uid,
     date: document.getElementById('hr-pay-date')?.value || '',
@@ -268,25 +243,25 @@ async function saveHrPayrollForm(event) {
   };
 
   try {
-    showLoading(true);
-    const res = await callApi(payload);
+    if (typeof toggleLoading === 'function') toggleLoading(true);
+    const res = await callApi(actionName, payload);
     if (res && res.success) {
-      showToast("Payroll စာရင်း အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ", "success");
+      showToast("SUCCESS", "Payroll စာရင်း အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ");
       closeHrPayrollModal();
       loadHrPayrollData(false);
     } else {
-      showToast(res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ", "error");
+      showToast("ERROR", res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ");
     }
   } catch (err) {
-    showToast("Save Error: " + err.message, "error");
+    showToast("ERROR", "Save Error: " + err.message);
   } finally {
-    showLoading(false);
+    if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
 function exportToCSVHrPayroll() {
   if (!gPayrollData || gPayrollData.length === 0) {
-    showToast("Export ပြုလုပ်ရန် စာရင်း မရှိပါ", "warning");
+    showToast("ERROR", "Export ပြုလုပ်ရန် စာရင်း မရှိပါ");
     return;
   }
   let csv = "NO,DATE,CATEGORY,DESCRIPTION,METHOD,DEBIT,CREDIT,BALANCES,VR_NO\n";
@@ -302,34 +277,5 @@ function exportToCSVHrPayroll() {
 }
 
 function sendMonthlyPayslipsToStaff() {
-  showToast("Resend API ဖြင့် မေးလ်ပို့ဆောင်ခြင်း စတင်နေပါပြီ...", "info");
-}
-
-// 💡 Smart Toast Guard (ကျရောက်လာသော Error Message အမှန်ကို အပြည့်အဝ ဖော်ပြပေးမည်)
-if (typeof window.showToast !== 'function') {
-  window.showToast = function(arg1, arg2) {
-    let type = 'info';
-    let msg = '';
-
-    if (['error', 'success', 'warning', 'info'].includes(String(arg1).toLowerCase())) {
-      type = String(arg1).toLowerCase();
-      msg = arg2 || '';
-    } else if (['error', 'success', 'warning', 'info'].includes(String(arg2).toLowerCase())) {
-      type = String(arg2).toLowerCase();
-      msg = arg1 || '';
-    } else {
-      msg = arg1 || arg2 || 'Notification';
-    }
-
-    const container = document.getElementById('toast-container');
-    if (container) {
-      const toast = document.createElement('div');
-      toast.className = `p-3 rounded-lg text-xs font-bold text-white shadow-xl flex items-center gap-2 ${
-        type === 'error' ? 'bg-rose-600' : type === 'success' ? 'bg-emerald-600' : 'bg-indigo-600'
-      }`;
-      toast.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> <span>${msg}</span>`;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 4000);
-    }
-  };
+  showToast("SUCCESS", "Resend API ဖြင့် မေးလ်ပို့ဆောင်ခြင်း စတင်နေပါပြီ...");
 }
