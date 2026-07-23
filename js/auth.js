@@ -30,10 +30,10 @@ async function handleLoginSubmit(e) {
       localStorage.setItem('golden_user_name', response.username);
       localStorage.setItem('golden_user_role', response.role);
       localStorage.setItem('golden_auth_token', response.token);
+      localStorage.setItem('erp_token', response.token);
+      localStorage.setItem('erp_role', response.role);
 
-      document.getElementById('login-overlay').classList.add('hidden');
-      document.getElementById('erp-workspace').classList.remove('hidden');
-
+      showWorkspace();
       applyRoleRestrictions();
 
       if (typeof switchTab === 'function') {
@@ -70,11 +70,51 @@ function applyRoleRestrictions() {
   }
 }
 
+function showWorkspace() {
+  document.documentElement.className = 'dark is-authed';
+
+  const overlay = document.getElementById('login-overlay');
+  const ws = document.getElementById('erp-workspace');
+
+  if (overlay) {
+    overlay.classList.add('hidden');
+    overlay.style.display = 'none';
+  }
+  if (ws) {
+    ws.classList.remove('hidden');
+    ws.style.display = 'flex';
+  }
+}
+
+function showLogin() {
+  document.documentElement.className = 'dark not-authed';
+
+  const overlay = document.getElementById('login-overlay');
+  const ws = document.getElementById('erp-workspace');
+
+  if (overlay) {
+    overlay.classList.remove('hidden');
+    overlay.style.display = 'flex';
+  }
+  if (ws) {
+    ws.classList.add('hidden');
+    ws.style.display = 'none';
+  }
+
+  const passwordInput = document.getElementById('login-password');
+  if (passwordInput) passwordInput.value = '';
+}
+
+/**
+ * 💡 BULLETPROOF LOGOUT (Token များ ရှင်းထုတ်ပြီး Page ပါ Auto Reload ပြုလုပ်ပေးမည်)
+ */
 function handleLogout() {
   if (confirm("စနစ်မှ ထွက်ခွာလိုပါသလားရှင်?")) {
     localStorage.removeItem('golden_user_name');
     localStorage.removeItem('golden_user_role');
     localStorage.removeItem('golden_auth_token');
+    localStorage.removeItem('erp_token');
+    localStorage.removeItem('erp_role');
 
     if (window.AppState) {
       window.AppState.currentUser = null;
@@ -82,20 +122,19 @@ function handleLogout() {
       window.AppState.authToken = null;
     }
 
-    document.getElementById('erp-workspace').classList.add('hidden');
-    document.getElementById('login-overlay').classList.remove('hidden');
-
-    const passwordInput = document.getElementById('login-password');
-    if (passwordInput) passwordInput.value = '';
-
+    showLogin();
     showToast("SUCCESS", "စနစ်မှ အောင်မြင်စွာ ထွက်ခွာပြီးပါပြီ။");
+
+    setTimeout(function() {
+      window.location.reload();
+    }, 300);
   }
 }
 
 function checkExistingSession() {
   const savedUser = localStorage.getItem('golden_user_name');
   const savedRole = localStorage.getItem('golden_user_role');
-  const savedToken = localStorage.getItem('golden_auth_token');
+  const savedToken = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
 
   if (savedUser && savedRole && savedToken) {
     window.AppState = window.AppState || {};
@@ -103,16 +142,13 @@ function checkExistingSession() {
     window.AppState.currentUserRole = savedRole;
     window.AppState.authToken = savedToken;
 
-    const overlay = document.getElementById('login-overlay');
-    const ws = document.getElementById('erp-workspace');
-
-    if (overlay) overlay.classList.add('hidden');
-    if (ws) ws.classList.remove('hidden');
-
+    showWorkspace();
     applyRoleRestrictions();
 
     if (typeof switchTab === 'function') {
       switchTab('dashboard');
     }
+  } else {
+    showLogin();
   }
 }
