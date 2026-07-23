@@ -78,7 +78,6 @@
       </div>
     </div>
 
-    <!-- Dynamic A5:AD5000 Columns Table -->
     <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
       <table class="w-full text-left border-collapse min-w-[2000px]" id="report-income-main-table"></table>
     </div>
@@ -88,12 +87,15 @@
   <div id="panel-report-monthly-income" class="report-panel hidden space-y-8">
     <div class="flex flex-col sm:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
       <div class="text-xs font-bold text-indigo-400 uppercase tracking-wider"><i class="fa-solid fa-calendar-check mr-1.5"></i> Monthly Income Report (InRep Sheet A5:O50)</div>
+      
+      <!-- 💡 EXPORT CSV BUTTON -->
       <div class="flex items-center gap-2.5">
         <button onclick="loadReportGeneralData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-rotate text-xs"></i> Refresh</button>
+        <button onclick="exportToCSVReportGeneral()" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-file-export text-xs"></i> Export CSV</button>
       </div>
     </div>
 
-    <!-- 💡 Table 1 (A5:O19 - Emerald/Teal Theme) -->
+    <!-- Table 1 (A5:O19 - Emerald/Teal Theme) -->
     <div class="space-y-2">
       <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-table"></i> (၁) Primary Revenue Breakdown (A5:O19)</h4>
       <div class="table-container bg-[#0c1322] border border-emerald-500/20 shadow-2xl relative overflow-x-auto">
@@ -101,7 +103,7 @@
       </div>
     </div>
 
-    <!-- 💡 Table 2 (A20:O36 - Indigo/Purple Theme - Distinct Color) -->
+    <!-- Table 2 (A20:O36 - Indigo/Purple Theme) -->
     <div class="space-y-2 pt-4 border-t border-slate-800">
       <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-table-cells"></i> (၂) Secondary Category Summary (A20:O36)</h4>
       <div class="table-container bg-[#0c1322] border border-indigo-500/20 shadow-2xl relative overflow-x-auto">
