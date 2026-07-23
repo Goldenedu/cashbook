@@ -1,5 +1,5 @@
 /**
- * GOLDEN ERP SYSTEM - INSTANT ZERO-LATENCY SPA ROUTER
+ * GOLDEN ERP SYSTEM - INSTANT ZERO-LATENCY SPA ROUTER (NO FLICKER)
  * File: js/app.js
  */
 
@@ -24,33 +24,60 @@ window.TITLE_MAP = window.TITLE_MAP || {
   'settings': 'System Settings & Controls'
 };
 
-// 💡 GitHub ပေါ်ရှိ views/reports-fund.html ဖိုင်နာမည်အတိုင်း အတိအကျ ကိုက်ညီစေခြင်း
 const VIEW_FILES = [
   'dashboard', 'bank-cash-kit', 'office', 'hr', 'staff',
   'income', 'student', 'promotion', 'uniform', 'reports', 'reports-fund', 'settings'
 ];
 
-async function preloadAllViews() {
+/**
+ * 💡 Instant Load Active View first, then Background Preload others (Eliminates Flicker)
+ */
+async function initAppAndRouter() {
   const container = document.getElementById('view-container');
   if (!container) return;
 
-  for (const v of VIEW_FILES) {
-    try {
-      const res = await fetch(`views/${v}.html`);
-      if (res.ok) {
-        const htmlText = await res.text();
-        const wrapper = document.createElement('div');
-        wrapper.id = `view-${v}`;
-        wrapper.className = 'view-panel hidden';
-        wrapper.innerHTML = htmlText;
-        container.appendChild(wrapper);
-      }
-    } catch (err) {
-      console.warn(`Failed to preload view: ${v}`, err);
+  // 1. Load active module immediately (Default: Dashboard)
+  const activeModule = (window.AppState && window.AppState.currentModule) ? window.AppState.currentModule : 'dashboard';
+  let initialViewId = activeModule;
+  if (['bank', 'cash', 'kitchen'].includes(activeModule)) initialViewId = 'bank-cash-kit';
+  else if (activeModule === 'payroll') initialViewId = 'hr';
+  else if (['fulltime', 'parttime'].includes(activeModule)) initialViewId = 'staff';
+  else if (activeModule === 'report-staff-fund') initialViewId = 'reports-fund';
+  else if (activeModule.startsWith('report-')) initialViewId = 'reports';
+
+  try {
+    const res = await fetch(`views/${initialViewId}.html`);
+    if (res.ok) {
+      const htmlText = await res.text();
+      const wrapper = document.createElement('div');
+      wrapper.id = `view-${initialViewId}`;
+      wrapper.className = 'view-panel';
+      wrapper.innerHTML = htmlText;
+      container.appendChild(wrapper);
     }
+  } catch (err) {
+    console.warn("Initial view load error:", err);
   }
 
-  switchTab('dashboard');
+  switchTab(activeModule);
+
+  // 2. Background silent preloading for other views
+  setTimeout(() => {
+    VIEW_FILES.forEach(async (v) => {
+      if (v === initialViewId || document.getElementById(`view-${v}`)) return;
+      try {
+        const res = await fetch(`views/${v}.html`);
+        if (res.ok) {
+          const htmlText = await res.text();
+          const wrapper = document.createElement('div');
+          wrapper.id = `view-${v}`;
+          wrapper.className = 'view-panel hidden';
+          wrapper.innerHTML = htmlText;
+          container.appendChild(wrapper);
+        }
+      } catch (e) {}
+    });
+  }, 300);
 }
 
 function switchTab(tabId) {
@@ -65,19 +92,12 @@ function switchTab(tabId) {
 
   document.querySelectorAll('.view-panel').forEach(panel => panel.classList.add('hidden'));
 
-  // 💡 GitHub ပေါ်ရှိ 'reports-fund.html' သို့ တိကျစွာ လမ်းကြောင်းပေးခြင်း
   let targetViewId = tabId;
-  if (['bank', 'cash', 'kitchen'].includes(tabId)) {
-    targetViewId = 'bank-cash-kit';
-  } else if (tabId === 'payroll') {
-    targetViewId = 'hr';
-  } else if (['fulltime', 'parttime'].includes(tabId)) {
-    targetViewId = 'staff';
-  } else if (tabId === 'report-staff-fund') {
-    targetViewId = 'reports-fund'; // 💡 views/reports-fund.html ဖိုင်နာမည်အစစ်
-  } else if (tabId.startsWith('report-')) {
-    targetViewId = 'reports';
-  }
+  if (['bank', 'cash', 'kitchen'].includes(tabId)) targetViewId = 'bank-cash-kit';
+  else if (tabId === 'payroll') targetViewId = 'hr';
+  else if (['fulltime', 'parttime'].includes(tabId)) targetViewId = 'staff';
+  else if (tabId === 'report-staff-fund') targetViewId = 'reports-fund';
+  else if (tabId.startsWith('report-')) targetViewId = 'reports';
 
   const targetPanel = document.getElementById(`view-${targetViewId}`);
   if (targetPanel) {
@@ -135,7 +155,6 @@ async function loadDashboardData(isSilent = true, forceRefresh = false) {
 
 function renderDashboardUI(data) {
   if (!data || !data.kpi || !data.balances) return;
-
   const setT = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
   setT('db-total-income', Number(data.kpi.totalIncome || 0).toLocaleString('en-US') + " MMK");
@@ -210,5 +229,5 @@ function updateClock() {
 setInterval(updateClock, 30000);
 document.addEventListener("DOMContentLoaded", function () {
   updateClock();
-  preloadAllViews();
+  initAppAndRouter();
 });
