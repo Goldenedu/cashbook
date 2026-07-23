@@ -1,7 +1,7 @@
 <!-- views/reports.html -->
 <div class="space-y-5">
 
-  <!-- 💡 Sub-Panel Selector Tabs (၄ ခုသန့်သန့်) -->
+  <!-- Sub-Panel Selector Tabs -->
   <div class="flex flex-wrap items-center gap-2 p-1.5 bg-[#0c1322] border border-slate-800 rounded-xl w-fit">
     <button onclick="showReportPanel('panel-report-financial')" id="btn-rep-fin" class="rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-emerald-600 text-white flex items-center gap-2">
       <i class="fa-solid fa-chart-pie"></i> Financial Statement
@@ -17,9 +17,7 @@
     </button>
   </div>
 
-  <!-- ============================================================================ -->
-  <!-- 1️⃣ FINANCIAL STATEMENT REPORT PANEL                                          -->
-  <!-- ============================================================================ -->
+  <!-- 1️⃣ FINANCIAL STATEMENT PANEL -->
   <div id="panel-report-financial" class="report-panel space-y-5">
     <div class="flex flex-col sm:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
       <div class="relative w-full sm:w-80">
@@ -33,7 +31,6 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-      <!-- Income Side -->
       <div class="space-y-5">
         <div class="bg-[#0c1322] border border-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
           <h3 class="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-graduation-cap"></i> (က) Income by Student Category</h3>
@@ -56,7 +53,6 @@
         </div>
       </div>
 
-      <!-- Expense Side -->
       <div class="bg-[#0c1322] border border-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
         <h3 class="text-xs font-black text-rose-400 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-basket-shopping"></i> (ဂ) Expense Breakdown</h3>
         <div class="overflow-x-auto table-container">
@@ -69,16 +65,12 @@
     </div>
   </div>
 
-  <!-- ============================================================================ -->
-  <!-- 2️⃣ INCOME DETAIL MATRIX REPORT PANEL                                         -->
-  <!-- ============================================================================ -->
+  <!-- 2️⃣ INCOME DETAIL (InDetail) PANEL -->
   <div id="panel-report-income-detail" class="report-panel hidden space-y-5">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="report-income-kpi"></div>
-
     <div class="flex flex-col sm:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
       <div class="relative w-full sm:w-80">
         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
-        <input type="text" id="report-income-search" oninput="onSearchInputReportIncome()" placeholder="Search FYID, Name, Class..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
+        <input type="text" id="report-income-search" oninput="onSearchInputReportIncome()" placeholder="Search in detail report..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
       </div>
       <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
         <button onclick="loadReportIncomeData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-rotate text-xs"></i> Refresh</button>
@@ -86,39 +78,40 @@
       </div>
     </div>
 
+    <!-- Dynamic A5:AD5000 Columns Table -->
     <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
-      <table class="w-full text-left border-collapse min-w-[1500px]" id="report-income-main-table"></table>
+      <table class="w-full text-left border-collapse min-w-[2000px]" id="report-income-main-table"></table>
     </div>
   </div>
 
-  <!-- ============================================================================ -->
-  <!-- 3️⃣ MONTHLY INCOME REPORT PANEL                                               -->
-  <!-- ============================================================================ -->
-  <div id="panel-report-monthly-income" class="report-panel hidden space-y-5">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="report-general-kpi"></div>
-
+  <!-- 3️⃣ MONTHLY INCOME (InRep - 2 Tables) PANEL -->
+  <div id="panel-report-monthly-income" class="report-panel hidden space-y-8">
     <div class="flex flex-col sm:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
-      <div class="relative w-full sm:w-80">
-        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
-        <input type="text" id="report-general-search" oninput="onSearchInputReportGeneral()" placeholder="Search month, category..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
-      </div>
-      <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+      <div class="text-xs font-bold text-indigo-400 uppercase tracking-wider"><i class="fa-solid fa-calendar-check mr-1.5"></i> Monthly Income Report (InRep Sheet A5:O50)</div>
+      <div class="flex items-center gap-2.5">
         <button onclick="loadReportGeneralData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-rotate text-xs"></i> Refresh</button>
-        <button onclick="exportToCSVReportGeneral()" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-file-export text-xs"></i> Export CSV</button>
       </div>
     </div>
 
-    <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
-      <table class="w-full text-left border-collapse min-w-[1200px]" id="report-general-eff-table"></table>
+    <!-- 💡 Table 1 (A5:O19 - Emerald/Teal Theme) -->
+    <div class="space-y-2">
+      <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-table"></i> (၁) Primary Revenue Breakdown (A5:O19)</h4>
+      <div class="table-container bg-[#0c1322] border border-emerald-500/20 shadow-2xl relative overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[1400px]" id="report-general-table-1"></table>
+      </div>
+    </div>
+
+    <!-- 💡 Table 2 (A20:O36 - Indigo/Purple Theme - Distinct Color) -->
+    <div class="space-y-2 pt-4 border-t border-slate-800">
+      <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-table-cells"></i> (၂) Secondary Category Summary (A20:O36)</h4>
+      <div class="table-container bg-[#0c1322] border border-indigo-500/20 shadow-2xl relative overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[1400px]" id="report-general-table-2"></table>
+      </div>
     </div>
   </div>
 
-  <!-- ============================================================================ -->
-  <!-- 4️⃣ STUDENT DEMOGRAPHICS & CLASS AMOUNT REPORT PANEL                           -->
-  <!-- ============================================================================ -->
+  <!-- 4️⃣ STUDENT DEMOGRAPHICS PANEL -->
   <div id="panel-report-student" class="report-panel hidden space-y-5">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="report-student-kpi"></div>
-
     <div class="flex flex-col sm:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
       <div class="relative w-full sm:w-80">
         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
@@ -130,11 +123,10 @@
       </div>
     </div>
 
-    <!-- 💡 Tables Container (CLASS AMOUNT ပါဝင်သော ဇယားများ) -->
     <div id="report-student-tables-container" class="space-y-6"></div>
   </div>
 
 </div>
 
-<!-- 💡 AUTO-LOAD TRIGGER: Safe Data-URI Trigger (404 Error မတက်ပါ) -->
+<!-- AUTO-LOAD TRIGGER -->
 <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="if(typeof initReportsPage==='function'){initReportsPage();} this.remove();" class="hidden">
