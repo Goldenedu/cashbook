@@ -145,35 +145,11 @@
       </div>
     </div>
 
-    <!-- Staff Table Grid -->
+    <!-- Staff Table Grid (Dynamic Head via JS) -->
     <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
       <table class="w-full text-left border-collapse min-w-[1800px]">
-        <thead>
-          <tr class="bg-[#0e172a]">
-            <th scope="col" class="w-12 text-center text-slate-400 text-xs py-3">NO</th>
-            <th scope="col" class="w-28 text-slate-400 text-xs py-3">JOIN DATE</th>
-            <th scope="col" class="min-w-[200px] text-slate-400 text-xs py-3">STAFF IDNAME</th>
-            <th scope="col" class="w-28 text-slate-400 text-xs py-3">EDUCATION</th>
-            <th scope="col" class="w-36 text-slate-400 text-xs py-3">POSITION</th>
-            <th scope="col" class="w-28 text-slate-400 text-xs py-3">SALARY GRADE</th>
-            <th scope="col" class="w-28 text-right text-slate-400 text-xs py-3">WORKING DAYS</th>
-            <th scope="col" class="w-32 text-right text-slate-400 text-xs py-3">BASIC AMT</th>
-            <th scope="col" class="w-32 text-right text-slate-400 text-xs py-3">EXTRA AMT</th>
-            <th scope="col" class="w-32 text-right text-slate-400 text-xs py-3">TOTAL SALARY</th>
-            <th scope="col" class="w-28 text-right text-emerald-400 text-xs py-3">BONUS</th>
-            <th scope="col" class="w-28 text-right text-teal-400 text-xs py-3">FUND</th>
-            <th scope="col" class="w-36 text-right text-indigo-400 text-xs py-3">TOTAL NET AMT</th>
-            <th scope="col" class="w-24 text-slate-400 text-xs py-3">STATUS</th>
-            <th scope="col" class="w-24 text-slate-400 text-xs py-3">GENDER</th>
-            <th scope="col" class="w-36 text-slate-400 text-xs py-3">NRC NO</th>
-            <th scope="col" class="w-36 text-slate-400 text-xs py-3">BANK ACCOUNT</th>
-            <th scope="col" class="w-36 text-slate-400 text-xs py-3">PHONE NO</th>
-            <th scope="col" class="w-44 text-slate-400 text-xs py-3">EMAIL</th>
-            <th scope="col" class="w-28 text-slate-400 text-xs py-3">FUND DATE</th>
-            <th scope="col" class="w-32 text-right text-emerald-400 text-xs py-3">UNPAID BONUS</th>
-            <th scope="col" class="w-32 text-right text-teal-400 text-xs py-3">UNPAID FUND</th>
-            <th scope="col" class="w-24 text-center text-slate-400 text-xs py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">ACTION</th>
-          </tr>
+        <thead id="staff-table-head">
+          <!-- Dynamic Headers injected by JS -->
         </thead>
         <tbody id="staff-table-body" class="divide-y divide-slate-800/40 text-slate-300">
           <!-- Dynamic Staff Rows -->
@@ -304,13 +280,13 @@
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Education</label>
           <select id="staff-education" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
-            <!-- Dynamic Options from config.js -->
+            <!-- Dynamic Options -->
           </select>
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Position (ရာထူး)</label>
           <select id="staff-position" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
-            <!-- Dynamic Options from config.js -->
+            <!-- Dynamic Options -->
           </select>
         </div>
       </div>
@@ -321,7 +297,7 @@
           <div class="flex flex-col gap-1">
             <label class="font-bold text-slate-400 uppercase tracking-wide">Salary Grade</label>
             <select id="staff-grade" onchange="onSalaryGradeChangeStaff()" class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
-              <!-- Dynamic Options from config.js -->
+              <!-- Dynamic Options -->
             </select>
           </div>
           <div class="flex flex-col gap-1">
