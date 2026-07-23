@@ -304,3 +304,32 @@ function exportToCSVHrPayroll() {
 function sendMonthlyPayslipsToStaff() {
   showToast("Resend API ဖြင့် မေးလ်ပို့ဆောင်ခြင်း စတင်နေပါပြီ...", "info");
 }
+
+// 💡 Smart Toast Guard (ကျရောက်လာသော Error Message အမှန်ကို အပြည့်အဝ ဖော်ပြပေးမည်)
+if (typeof window.showToast !== 'function') {
+  window.showToast = function(arg1, arg2) {
+    let type = 'info';
+    let msg = '';
+
+    if (['error', 'success', 'warning', 'info'].includes(String(arg1).toLowerCase())) {
+      type = String(arg1).toLowerCase();
+      msg = arg2 || '';
+    } else if (['error', 'success', 'warning', 'info'].includes(String(arg2).toLowerCase())) {
+      type = String(arg2).toLowerCase();
+      msg = arg1 || '';
+    } else {
+      msg = arg1 || arg2 || 'Notification';
+    }
+
+    const container = document.getElementById('toast-container');
+    if (container) {
+      const toast = document.createElement('div');
+      toast.className = `p-3 rounded-lg text-xs font-bold text-white shadow-xl flex items-center gap-2 ${
+        type === 'error' ? 'bg-rose-600' : type === 'success' ? 'bg-emerald-600' : 'bg-indigo-600'
+      }`;
+      toast.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> <span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+  };
+}
