@@ -2,77 +2,22 @@
 <html lang="my" class="dark">
 <head>
   <meta charset="UTF-8">
+  <!-- Favicon Icon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230c1322'/><path d='M50 20 L90 38 L50 56 L10 38 Z' fill='%23818cf8'/><path d='M25 46.5 V65 C25 75 75 75 75 65 V46.5' fill='none' stroke='%23818cf8' stroke-width='6' stroke-linecap='round'/><circle cx='82' cy='55' r='4' fill='%23fbbf24'/><path d='M82 55 V75' stroke='%23fbbf24' stroke-width='3' stroke-linecap='round'/></svg>">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GOLDEN CASH BOOK - ERP SYSTEM</title>
-
-  <!-- Favicon Icon --> 
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230c1322'/><path d='M50 20 L90 38 L50 56 L10 38 Z' fill='%23818cf8'/><path d='M25 46.5 V65 C25 75 75 75 75 65 V46.5' fill='none' stroke='%23818cf8' stroke-width='6' stroke-linecap='round'/><circle cx='82' cy='55' r='4' fill='%23fbbf24'/><path d='M82 55 V75' stroke='%23fbbf24' stroke-width='3' stroke-linecap='round'/></svg>">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
-  
   <!-- Font Awesome Icons CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <style>
-    /* Force Browser Elements Dark Scheme */
-    :root { color-scheme: dark; }
-
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #090d16; }
-    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #334155; }
-    
-    .nav-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-    .nav-btn:hover { padding-left: 1.25rem; background-color: rgba(30, 41, 59, 0.6); }
-    .nav-btn.active { 
-      background-color: #1e293b !important; 
-      color: #ffffff !important; 
-      font-weight: 700; 
-      border-left: 4px solid #6366f1; 
-    }
-    
-    .stats-card { background: linear-gradient(145deg, #0e172a, #0c1322); border: 1px solid #1e293b; }
-    .table-container { border-radius: 0.75rem; border: 1px solid #1e293b; }
-    
-    table thead th {
-      position: sticky; top: 0; z-index: 20;
-      background-color: #0c1322 !important;
-      padding: 12px 16px; font-size: 0.75rem !important;
-      text-transform: uppercase; letter-spacing: 0.05em; color: #cbd5e1 !important;
-    }
-    table tbody td {
-      padding: 10px 16px; border-bottom: 1px solid #1e293b;
-      font-size: 0.8rem !important; white-space: nowrap !important;
-    }
-    table tbody tr:hover { background-color: rgba(30, 41, 59, 0.3); }
-
-    /* Dark Mode Forms Overrides */
-    input, select, textarea {
-      background-color: #0f172a !important;
-      border: 1px solid #1e293b !important;
-      color: #f8fafc !important;
-      font-size: 0.75rem !important;
-    }
-    input:focus, select:focus, textarea:focus {
-      border-color: #6366f1 !important;
-      outline: none !important;
-    }
-    textarea::placeholder, input::placeholder {
-      color: #64748b !important;
-      opacity: 1 !important;
-    }
-
-    .view-panel { animation: fadeIn 0.2s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-  </style>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="bg-[#090d16] font-sans flex h-screen overflow-hidden text-slate-300">
 
-  <!-- LOGIN OVERLAY -->
-  <div id="login-overlay" class="fixed inset-0 bg-[#090d16] z-[100] flex items-center justify-center p-4">
+  <!-- 💡 LOGIN OVERLAY (ဖလပ်ဖလပ် မဖြစ်စေရန် hidden မူရင်း ထားထားသည်) -->
+  <div id="login-overlay" class="fixed inset-0 bg-[#090d16] z-[100] flex items-center justify-center p-4 hidden">
     <div class="w-full max-w-sm bg-[#0c1322] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 text-slate-300">
-      
       <div class="text-center space-y-1.5">
         <div class="inline-flex p-3 bg-indigo-500/10 text-indigo-400 rounded-xl mb-1">
           <i class="fa-solid fa-shield-halved text-2xl"></i>
@@ -112,7 +57,6 @@
 
   <!-- MAIN ERP WORKSPACE -->
   <div id="erp-workspace" class="hidden flex h-full w-full">
-
     <aside class="w-64 bg-[#0c1322] border-r border-slate-800 flex flex-col h-full shadow-2xl shrink-0">
       <div class="h-[60px] px-4 border-b border-slate-800 flex items-center justify-between text-white bg-[#0e172a]">
         <div class="flex items-center gap-2.5 font-extrabold text-sm tracking-wide">
@@ -125,12 +69,10 @@
       </div>
 
       <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto" id="sidebar-nav">
-        <!-- Dashboard -->
         <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
           <i class="fa-solid fa-gauge-high w-4 text-center text-indigo-400"></i> Home Dashboard
         </button>
 
-        <!-- Main Books -->
         <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Main Books</p>
         <button onclick="switchTab('bank')" id="btn-bank" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
           <i class="fa-solid fa-building-columns text-amber-400 w-4 text-center"></i> Main Bank Book
@@ -142,7 +84,6 @@
           <i class="fa-solid fa-wallet text-sky-400 w-4 text-center"></i> Main Income Book
         </button>
 
-        <!-- Expense Book -->
         <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Expense Book</p>
         <button onclick="switchTab('office')" id="btn-office" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
           <i class="fa-solid fa-briefcase text-cyan-400 w-4 text-center"></i> Office Exp Book
@@ -151,14 +92,12 @@
           <i class="fa-solid fa-utensils text-rose-400 w-4 text-center"></i> Kitchen Exp Book
         </button>
 
-        <!-- HR Section -->
         <div id="nav-hr-section">
           <button onclick="switchTab('hr')" id="btn-hr" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
             <i class="fa-solid fa-money-check-dollar text-teal-400 w-4 text-center"></i> HR Payroll & Staff
           </button>
         </div>
 
-        <!-- List & Inventory -->
         <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">List & Inventory</p>
         <button onclick="switchTab('student')" id="btn-student" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
           <i class="fa-solid fa-user-graduate text-indigo-400 w-4 text-center"></i> Student List
@@ -170,7 +109,6 @@
           <i class="fa-solid fa-coins text-yellow-400 w-4 text-center"></i> Promotion List
         </button>
 
-        <!-- Reports & Financial Statements -->
         <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Reporting</p>
         <button onclick="switchTab('report-financial')" id="btn-report-financial" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
           <i class="fa-solid fa-chart-pie text-emerald-400 w-4 text-center"></i> Financial Report
@@ -200,7 +138,6 @@
     <div class="flex-1 flex flex-col overflow-hidden">
       <header class="bg-[#0c1322] border-b border-slate-800 h-[60px] px-6 flex justify-between items-center z-10 shrink-0">
         <h1 id="page-title" class="text-base md:text-lg font-extrabold text-white tracking-wide">Home Dashboard</h1>
-
         <div id="live-metadata" class="text-xs font-bold text-emerald-400 bg-[#111c44] border border-emerald-500/20 px-3.5 py-1.5 rounded-lg">
           FY 2026-2027 | User: Anonymous
         </div>
@@ -226,7 +163,7 @@
   <script src="js/bank-cash-kit.js"></script>
   <script src="js/office.js"></script>
   <script src="js/hr.js"></script>
-  <script src="js/staff.js"></script> <!-- 💡 STAFF MODULE Script ဖြည့်စွက်ထားပါသည် -->
+  <script src="js/staff.js"></script>
   <script src="js/income.js"></script>
   <script src="js/student.js"></script>
   <script src="js/promotion.js"></script>
