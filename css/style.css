@@ -62,3 +62,11 @@ input[type="number"], input.font-mono, td.font-mono, span.font-mono, .font-mono 
 /* View Panel Animation */
 .view-panel { animation: fadeIn 0.2s ease-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 💡 Search Box ကို ထိပ်ဆုံးမှ ဒုတိယကတ် အဆုံးအထိ (50% Width) ကွက်တိ ဆွဲဆန့်ပေးခြင်း */
+@media (min-width: 768px) {
+  .relative.w-full {
+    width: 50% !important;
+    max-width: 680px !important;
+  }
+}
