@@ -3,6 +3,31 @@
  * File: js/staff.js
  */
 
+// 💡 Loading & Toast Safe Guards
+if (typeof window.showLoading !== 'function') {
+  window.showLoading = function(show) {
+    const el = document.getElementById('loading-overlay');
+    if (el) el.classList.toggle('hidden', !show);
+  };
+}
+
+if (typeof window.showToast !== 'function') {
+  window.showToast = function(msg, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (container) {
+      const toast = document.createElement('div');
+      toast.className = `p-3 rounded-lg text-xs font-bold text-white shadow-xl ${
+        type === 'error' ? 'bg-rose-600' : type === 'success' ? 'bg-emerald-600' : 'bg-indigo-600'
+      }`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    } else {
+      console.log(`[Toast - ${type}]: ${msg}`);
+    }
+  };
+}
+
 let gStaffCategory = 'Full Time'; // 'Full Time' or 'Part Time'
 let gStaffPage = 1;
 let gStaffLimit = 30;
@@ -16,7 +41,6 @@ async function switchStaffCategory(category) {
   gStaffCategory = category;
   gStaffPage = 1;
 
-  // Toggle Header Buttons
   const btnFT = document.getElementById('staff-tab-ft');
   const btnPT = document.getElementById('staff-tab-pt');
   const pageTitle = document.getElementById('staff-page-title');
@@ -31,7 +55,6 @@ async function switchStaffCategory(category) {
     if (pageTitle) pageTitle.innerHTML = `<i class="fa-solid fa-user-clock text-indigo-400"></i> Part Time Staff List (PID)`;
   }
 
-  // 💡 Update Table Header dynamically to avoid STATUS & ACTION misalignment
   renderStaffTableHead();
   await loadStaffData(false);
 }
@@ -68,7 +91,6 @@ function renderStaffTableHead() {
         <th scope="col" class="w-24 text-center text-slate-400 text-xs py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">ACTION</th>
       </tr>`;
   } else {
-    // 💡 Part Time: 14 Columns exact alignment
     thead.innerHTML = `
       <tr class="bg-[#0e172a]">
         <th scope="col" class="w-12 text-center text-slate-400 text-xs py-3">NO</th>
@@ -164,7 +186,6 @@ function renderStaffTable(data) {
   }
 
   if (gStaffCategory === 'Full Time') {
-    // 💡 Full Time: 23 Columns
     tbody.innerHTML = data.map((item, idx) => `
       <tr class="hover:bg-slate-800/40 transition">
         <td class="text-center text-slate-400 py-3">${item.no || (idx + 1)}</td>
@@ -198,7 +219,6 @@ function renderStaffTable(data) {
       </tr>
     `).join('');
   } else {
-    // 💡 Part Time: 14 Columns
     tbody.innerHTML = data.map((item, idx) => `
       <tr class="hover:bg-slate-800/40 transition">
         <td class="text-center text-slate-400 py-3">${item.no || (idx + 1)}</td>
@@ -250,9 +270,6 @@ function onSearchInputStaff() {
   loadStaffData(false);
 }
 
-/**
- * 💡 FullTime!I1:U2 Sheet မှ လစာနှုန်းထားများကို တိုက်ရိုက်ယူပြီး Dropdown ဖြည့်ပေးခြင်း
- */
 async function populateDropdownsStaff() {
   try {
     const res = await callApi({ action: 'getPayrollSettings' });
