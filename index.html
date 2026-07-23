@@ -20,7 +20,7 @@
   </script>
 
   <style>
-    /* 💡 Dynamic CSS Specificity (No !important lock) */
+    /* Dynamic CSS Specificity */
     html.is-authed #login-overlay { display: none; }
     html.is-authed #erp-workspace { display: flex; }
     html.not-authed #login-overlay { display: flex; }
@@ -77,7 +77,7 @@
   </div>
 
   <!-- MAIN ERP WORKSPACE -->
-  <div id="erp-workspace" class="flex h-full w-full">
+  <div id="erp-workspace" class="hidden h-full w-full">
     <aside class="w-64 bg-[#0c1322] border-r border-slate-800 flex flex-col h-full shadow-2xl shrink-0">
       <div class="h-[60px] px-4 border-b border-slate-800 flex items-center justify-between text-white bg-[#0e172a]">
         <div class="flex items-center gap-2.5 font-extrabold text-sm tracking-wide">
@@ -89,58 +89,64 @@
         </button>
       </div>
 
-      <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto" id="sidebar-nav">
-        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+      <!-- 💡 SIDEBAR NAV (Font Size 14px / text-sm သို့ ပိုမို ကြီးမားထင်ရှားအောင် ပြင်ထားသည်) -->
+      <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto" id="sidebar-nav">
+        <!-- Dashboard -->
+        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-gauge-high w-4 text-center text-indigo-400"></i> Home Dashboard
         </button>
 
-        <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Main Books</p>
-        <button onclick="switchTab('bank')" id="btn-bank" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <!-- Main Books -->
+        <p class="text-[10.5px] font-black text-slate-500 px-4 uppercase tracking-widest mt-5 mb-2">Main Books</p>
+        <button onclick="switchTab('bank')" id="btn-bank" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-building-columns text-amber-400 w-4 text-center"></i> Main Bank Book
         </button>
-        <button onclick="switchTab('cash')" id="btn-cash" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <button onclick="switchTab('cash')" id="btn-cash" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-money-bill-wave text-emerald-400 w-4 text-center"></i> Main Cash Book
         </button>
-        <button onclick="switchTab('income')" id="btn-income" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <button onclick="switchTab('income')" id="btn-income" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-wallet text-sky-400 w-4 text-center"></i> Main Income Book
         </button>
 
-        <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Expense Book</p>
-        <button onclick="switchTab('office')" id="btn-office" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <!-- Expense Book -->
+        <p class="text-[10.5px] font-black text-slate-500 px-4 uppercase tracking-widest mt-5 mb-2">Expense Book</p>
+        <button onclick="switchTab('office')" id="btn-office" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-briefcase text-cyan-400 w-4 text-center"></i> Office Exp Book
         </button>
-        <button onclick="switchTab('kitchen')" id="btn-kitchen" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <button onclick="switchTab('kitchen')" id="btn-kitchen" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-utensils text-rose-400 w-4 text-center"></i> Kitchen Exp Book
         </button>
 
         <div id="nav-hr-section">
-          <button onclick="switchTab('hr')" id="btn-hr" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+          <button onclick="switchTab('hr')" id="btn-hr" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
             <i class="fa-solid fa-money-check-dollar text-teal-400 w-4 text-center"></i> HR Payroll & Staff
           </button>
         </div>
 
-        <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">List & Inventory</p>
-        <button onclick="switchTab('student')" id="btn-student" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <!-- List & Inventory -->
+        <p class="text-[10.5px] font-black text-slate-500 px-4 uppercase tracking-widest mt-5 mb-2">List & Inventory</p>
+        <button onclick="switchTab('student')" id="btn-student" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-user-graduate text-indigo-400 w-4 text-center"></i> Student List
         </button>
-        <button onclick="switchTab('uniform')" id="btn-uniform" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <button onclick="switchTab('uniform')" id="btn-uniform" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-shirt text-amber-400 w-4 text-center"></i> Uniform Ledger
         </button>
-        <button onclick="switchTab('promotion')" id="btn-promotion" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <button onclick="switchTab('promotion')" id="btn-promotion" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-coins text-yellow-400 w-4 text-center"></i> Promotion List
         </button>
 
-        <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Reporting</p>
-        <button onclick="switchTab('report-financial')" id="btn-report-financial" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <!-- Reporting -->
+        <p class="text-[10.5px] font-black text-slate-500 px-4 uppercase tracking-widest mt-5 mb-2">Reporting</p>
+        <button onclick="switchTab('report-financial')" id="btn-report-financial" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-chart-pie text-emerald-400 w-4 text-center"></i> Financial Reports
         </button>
-        <button onclick="switchTab('report-staff-fund')" id="btn-report-staff-fund" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+        <button onclick="switchTab('report-staff-fund')" id="btn-report-staff-fund" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-hand-holding-dollar text-teal-400 w-4 text-center"></i> Staff Fund Report
         </button>
 
         <div id="nav-settings-section">
-          <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">System Controls</p>
-          <button onclick="switchTab('settings')" id="btn-settings" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
+          <p class="text-[10.5px] font-black text-slate-500 px-4 uppercase tracking-widest mt-5 mb-2">System Controls</p>
+          <button onclick="switchTab('settings')" id="btn-settings" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
             <i class="fa-solid fa-gears text-indigo-400 w-4 text-center"></i> System Settings
           </button>
         </div>
