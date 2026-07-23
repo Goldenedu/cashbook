@@ -384,3 +384,4 @@ function exportToCSVIncome() {
   a.download = `Income_Export_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
+
