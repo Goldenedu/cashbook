@@ -24,10 +24,10 @@ window.TITLE_MAP = window.TITLE_MAP || {
   'settings': 'System Settings & Controls'
 };
 
-// 💡 1. VIEW_FILES ထဲသို့ 'report-staff-fund' ထည့်သွင်းပေးခြင်း
+// 💡 GitHub ပေါ်ရှိ views/reports-fund.html ဖိုင်နာမည်အတိုင်း အတိအကျ ကိုက်ညီစေခြင်း
 const VIEW_FILES = [
   'dashboard', 'bank-cash-kit', 'office', 'hr', 'staff',
-  'income', 'student', 'promotion', 'uniform', 'reports', 'report-staff-fund', 'settings'
+  'income', 'student', 'promotion', 'uniform', 'reports', 'reports-fund', 'settings'
 ];
 
 async function preloadAllViews() {
@@ -65,7 +65,7 @@ function switchTab(tabId) {
 
   document.querySelectorAll('.view-panel').forEach(panel => panel.classList.add('hidden'));
 
-  // 💡 2. Target View Mapping (report-staff-fund အတွက် သီးသန့် View လမ်းကြောင်းပေးခြင်း)
+  // 💡 GitHub ပေါ်ရှိ 'reports-fund.html' သို့ တိကျစွာ လမ်းကြောင်းပေးခြင်း
   let targetViewId = tabId;
   if (['bank', 'cash', 'kitchen'].includes(tabId)) {
     targetViewId = 'bank-cash-kit';
@@ -74,7 +74,7 @@ function switchTab(tabId) {
   } else if (['fulltime', 'parttime'].includes(tabId)) {
     targetViewId = 'staff';
   } else if (tabId === 'report-staff-fund') {
-    targetViewId = 'report-staff-fund'; // 💡 သီးသန့် View သို့ ညွှန်းမည်
+    targetViewId = 'reports-fund'; // 💡 views/reports-fund.html ဖိုင်နာမည်အစစ်
   } else if (tabId.startsWith('report-')) {
     targetViewId = 'reports';
   }
@@ -115,7 +115,6 @@ function triggerModuleInit(tabId) {
   } else if (tabId === 'report-in-rep') {
     if (typeof showReportPanel === 'function') showReportPanel('panel-report-monthly-income');
   } else if (tabId === 'report-staff-fund') {
-    // 💡 3. Staff Fund Data ကို တိုက်ရိုက် ခေါ်ယူခြင်း
     if (typeof loadReportStaffFundData === 'function') loadReportStaffFundData(false);
   } else if (tabId === 'report-student') {
     if (typeof showReportPanel === 'function') showReportPanel('panel-report-student');
