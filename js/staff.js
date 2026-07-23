@@ -19,15 +19,21 @@ async function switchStaffCategory(category) {
   const btnFT = document.getElementById('staff-tab-ft');
   const btnPT = document.getElementById('staff-tab-pt');
   const pageTitle = document.getElementById('staff-page-title');
+  const btnEditGrade = document.getElementById('btn-edit-grade');
+  const btnEditGradeHr = document.getElementById('btn-edit-grade-hr');
 
   if (category === 'Full Time') {
     if (btnFT) btnFT.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-lg shadow-indigo-600/10";
     if (btnPT) btnPT.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white";
     if (pageTitle) pageTitle.innerHTML = `<i class="fa-solid fa-users text-indigo-400"></i> Full Time Staff List (FID)`;
+    if (btnEditGrade) btnEditGrade.classList.remove('hidden');
+    if (btnEditGradeHr) btnEditGradeHr.classList.remove('hidden');
   } else {
     if (btnFT) btnFT.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white";
     if (btnPT) btnPT.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-lg shadow-indigo-600/10";
     if (pageTitle) pageTitle.innerHTML = `<i class="fa-solid fa-user-clock text-indigo-400"></i> Part Time Staff List (PID)`;
+    if (btnEditGrade) btnEditGrade.classList.add('hidden');
+    if (btnEditGradeHr) btnEditGradeHr.classList.add('hidden');
   }
 
   renderStaffTableHead();
@@ -244,6 +250,9 @@ function onSearchInputStaff() {
   loadStaffData(false);
 }
 
+/**
+ * 💡 Config ထဲမှ Education & Position Dropdowns များကို Dynamic ဖြည့်ပေးခြင်း
+ */
 async function populateDropdownsStaff() {
   try {
     const res = await callApi('getPayrollSettings', {});
@@ -254,25 +263,26 @@ async function populateDropdownsStaff() {
     console.warn("Could not load payroll settings from API:", err);
   }
 
-  // 1. Education Dropdown
+  // 1. Education Dropdown (config.js မှ ယူသုံးခြင်း)
   const eduSelect = document.getElementById('staff-education');
   if (eduSelect) {
-    const list = ["Master", "Bachelor Degree", "Undergraduate", "Diploma", "High School", "Middle School", "Primary School", "Other"];
-    eduSelect.innerHTML = list.map(e => `<option value="${e}">${e}</option>`).join('');
+    const edus = window.DROPDOWNS?.staffCommon?.education || ["Non", "Phd", "Master", "Degree", "High Graduate", "Middle", "Primary", "High School"];
+    eduSelect.innerHTML = edus.map(e => `<option value="${e}">${e}</option>`).join('');
   }
 
-  // 2. Position Dropdown
+  // 2. Position Dropdown (Full Time / Part Time အလိုက် config.js မှ Dynamic ခွဲထုတ်ခြင်း)
   const posSelect = document.getElementById('staff-position');
   if (posSelect) {
-    const list = [
-      "Principal", "Vice Principal", "Head Teacher", "Senior Teacher", "Junior Teacher",
-      "Primary Teacher", "Pre School Teacher", "Assistant Teacher", "Office Staff",
-      "Accountant", "Cashier", "HR Staff", "IT Support", "Driver", "Security", "Cleaner", "Kitchen Staff"
-    ];
-    posSelect.innerHTML = list.map(p => `<option value="${p}">${p}</option>`).join('');
+    let positions = [];
+    if (gStaffCategory === 'Full Time') {
+      positions = window.DROPDOWNS?.staffCommon?.fullTimePositions || ["Non", "Admin", "Teacher", "Finance", "Chef"];
+    } else {
+      positions = window.DROPDOWNS?.staffCommon?.partTimePositions || ["Non", "သင်ကြားရေး", "အခြား နည်းပြဆရာ"];
+    }
+    posSelect.innerHTML = positions.map(p => `<option value="${p}">${p}</option>`).join('');
   }
 
-  // 3. Salary Grade Dropdown (Sheet မှ ရရှိသော dynamic grades)
+  // 3. Salary Grade Dropdown (Sheet မှ ရရှိသော Dynamic Grades)
   const gradeSelect = document.getElementById('staff-grade');
   if (gradeSelect) {
     let html = '<option value="Non">Non-Grade</option>';
@@ -471,4 +481,81 @@ function exportToCSVStaff() {
   a.href = url;
   a.download = `Staff_${gStaffCategory}_Export_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
+}
+
+// ============================================================================
+// 💡 GRADE MATRIX EDITOR MODAL FUNCTIONS
+// ============================================================================
+
+async function openGradeModal() {
+  try {
+    if (typeof toggleLoading === 'function') toggleLoading(true);
+    const res = await callApi('getPayrollSettings', {});
+    
+    if (res && res.success && res.data) {
+      gPayrollSettings = res.data;
+      const grades = res.data.grades || {};
+
+      ['A','B','C','D','E','F','G','H','I','J','K'].forEach(letter => {
+        const input = document.getElementById(`grade-${letter}`);
+        if (input) input.value = grades[`GRADE ${letter}`] || 0;
+      });
+
+      const bonusInput = document.getElementById('grade-bonus');
+      const fundInput = document.getElementById('grade-fund');
+      if (bonusInput) bonusInput.value = res.data.bonus || 0;
+      if (fundInput) fundInput.value = res.data.fundRate || 0;
+
+      const modal = document.getElementById('grade-modal');
+      if (modal) modal.classList.remove('hidden');
+    } else {
+      showToast("ERROR", "Grade Settings ဖတ်ယူ၍ မရပါ");
+    }
+  } catch (err) {
+    showToast("ERROR", "Grade Modal Error: " + err.message);
+  } finally {
+    if (typeof toggleLoading === 'function') toggleLoading(false);
+  }
+}
+
+function closeGradeModal() {
+  const modal = document.getElementById('grade-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function saveGradeForm(event) {
+  event.preventDefault();
+
+  const values = [
+    parseFloat(document.getElementById('grade-A')?.value || 0),
+    parseFloat(document.getElementById('grade-B')?.value || 0),
+    parseFloat(document.getElementById('grade-C')?.value || 0),
+    parseFloat(document.getElementById('grade-D')?.value || 0),
+    parseFloat(document.getElementById('grade-E')?.value || 0),
+    parseFloat(document.getElementById('grade-F')?.value || 0),
+    parseFloat(document.getElementById('grade-G')?.value || 0),
+    parseFloat(document.getElementById('grade-H')?.value || 0),
+    parseFloat(document.getElementById('grade-I')?.value || 0),
+    parseFloat(document.getElementById('grade-J')?.value || 0),
+    parseFloat(document.getElementById('grade-K')?.value || 0),
+    parseFloat(document.getElementById('grade-bonus')?.value || 0),
+    parseFloat(document.getElementById('grade-fund')?.value || 0)
+  ];
+
+  try {
+    if (typeof toggleLoading === 'function') toggleLoading(true);
+    const res = await callApi('updatePayrollSettings', { values });
+
+    if (res && res.success) {
+      showToast("SUCCESS", "Grade Matrix နှုန်းထားများကို Sheet တွင် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ");
+      closeGradeModal();
+      await populateDropdownsStaff();
+    } else {
+      showToast("ERROR", res.message || "Grade သိမ်းဆည်းမှု မအောင်မြင်ပါ");
+    }
+  } catch (err) {
+    showToast("ERROR", "Save Grade Error: " + err.message);
+  } finally {
+    if (typeof toggleLoading === 'function') toggleLoading(false);
+  }
 }
