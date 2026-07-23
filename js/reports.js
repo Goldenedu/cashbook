@@ -1,5 +1,5 @@
 /**
- * GOLDEN ERP SYSTEM - REPORTING ENGINE & CSV EXPORT
+ * GOLDEN ERP SYSTEM - REPORTING ENGINE & COLOR STYLING
  * File: js/reports.js
  */
 
@@ -10,6 +10,25 @@ function cleanNum(val) {
   var cleaned = String(val).replace(/,/g, "").replace(/[^\d.-]/g, "");
   var num = parseFloat(cleaned);
   return isNaN(num) ? 0 : num;
+}
+
+/**
+ * 💡 [PROMO BADGE FORMATTER]
+ * Promo Plan မျာအလိုက် အရောင်ခွဲ ပင်းတံဆိပ်များ တပ်ဆင်ပေးခြင်း
+ */
+function getPromoBadge(promo) {
+  if (!promo || promo === "-" || promo === "Non") return `<span class="text-slate-500">-</span>`;
+  var p = String(promo).trim();
+  var pLower = p.toLowerCase();
+  
+  if (pLower.includes("full scholar")) {
+    return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 inline-flex items-center gap-1"><i class="fa-solid fa-circle-check text-[9px]"></i> ${p}</span>`;
+  } else if (pLower.includes("half scholar")) {
+    return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">${p}</span>`;
+  } else if (pLower.includes("original")) {
+    return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">${p}</span>`;
+  }
+  return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">${p}</span>`;
 }
 
 function initReportsPage() {
@@ -156,9 +175,6 @@ function compileReportFinancialData() {
 
 function onSearchInputReportFinancial() { compileReportFinancialData(); }
 
-/**
- * 💡 FINANCIAL STATEMENT CSV FILE DOWNLOAD
- */
 function exportToCSVReportFinancial() {
   const rData = window.erpCache['financial-report'];
   if (!rData) { showToast("ERROR", "ထုတ်ယူရန် မည်သည့်ဒေတာမျှ မရှိသေးပါ!"); return; }
@@ -169,14 +185,6 @@ function exportToCSVReportFinancial() {
   csv += `3,"Day Student Income",${cleanNum(rData.categories?.dayStudent)}\n`;
   csv += `,"TOTAL CATEGORY INCOME",${cleanNum(rData.categories?.total)}\n\n`;
 
-  csv += "--- SECTION 2: INCOME BY ACCOUNT ---\nNO,ACCOUNT NAME,TOTAL AMOUNT\n";
-  csv += `1,"Registration",${cleanNum(rData.accounts?.registration)}\n`;
-  csv += `2,"Services",${cleanNum(rData.accounts?.services)}\n`;
-  csv += `3,"Ferry",${cleanNum(rData.accounts?.ferry)}\n`;
-  csv += `4,"Night Study Fees",${cleanNum(rData.accounts?.nightStudy)}\n`;
-  csv += `5,"Others",${cleanNum(rData.accounts?.others)}\n`;
-  csv += `,"TOTAL ACCOUNT INCOME",${cleanNum(rData.accounts?.total)}\n\n`;
-
   const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
@@ -185,7 +193,7 @@ function exportToCSVReportFinancial() {
 }
 
 // ============================================================================
-// 2️⃣ INCOME DETAIL REPORT (InDetail Sheet A5:AD5000)
+// 2️⃣ INCOME DETAIL REPORT (InDetail Sheet - WITH COLUMN COLORS)
 // ============================================================================
 
 async function loadReportIncomeData(isSilent = false) {
@@ -206,6 +214,9 @@ async function loadReportIncomeData(isSilent = false) {
   }
 }
 
+/**
+ * 💡 [INDETAIL MATRIX COLOR STYLING ENGINE]
+ */
 function compileReportIncomeData() {
   const table = document.getElementById('report-income-main-table');
   if (!table) return;
@@ -220,10 +231,26 @@ function compileReportIncomeData() {
     return row.some(cell => String(cell || '').toLowerCase().includes(search));
   });
 
+  // 💡 Header Color Styling based on Column Title
   let headerHtml = `
     <thead>
       <tr class="bg-[#0e172a] text-slate-400">
-        ${headers.map(h => `<th class="py-3 px-4 text-xs uppercase font-bold border-b border-slate-800">${h}</th>`).join('')}
+        ${headers.map((h, i) => {
+          const hName = String(h || "").trim().toUpperCase();
+          let colorClass = "text-slate-200";
+
+          if (hName.includes("PROMO")) colorClass = "text-amber-400";
+          else if (hName.includes("JOIN MONTH")) colorClass = "text-teal-400";
+          else if (hName.includes("REFUND MONTH")) colorClass = "text-amber-400";
+          else if (hName.includes("REFUND AMT") || hName.includes("REFUNT AMT")) colorClass = "text-rose-400";
+          else if (hName.includes("REGISTRATION")) colorClass = "text-indigo-400";
+          else if (hName.includes("FERRY")) colorClass = "text-sky-400";
+          else if (hName.includes("NIGHT STUDY")) colorClass = "text-yellow-400";
+
+          const alignClass = (hName.includes("AMT") || hName.includes("REGISTRATION") || hName.includes("FERRY") || hName.includes("FEES") || (i > 7 && !hName.includes("MONTH"))) ? "text-right" : "text-left";
+
+          return `<th class="py-3 px-4 text-xs uppercase font-bold border-b border-slate-800 ${colorClass} ${alignClass}">${h}</th>`;
+        }).join('')}
       </tr>
     </thead>
   `;
@@ -236,14 +263,55 @@ function compileReportIncomeData() {
     filtered.forEach(row => {
       bodyHtml += `<tr class="hover:bg-slate-800/20">`;
       row.forEach((cell, idx) => {
+        const hName = String(headers[idx] || "").trim().toUpperCase();
         const cellStr = String(cell || "").trim();
         const num = parseFloat(cellStr.replace(/,/g, ""));
         const isNum = !isNaN(num) && isFinite(num) && cellStr !== "";
 
-        if (isNum && idx > 3) {
+        // 💡 1. PROMO Column Badges
+        if (hName.includes("PROMO")) {
+          bodyHtml += `<td class="py-3 px-4">${getPromoBadge(cellStr)}</td>`;
+
+        // 💡 2. STU STATUS Badges
+        } else if (hName.includes("STU STATUS") || hName === "STATUS") {
+          if (cellStr.toLowerCase() === "active") {
+            bodyHtml += `<td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Active</span></td>`;
+          } else if (cellStr.toLowerCase() === "inactive") {
+            bodyHtml += `<td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">Inactive</span></td>`;
+          } else {
+            bodyHtml += `<td class="py-3 px-4 text-slate-300 font-bold">${cellStr}</td>`;
+          }
+
+        // 💡 3. JOIN MONTH (Teal Color)
+        } else if (hName.includes("JOIN MONTH")) {
+          bodyHtml += `<td class="py-3 px-4 text-teal-400 font-bold font-mono">${cellStr || '-'}</td>`;
+
+        // 💡 4. REFUND MONTH (Amber Color)
+        } else if (hName.includes("REFUND MONTH")) {
+          bodyHtml += `<td class="py-3 px-4 text-amber-400 font-bold font-mono">${cellStr || '-'}</td>`;
+
+        // 💡 5. REFUND AMT (Rose Bold Color)
+        } else if (hName.includes("REFUND AMT") || hName.includes("REFUNT AMT")) {
+          bodyHtml += `<td class="py-3 px-4 text-right font-mono font-extrabold text-rose-400">${isNum ? num.toLocaleString('en-US') : (cellStr || '0')}</td>`;
+
+        // 💡 6. REGISTRATION (Indigo Bold Color)
+        } else if (hName.includes("REGISTRATION")) {
+          bodyHtml += `<td class="py-3 px-4 text-right font-mono font-extrabold text-indigo-400">${isNum ? num.toLocaleString('en-US') : (cellStr || '0')}</td>`;
+
+        // 💡 7. FERRY (Sky Blue Color)
+        } else if (hName.includes("FERRY")) {
+          bodyHtml += `<td class="py-3 px-4 text-right font-mono font-bold text-sky-400">${isNum ? num.toLocaleString('en-US') : (cellStr || '0')}</td>`;
+
+        // 💡 8. NIGHT STUDY FEES (Yellow Color)
+        } else if (hName.includes("NIGHT STUDY")) {
+          bodyHtml += `<td class="py-3 px-4 text-right font-mono font-bold text-yellow-400">${isNum ? num.toLocaleString('en-US') : (cellStr || '0')}</td>`;
+
+        // 💡 9. Monthly Amount Columns (MAR 26, APR 26, etc.)
+        } else if (isNum && idx > 3) {
           bodyHtml += `<td class="py-3 px-4 text-right font-mono font-bold text-slate-200">${num.toLocaleString('en-US')}</td>`;
+
         } else {
-          bodyHtml += `<td class="py-3 px-4 text-slate-300">${cellStr}</td>`;
+          bodyHtml += `<td class="py-3 px-4 text-slate-300 font-bold">${cellStr}</td>`;
         }
       });
       bodyHtml += `</tr>`;
@@ -256,9 +324,6 @@ function compileReportIncomeData() {
 
 function onSearchInputReportIncome() { compileReportIncomeData(); }
 
-/**
- * 💡 INDETAIL CSV FILE DOWNLOAD
- */
 function exportToCSVReportIncome() {
   const rData = window.erpCache['income-detail-report'];
   if (!rData || !rData.headers || !rData.data) {
@@ -278,7 +343,7 @@ function exportToCSVReportIncome() {
 }
 
 // ============================================================================
-// 3️⃣ MONTHLY INCOME REPORT (InRep Sheet A5:O50 - 2 Tables)
+// 3️⃣ MONTHLY INCOME REPORT (InRep)
 // ============================================================================
 
 async function loadReportGeneralData(isSilent = false) {
@@ -302,7 +367,6 @@ async function loadReportGeneralData(isSilent = false) {
 function compileReportGeneralData() {
   const rData = window.erpCache['monthly-income-report'] || {};
   
-  // Table 1 Render (A5:O19 - Emerald Theme)
   const t1 = document.getElementById('report-general-table-1');
   if (t1 && rData.table1) {
     let hHtml = `<thead><tr class="bg-emerald-950/40 text-emerald-300">${(rData.table1.headers || []).map(h => `<th class="py-3 px-4 text-xs font-bold uppercase border-b border-emerald-500/20">${h}</th>`).join('')}</tr></thead>`;
@@ -323,7 +387,6 @@ function compileReportGeneralData() {
     t1.innerHTML = hHtml + bHtml;
   }
 
-  // Table 2 Render (A20:O36 - Indigo Theme)
   const t2 = document.getElementById('report-general-table-2');
   if (t2 && rData.table2) {
     let hHtml = `<thead><tr class="bg-indigo-950/40 text-indigo-300">${(rData.table2.headers || []).map(h => `<th class="py-3 px-4 text-xs font-bold uppercase border-b border-indigo-500/20">${h}</th>`).join('')}</tr></thead>`;
@@ -345,9 +408,6 @@ function compileReportGeneralData() {
   }
 }
 
-/**
- * 💡 INREP MONTHLY INCOME CSV FILE DOWNLOAD (TABLE 1 + TABLE 2)
- */
 function exportToCSVReportGeneral() {
   const rData = window.erpCache['monthly-income-report'];
   if (!rData || !rData.table1) {
@@ -520,9 +580,6 @@ function compileReportStudentData() {
 
 function onSearchInputReportStudent() { compileReportStudentData(); }
 
-/**
- * 💡 STUDENT DEMOGRAPHICS CSV FILE DOWNLOAD
- */
 function exportToCSVReportStudent() {
   const cache = window.erpCache['student-report-details'] || {};
   const students = cache.students || [];
@@ -664,9 +721,6 @@ function compileReportStaffFundData() {
 
 function onSearchInputReportStaffFund() { compileReportStaffFundData(); }
 
-/**
- * 💡 STAFF FUND CSV FILE DOWNLOAD
- */
 function exportToCSVReportStaffFund() {
   const fundData = window.erpCache['staff-fund-report'] || [];
   if (fundData.length === 0) { showToast("ERROR", "ထုတ်ယူရန် မည်သည့်ဒေတာမျှ မရှိသေးပါ!"); return; }
