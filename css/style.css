@@ -1,9 +1,15 @@
 /* css/style.css */
+
+/* Force Browser Elements Dark Scheme */
+:root { color-scheme: dark; }
+
+/* Custom Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #090d16; }
 ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #334155; }
 
+/* Navigation Buttons */
 .nav-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 .nav-btn:hover { padding-left: 1.25rem; background-color: rgba(30, 41, 59, 0.6); }
 .nav-btn.active { 
@@ -13,9 +19,11 @@
   border-left: 4px solid #6366f1; 
 }
 
+/* Cards & Containers */
 .stats-card { background: linear-gradient(145deg, #0e172a, #0c1322); border: 1px solid #1e293b; }
 .table-container { border-radius: 0.75rem; border: 1px solid #1e293b; }
 
+/* Table Styling */
 table thead th {
   position: sticky; top: 0; z-index: 20;
   background-color: #0c1322 !important;
@@ -27,3 +35,30 @@ table tbody td {
   font-size: 0.8rem !important; white-space: nowrap !important;
 }
 table tbody tr:hover { background-color: rgba(30, 41, 59, 0.3); }
+
+/* Dark Mode Forms Overrides */
+input, select, textarea {
+  background-color: #0f172a !important;
+  border: 1px solid #1e293b !important;
+  color: #f8fafc !important;
+  font-size: 0.75rem !important;
+  font-variant-numeric: lining-nums tabular-nums !important;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #6366f1 !important;
+  outline: none !important;
+}
+textarea::placeholder, input::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+/* 💡 Force English Digits (Latin Numerals 1234567890) on all Number Fields */
+input[type="number"], input.font-mono, td.font-mono, span.font-mono, .font-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+  font-variant-numeric: lining-nums tabular-nums !important;
+}
+
+/* View Panel Animation */
+.view-panel { animation: fadeIn 0.2s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
