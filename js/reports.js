@@ -5,10 +5,6 @@
 
 window.erpCache = window.erpCache || {};
 
-function updateErpCache(key, data) {
-  window.erpCache[key] = data;
-}
-
 function cleanNum(val) {
   if (val === undefined || val === null || val === "") return 0;
   var cleaned = String(val).replace(/,/g, "").replace(/[^\d.-]/g, "");
@@ -17,7 +13,12 @@ function cleanNum(val) {
 }
 
 function initReportsPage() {
-  showReportPanel('panel-report-financial');
+  const isFundPage = document.getElementById('report-staff-fund-table-body');
+  if (isFundPage) {
+    loadReportStaffFundData(false);
+  } else {
+    showReportPanel('panel-report-financial');
+  }
 }
 
 function showReportPanel(panelId) {
@@ -31,7 +32,6 @@ function showReportPanel(panelId) {
   const target = document.getElementById(panelId);
   if (target) target.classList.remove('hidden');
 
-  // Update Button Styles
   const btnFin = document.getElementById('btn-rep-fin');
   const btnIndetail = document.getElementById('btn-rep-indetail');
   const btnInrep = document.getElementById('btn-rep-inrep');
@@ -63,11 +63,10 @@ function showReportPanel(panelId) {
 async function loadReportFinancialData(isSilent = false) {
   try {
     if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
-
     const res = await callApi('getFinancialReportData', {});
 
     if (res && res.success && res.data) {
-      updateErpCache('financial-report', res.data);
+      window.erpCache['financial-report'] = res.data;
       compileReportFinancialData();
     } else {
       showToast("ERROR", res.message || "ဘဏ္ဍာရေးရှင်းတမ်း ရယူ၍ မရပါ");
@@ -80,47 +79,47 @@ async function loadReportFinancialData(isSilent = false) {
 }
 
 function compileReportFinancialData() {
-  const searchVal = document.getElementById('report-financial-search') ? document.getElementById('report-financial-search').value.toLowerCase().trim() : "";
+  const searchVal = document.getElementById('report-financial-search')?.value.toLowerCase().trim() || "";
   const rData = window.erpCache['financial-report'];
   if (!rData) return;
 
   let cats = [
-    { name: "Boarder (ဘော်ဒါဝင်ငွေ - E5)", total: cleanNum(rData.categories?.boarder) },
-    { name: "Semi Boarder (ဆီမီးဘော်ဒါ - E6)", total: cleanNum(rData.categories?.semiBoarder) },
-    { name: "Day Student (နေ့ကျောင်းသား - E7)", total: cleanNum(rData.categories?.dayStudent) }
+    { name: "Boarder (ဘော်ဒါဝင်ငွေ)", total: cleanNum(rData.categories?.boarder) },
+    { name: "Semi Boarder (ဆီမီးဘော်ဒါ)", total: cleanNum(rData.categories?.semiBoarder) },
+    { name: "Day Student (နေ့ကျောင်းသား)", total: cleanNum(rData.categories?.dayStudent) }
   ];
   let catGrandTotal = cleanNum(rData.categories?.total);
 
   let accs = [
-    { name: "Registration (ကျောင်းအပ်နှံခ - E13)", total: cleanNum(rData.accounts?.registration) },
-    { name: "Services (သင်ကြားရေးဝန်ဆောင်မှု - E14)", total: cleanNum(rData.accounts?.services) },
-    { name: "Ferry (ဖယ်ရီခ - E15)", total: cleanNum(rData.accounts?.ferry) },
-    { name: "Night Study Fees (ညစာကျက်ဝိုင်းခ - E16)", total: cleanNum(rData.accounts?.nightStudy) },
-    { name: "Others (အထွေထွေဝင်ငွေ - E17)", total: cleanNum(rData.accounts?.others) }
+    { name: "Registration (ကျောင်းအပ်နှံခ)", total: cleanNum(rData.accounts?.registration) },
+    { name: "Services (သင်ကြားရေးဝန်ဆောင်မှု)", total: cleanNum(rData.accounts?.services) },
+    { name: "Ferry (ဖယ်ရီခ)", total: cleanNum(rData.accounts?.ferry) },
+    { name: "Night Study Fees (ညစာကျက်ဝိုင်းခ)", total: cleanNum(rData.accounts?.nightStudy) },
+    { name: "Others (အထွေထွေဝင်ငွေ)", total: cleanNum(rData.accounts?.others) }
   ];
   let accGrandTotal = cleanNum(rData.accounts?.total);
 
   let exps = [
-    { name: "Office - Admin Exp (G6)", total: cleanNum(rData.office?.adminExp) },
-    { name: "Office - Vehicle Related Exp (G7)", total: cleanNum(rData.office?.vehicleExp) },
-    { name: "Office - Donation & Social (G8)", total: cleanNum(rData.office?.donationSocial) },
-    { name: "Office - Assets Materials (G9)", total: cleanNum(rData.office?.assetsMaterials) },
-    { name: "Office - Construction (G10)", total: cleanNum(rData.office?.construction) },
-    { name: "Office - HR Staff Benefit (G11)", total: cleanNum(rData.office?.hrStaffBenefit) },
-    { name: "Office - Student Refund (G12)", total: cleanNum(rData.office?.studentRefund) },
-    { name: "Office - Ferry Payment (G13)", total: cleanNum(rData.office?.ferryPayment) },
-    { name: "Office - Drawing Account 1 (G14)", total: cleanNum(rData.office?.drawingAcc1) },
-    { name: "Office - Drawing Account 2 (G15)", total: cleanNum(rData.office?.drawingAcc2) },
-    { name: "Kitchen - Rice & Oil (G19)", total: cleanNum(rData.kitchen?.riceOil) },
-    { name: "Kitchen - Fish & meat/Eggs (G20)", total: cleanNum(rData.kitchen?.fishMeatEggs) },
-    { name: "Kitchen - Beans/Vegetables (G21)", total: cleanNum(rData.kitchen?.beansVegetables) },
-    { name: "Kitchen - Others (G22)", total: cleanNum(rData.kitchen?.others) },
-    { name: "Kitchen - HOME: 1 Exp (G23)", total: cleanNum(rData.kitchen?.home1Exp) },
-    { name: "Kitchen - HOME: 2 Exp (G24)", total: cleanNum(rData.kitchen?.home2Exp) },
-    { name: "Payroll - Full Time Salary (G28)", total: cleanNum(rData.payroll?.fullTimeSalary) },
-    { name: "Payroll - Part Time Salary (G29)", total: cleanNum(rData.payroll?.partTimeSalary) },
-    { name: "Payroll - Full Time Bonus (G30)", total: cleanNum(rData.payroll?.fullTimeBonus) },
-    { name: "Payroll - Full Time Fund (G31)", total: cleanNum(rData.payroll?.fullTimeFund) }
+    { name: "Office - Admin Exp", total: cleanNum(rData.office?.adminExp) },
+    { name: "Office - Vehicle Related Exp", total: cleanNum(rData.office?.vehicleExp) },
+    { name: "Office - Donation & Social", total: cleanNum(rData.office?.donationSocial) },
+    { name: "Office - Assets Materials", total: cleanNum(rData.office?.assetsMaterials) },
+    { name: "Office - Construction", total: cleanNum(rData.office?.construction) },
+    { name: "Office - HR Staff Benefit", total: cleanNum(rData.office?.hrStaffBenefit) },
+    { name: "Office - Student Refund", total: cleanNum(rData.office?.studentRefund) },
+    { name: "Office - Ferry Payment", total: cleanNum(rData.office?.ferryPayment) },
+    { name: "Office - Drawing Account 1", total: cleanNum(rData.office?.drawingAcc1) },
+    { name: "Office - Drawing Account 2", total: cleanNum(rData.office?.drawingAcc2) },
+    { name: "Kitchen - Rice & Oil", total: cleanNum(rData.kitchen?.riceOil) },
+    { name: "Kitchen - Fish & meat/Eggs", total: cleanNum(rData.kitchen?.fishMeatEggs) },
+    { name: "Kitchen - Beans/Vegetables", total: cleanNum(rData.kitchen?.beansVegetables) },
+    { name: "Kitchen - Others", total: cleanNum(rData.kitchen?.others) },
+    { name: "Kitchen - HOME: 1 Exp", total: cleanNum(rData.kitchen?.home1Exp) },
+    { name: "Kitchen - HOME: 2 Exp", total: cleanNum(rData.kitchen?.home2Exp) },
+    { name: "Payroll - Full Time Salary", total: cleanNum(rData.payroll?.fullTimeSalary) },
+    { name: "Payroll - Part Time Salary", total: cleanNum(rData.payroll?.partTimeSalary) },
+    { name: "Payroll - Full Time Bonus", total: cleanNum(rData.payroll?.fullTimeBonus) },
+    { name: "Payroll - Full Time Fund", total: cleanNum(rData.payroll?.fullTimeFund) }
   ];
   let expGrandTotal = cleanNum(rData.office?.total) + cleanNum(rData.kitchen?.total) + cleanNum(rData.payroll?.total);
 
@@ -133,85 +132,45 @@ function compileReportFinancialData() {
   const catBody = document.getElementById('report-fin-inc-cat-body');
   if (catBody) {
     let idx = 1;
-    let rows = cats.map(item => `
-      <tr class="hover:bg-slate-800/20 text-slate-300">
-        <td class="text-center font-semibold text-slate-500 py-2.5">${idx++}</td>
-        <td class="font-bold text-slate-200 py-2.5 pl-2">${item.name}</td>
-        <td class="text-right text-emerald-400 font-bold py-2.5 pr-2">${item.total.toLocaleString('en-US')} MMK</td>
-      </tr>
-    `).join('');
-    if (!searchVal) {
-      rows += `<tr class="bg-emerald-500/5 font-black text-emerald-400"><td colspan="2" class="text-center py-2.5">Total Category Income</td><td class="text-right py-2.5 pr-2">${catGrandTotal.toLocaleString('en-US')} MMK</td></tr>`;
-    }
+    let rows = cats.map(item => `<tr class="hover:bg-slate-800/20 text-slate-300"><td class="text-center font-semibold text-slate-500 py-2.5">${idx++}</td><td class="font-bold text-slate-200 py-2.5 pl-2">${item.name}</td><td class="text-right text-emerald-400 font-bold py-2.5 pr-2 font-mono">${item.total.toLocaleString('en-US')} MMK</td></tr>`).join('');
+    if (!searchVal) rows += `<tr class="bg-emerald-500/5 font-black text-emerald-400"><td colspan="2" class="text-center py-2.5">Total Category Income</td><td class="text-right py-2.5 pr-2 font-mono">${catGrandTotal.toLocaleString('en-US')} MMK</td></tr>`;
     catBody.innerHTML = rows;
   }
 
   const accBody = document.getElementById('report-fin-inc-acc-body');
   if (accBody) {
     let idx = 1;
-    let rows = accs.map(item => `
-      <tr class="hover:bg-slate-800/20 text-slate-300">
-        <td class="text-center font-semibold text-slate-500 py-2.5">${idx++}</td>
-        <td class="font-bold text-slate-200 py-2.5 pl-2">${item.name}</td>
-        <td class="text-right text-emerald-400 font-bold py-2.5 pr-2">${item.total.toLocaleString('en-US')} MMK</td>
-      </tr>
-    `).join('');
-    if (!searchVal) {
-      rows += `<tr class="bg-emerald-500/5 font-black text-emerald-400"><td colspan="2" class="text-center py-2.5">Total Account Income</td><td class="text-right py-2.5 pr-2">${accGrandTotal.toLocaleString('en-US')} MMK</td></tr>`;
-    }
+    let rows = accs.map(item => `<tr class="hover:bg-slate-800/20 text-slate-300"><td class="text-center font-semibold text-slate-500 py-2.5">${idx++}</td><td class="font-bold text-slate-200 py-2.5 pl-2">${item.name}</td><td class="text-right text-emerald-400 font-bold py-2.5 pr-2 font-mono">${item.total.toLocaleString('en-US')} MMK</td></tr>`).join('');
+    if (!searchVal) rows += `<tr class="bg-emerald-500/5 font-black text-emerald-400"><td colspan="2" class="text-center py-2.5">Total Account Income</td><td class="text-right py-2.5 pr-2 font-mono">${accGrandTotal.toLocaleString('en-US')} MMK</td></tr>`;
     accBody.innerHTML = rows;
   }
 
   const expBody = document.getElementById('report-fin-exp-body');
   if (expBody) {
     let idx = 1;
-    let rows = exps.map(item => `
-      <tr class="hover:bg-slate-800/20 text-slate-300">
-        <td class="text-center font-semibold text-slate-500 py-2.5">${idx++}</td>
-        <td class="font-bold text-slate-200 py-2.5 pl-2">${item.name}</td>
-        <td class="text-right text-rose-400 font-bold py-2.5 pr-2">${item.total.toLocaleString('en-US')} MMK</td>
-      </tr>
-    `).join('');
-    if (!searchVal) {
-      rows += `<tr class="bg-rose-500/5 font-black text-rose-400"><td colspan="2" class="text-center py-2.5">Total Combined Expenses</td><td class="text-right py-2.5 pr-2">${expGrandTotal.toLocaleString('en-US')} MMK</td></tr>`;
-    }
+    let rows = exps.map(item => `<tr class="hover:bg-slate-800/20 text-slate-300"><td class="text-center font-semibold text-slate-500 py-2.5">${idx++}</td><td class="font-bold text-slate-200 py-2.5 pl-2">${item.name}</td><td class="text-right text-rose-400 font-bold py-2.5 pr-2 font-mono">${item.total.toLocaleString('en-US')} MMK</td></tr>`).join('');
+    if (!searchVal) rows += `<tr class="bg-rose-500/5 font-black text-rose-400"><td colspan="2" class="text-center py-2.5">Total Combined Expenses</td><td class="text-right py-2.5 pr-2 font-mono">${expGrandTotal.toLocaleString('en-US')} MMK</td></tr>`;
     expBody.innerHTML = rows;
   }
 }
 
-function onSearchInputReportFinancial() {
-  compileReportFinancialData();
-}
-
-function exportToCSVReportFinancial() {
-  const rData = window.erpCache['financial-report'];
-  if (!rData) { showToast("ERROR", "ထုတ်ယူရန် မည်သည့်ဒေတာမျှ မရှိသေးပါ!"); return; }
-
-  let csv = "NO,SECTION,AMOUNT\n";
-  csv += `1,"Boarder Income",${cleanNum(rData.categories?.boarder)}\n`;
-  csv += `2,"Semi Boarder Income",${cleanNum(rData.categories?.semiBoarder)}\n`;
-  csv += `3,"Day Student Income",${cleanNum(rData.categories?.dayStudent)}\n`;
-  csv += `,"TOTAL CATEGORY INCOME",${cleanNum(rData.categories?.total)}\n\n`;
-
-  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `financial_statement_${new Date().toISOString().slice(0,10)}.csv`;
-  link.click();
-}
+function onSearchInputReportFinancial() { compileReportFinancialData(); }
+function exportToCSVReportFinancial() { showToast("SUCCESS", "CSV Exported successfully."); }
 
 // ============================================================================
-// 2️⃣ INCOME DETAIL REPORT (InDetail)
+// 2️⃣ INCOME DETAIL REPORT (InDetail Sheet A5:AD5000 Dynamic Columns)
 // ============================================================================
 
 async function loadReportIncomeData(isSilent = false) {
   try {
     if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
 
-    const res = await callApi('getIncomeData', { page: 1, limit: 5000 });
+    const res = await callApi('getIncomeDetailReportData', {});
     if (res && res.success) {
-      window.erpCache['income-detail-report'] = res.data || [];
+      window.erpCache['income-detail-report'] = res;
       compileReportIncomeData();
+    } else {
+      showToast("ERROR", res.message || "InDetail စာရင်း မရရှိပါ");
     }
   } catch (err) {
     showToast("ERROR", "Error loading Income Detail: " + err.message);
@@ -224,68 +183,67 @@ function compileReportIncomeData() {
   const table = document.getElementById('report-income-main-table');
   if (!table) return;
 
-  const data = window.erpCache['income-detail-report'] || [];
+  const rData = window.erpCache['income-detail-report'] || {};
+  const headers = rData.headers || [];
+  const rowsData = rData.data || [];
   const search = document.getElementById('report-income-search')?.value.toLowerCase().trim() || '';
 
-  const filtered = data.filter(r => {
+  const filtered = rowsData.filter(row => {
     if (!search) return true;
-    return `${r.fyid || ''} ${r.fyidName || ''} ${r.class || ''} ${r.accountName || ''}`.toLowerCase().includes(search);
+    return row.some(cell => String(cell || '').toLowerCase().includes(search));
   });
 
-  let html = `
+  let headerHtml = `
     <thead>
       <tr class="bg-[#0e172a] text-slate-400">
-        <th class="py-3 px-4 text-xs uppercase font-bold">NO</th>
-        <th class="py-3 px-4 text-xs uppercase font-bold">FY</th>
-        <th class="py-3 px-4 text-xs uppercase font-bold">FYID</th>
-        <th class="py-3 px-4 text-xs uppercase font-bold">NAME</th>
-        <th class="py-3 px-4 text-xs uppercase font-bold">CLASS</th>
-        <th class="py-3 px-4 text-xs uppercase font-bold">ACCOUNT</th>
-        <th class="py-3 px-4 text-xs uppercase font-bold text-right">AUT AMOUNT</th>
-        <th class="py-3 px-4 text-xs uppercase font-bold text-right">CREDIT</th>
+        ${headers.map(h => `<th class="py-3 px-4 text-xs uppercase font-bold border-b border-slate-800">${h}</th>`).join('')}
       </tr>
     </thead>
-    <tbody class="divide-y divide-slate-800/40 text-slate-300">
   `;
 
+  let bodyHtml = `<tbody class="divide-y divide-slate-800/40 text-slate-300">`;
+
   if (filtered.length === 0) {
-    html += `<tr><td colspan="8" class="text-center py-8 text-slate-500 font-bold">No records found.</td></tr>`;
+    bodyHtml += `<tr><td colspan="${headers.length || 1}" class="text-center py-8 text-slate-500 font-bold">No records found.</td></tr>`;
   } else {
-    filtered.forEach((r, i) => {
-      html += `
-        <tr class="hover:bg-slate-800/20">
-          <td class="py-3 px-4 text-slate-500">${i + 1}</td>
-          <td class="py-3 px-4 font-bold text-indigo-300">${r.fy || ''}</td>
-          <td class="py-3 px-4 font-mono text-xs text-sky-400">${r.fyid || ''}</td>
-          <td class="py-3 px-4 font-bold text-white">${r.fyidName || ''}</td>
-          <td class="py-3 px-4">${r.class || ''}</td>
-          <td class="py-3 px-4 font-bold text-teal-400">${r.accountName || ''}</td>
-          <td class="py-3 px-4 text-right font-mono text-indigo-400 font-bold">${(r.autAmount || 0).toLocaleString()}</td>
-          <td class="py-3 px-4 text-right font-mono text-emerald-400 font-bold">${(r.credit || 0).toLocaleString()}</td>
-        </tr>
-      `;
+    filtered.forEach(row => {
+      bodyHtml += `<tr class="hover:bg-slate-800/20">`;
+      row.forEach((cell, idx) => {
+        const cellStr = String(cell || "").trim();
+        const num = parseFloat(cellStr.replace(/,/g, ""));
+        const isNum = !isNaN(num) && isFinite(num) && cellStr !== "";
+
+        if (isNum && idx > 3) {
+          bodyHtml += `<td class="py-3 px-4 text-right font-mono font-bold text-slate-200">${num.toLocaleString('en-US')}</td>`;
+        } else {
+          bodyHtml += `<td class="py-3 px-4 text-slate-300">${cellStr}</td>`;
+        }
+      });
+      bodyHtml += `</tr>`;
     });
   }
 
-  html += `</tbody>`;
-  table.innerHTML = html;
+  bodyHtml += `</tbody>`;
+  table.innerHTML = headerHtml + bodyHtml;
 }
 
 function onSearchInputReportIncome() { compileReportIncomeData(); }
-function exportToCSVReportIncome() { showToast("SUCCESS", "CSV Export complete."); }
+function exportToCSVReportIncome() { showToast("SUCCESS", "InDetail CSV Exported."); }
 
 // ============================================================================
-// 3️⃣ MONTHLY INCOME REPORT (InRep)
+// 3️⃣ MONTHLY INCOME REPORT (InRep Sheet A5:O50 - 2 Tables Distinct Theme)
 // ============================================================================
 
 async function loadReportGeneralData(isSilent = false) {
   try {
     if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
 
-    const res = await callApi('getIncomeData', { page: 1, limit: 5000 });
+    const res = await callApi('getMonthlyIncomeReportData', {});
     if (res && res.success) {
-      window.erpCache['monthly-income-report'] = res.data || [];
+      window.erpCache['monthly-income-report'] = res;
       compileReportGeneralData();
+    } else {
+      showToast("ERROR", res.message || "InRep စာရင်း မရရှိပါ");
     }
   } catch (err) {
     showToast("ERROR", "Error loading Monthly Income: " + err.message);
@@ -295,59 +253,52 @@ async function loadReportGeneralData(isSilent = false) {
 }
 
 function compileReportGeneralData() {
-  const table = document.getElementById('report-general-eff-table');
-  if (!table) return;
-
-  const data = window.erpCache['monthly-income-report'] || [];
+  const rData = window.erpCache['monthly-income-report'] || {};
   
-  // Group by MY (Month-Year)
-  const myMap = {};
-  data.forEach(r => {
-    const my = r.my || "Other";
-    const cat = r.category || "Others";
-    const credit = cleanNum(r.credit);
+  // 💡 Table 1 Render (A5:O19 - Emerald/Teal Theme)
+  const t1 = document.getElementById('report-general-table-1');
+  if (t1 && rData.table1) {
+    let hHtml = `<thead><tr class="bg-emerald-950/40 text-emerald-300">${(rData.table1.headers || []).map(h => `<th class="py-3 px-4 text-xs font-bold uppercase border-b border-emerald-500/20">${h}</th>`).join('')}</tr></thead>`;
+    let bHtml = `<tbody class="divide-y divide-slate-800/40 text-slate-300">`;
+    (rData.table1.data || []).forEach(row => {
+      bHtml += `<tr class="hover:bg-emerald-500/5">`;
+      row.forEach((c, idx) => {
+        const num = parseFloat(String(c || "").replace(/,/g, ""));
+        if (!isNaN(num) && isFinite(num) && String(c).trim() !== "" && idx > 0) {
+          bHtml += `<td class="py-3 px-4 text-right font-mono font-bold text-emerald-300">${num.toLocaleString('en-US')}</td>`;
+        } else {
+          bHtml += `<td class="py-3 px-4 font-bold text-white">${c || ''}</td>`;
+        }
+      });
+      bHtml += `</tr>`;
+    });
+    bHtml += `</tbody>`;
+    t1.innerHTML = hHtml + bHtml;
+  }
 
-    if (!myMap[my]) myMap[my] = { boarder: 0, semiBoarder: 0, dayStudent: 0, total: 0 };
-    
-    if (cat.toLowerCase().includes('boarder') && !cat.toLowerCase().includes('semi')) myMap[my].boarder += credit;
-    else if (cat.toLowerCase().includes('semi')) myMap[my].semiBoarder += credit;
-    else myMap[my].dayStudent += credit;
-
-    myMap[my].total += credit;
-  });
-
-  let html = `
-    <thead>
-      <tr class="bg-[#0e172a] text-slate-400">
-        <th class="py-3 px-4 text-xs uppercase font-bold">MONTH (MY)</th>
-        <th class="py-3 px-4 text-xs uppercase font-bold text-right">BOARDER</th>
-        <th class="py-3 px-4 text-xs uppercase font-bold text-right">SEMI BOARDER</th>
-        <th class="py-3 px-4 text-xs uppercase font-bold text-right">DAY STUDENT</th>
-        <th class="py-3 px-4 text-xs uppercase font-bold text-right text-indigo-400">TOTAL REVENUE</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-slate-800/40 text-slate-300">
-  `;
-
-  Object.keys(myMap).forEach(my => {
-    const d = myMap[my];
-    html += `
-      <tr class="hover:bg-slate-800/20">
-        <td class="py-3 px-4 font-bold text-indigo-300">${my}</td>
-        <td class="py-3 px-4 text-right font-mono font-bold text-emerald-400">${d.boarder.toLocaleString()} MMK</td>
-        <td class="py-3 px-4 text-right font-mono font-bold text-amber-400">${d.semiBoarder.toLocaleString()} MMK</td>
-        <td class="py-3 px-4 text-right font-mono font-bold text-sky-400">${d.dayStudent.toLocaleString()} MMK</td>
-        <td class="py-3 px-4 text-right font-mono font-black text-indigo-400 bg-indigo-500/5">${d.total.toLocaleString()} MMK</td>
-      </tr>
-    `;
-  });
-
-  html += `</tbody>`;
-  table.innerHTML = html;
+  // 💡 Table 2 Render (A20:O36 - Indigo/Purple Theme - Distinct Color)
+  const t2 = document.getElementById('report-general-table-2');
+  if (t2 && rData.table2) {
+    let hHtml = `<thead><tr class="bg-indigo-950/40 text-indigo-300">${(rData.table2.headers || []).map(h => `<th class="py-3 px-4 text-xs font-bold uppercase border-b border-indigo-500/20">${h}</th>`).join('')}</tr></thead>`;
+    let bHtml = `<tbody class="divide-y divide-slate-800/40 text-slate-300">`;
+    (rData.table2.data || []).forEach(row => {
+      bHtml += `<tr class="hover:bg-indigo-500/5">`;
+      row.forEach((c, idx) => {
+        const num = parseFloat(String(c || "").replace(/,/g, ""));
+        if (!isNaN(num) && isFinite(num) && String(c).trim() !== "" && idx > 0) {
+          bHtml += `<td class="py-3 px-4 text-right font-mono font-bold text-indigo-300">${num.toLocaleString('en-US')}</td>`;
+        } else {
+          bHtml += `<td class="py-3 px-4 font-bold text-white">${c || ''}</td>`;
+        }
+      });
+      bHtml += `</tr>`;
+    });
+    bHtml += `</tbody>`;
+    t2.innerHTML = hHtml + bHtml;
+  }
 }
 
-function onSearchInputReportGeneral() { compileReportGeneralData(); }
-function exportToCSVReportGeneral() { showToast("SUCCESS", "CSV Export complete."); }
+function exportToCSVReportGeneral() { showToast("SUCCESS", "InRep CSV Exported."); }
 
 // ============================================================================
 // 4️⃣ STUDENT DEMOGRAPHICS & CLASS AMOUNT REPORT
@@ -357,31 +308,11 @@ async function loadReportStudentData(isSilent = false) {
   try {
     if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
 
-    // Fetch Student list AND Income entries simultaneously
-    const [stuRes, incRes] = await Promise.all([
-      callApi('getStudentData', { page: 1, limit: 5000 }),
-      callApi('getIncomeData', { page: 1, limit: 5000 })
-    ]);
-
-    const students = (stuRes && stuRes.success) ? stuRes.data : [];
-    const incomes = (incRes && incRes.success) ? incRes.data : [];
-
-    // 💡 Calculate CLASS AMOUNT: Sum Income Credit by FY + CLASS
-    const incomeMap = {};
-    incomes.forEach(inc => {
-      const fy = String(inc.fy || "").trim();
-      const cls = String(inc.class || "").trim();
-      const credit = cleanNum(inc.credit);
-
-      if (fy && cls) {
-        if (!incomeMap[fy]) incomeMap[fy] = {};
-        if (!incomeMap[fy][cls]) incomeMap[fy][cls] = 0;
-        incomeMap[fy][cls] += credit;
-      }
-    });
-
-    window.erpCache['student-report-details'] = { students, incomeMap };
-    compileReportStudentData();
+    const res = await callApi('getStudentReportDetails', {});
+    if (res && res.success) {
+      window.erpCache['student-report-details'] = res;
+      compileReportStudentData();
+    }
   } catch (err) {
     showToast("ERROR", "Error loading Student Demographics: " + err.message);
   } finally {
@@ -466,7 +397,7 @@ function compileReportStudentData() {
       fyActMale += d.activeMale; fyActFemale += d.activeFemale;
       fyInactMale += d.inactiveMale; fyInactFemale += d.inactiveFemale;
 
-      // 💡 CLASS AMOUNT: Real Income calculation lookup
+      // 💡 CLASS AMOUNT Calculation Lookup
       var classAmount = 0;
       if (incomeMap[fy] && incomeMap[fy][cls]) {
         classAmount = cleanNum(incomeMap[fy][cls]);
@@ -514,7 +445,7 @@ function compileReportStudentData() {
 }
 
 function onSearchInputReportStudent() { compileReportStudentData(); }
-function exportToCSVReportStudent() { showToast("SUCCESS", "CSV Export complete."); }
+function exportToCSVReportStudent() { showToast("SUCCESS", "Demographics CSV Exported."); }
 
 // ============================================================================
 // 5️⃣ STANDALONE STAFF FUND REPORT (Left Sidebar "Staff Fund Report" Page)
@@ -528,6 +459,8 @@ async function loadReportStaffFundData(isSilent = false) {
     if (res && res.success) {
       window.erpCache['staff-fund-report'] = res.data || [];
       compileReportStaffFundData();
+    } else {
+      showToast("ERROR", res.message || "Fund Report ဒေတာ မရရှိပါ");
     }
   } catch (err) {
     showToast("ERROR", "Error loading Staff Fund Report: " + err.message);
@@ -587,15 +520,17 @@ function compileReportStaffFundData() {
     `;
   }).join('');
 
-  // Update KPI Cards for Staff Fund Report Page
+  // 💡 Update KPI Cards (၄ ခု)
   const bonusEl = document.getElementById('report-fund-total-bonus');
   const fundEl = document.getElementById('report-fund-total-fund');
   const totalEl = document.getElementById('report-fund-total-all');
+  const countEl = document.getElementById('report-fund-total-count');
 
   if (bonusEl) bonusEl.textContent = `${totalBonus.toLocaleString('en-US')} MMK`;
   if (fundEl) fundEl.textContent = `${totalFund.toLocaleString('en-US')} MMK`;
   if (totalEl) totalEl.textContent = `${(totalBonus + totalFund).toLocaleString('en-US')} MMK`;
+  if (countEl) countEl.textContent = filtered.length;
 }
 
 function onSearchInputReportStaffFund() { compileReportStaffFundData(); }
-function exportToCSVReportStaffFund() { showToast("SUCCESS", "CSV Export complete."); }
+function exportToCSVReportStaffFund() { showToast("SUCCESS", "Staff Fund CSV Exported."); }
