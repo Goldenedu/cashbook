@@ -3,31 +3,6 @@
  * File: js/staff.js
  */
 
-// 💡 Loading & Toast Safe Guards
-if (typeof window.showLoading !== 'function') {
-  window.showLoading = function(show) {
-    const el = document.getElementById('loading-overlay');
-    if (el) el.classList.toggle('hidden', !show);
-  };
-}
-
-if (typeof window.showToast !== 'function') {
-  window.showToast = function(msg, type = 'info') {
-    const container = document.getElementById('toast-container');
-    if (container) {
-      const toast = document.createElement('div');
-      toast.className = `p-3 rounded-lg text-xs font-bold text-white shadow-xl ${
-        type === 'error' ? 'bg-rose-600' : type === 'success' ? 'bg-emerald-600' : 'bg-indigo-600'
-      }`;
-      toast.textContent = msg;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    } else {
-      console.log(`[Toast - ${type}]: ${msg}`);
-    }
-  };
-}
-
 let gStaffCategory = 'Full Time'; // 'Full Time' or 'Part Time'
 let gStaffPage = 1;
 let gStaffLimit = 30;
@@ -113,11 +88,10 @@ function renderStaffTableHead() {
 
 async function loadStaffData(useCache = false) {
   try {
-    showLoading(true);
+    if (typeof toggleLoading === 'function') toggleLoading(true);
     renderStaffTableHead();
 
-    const res = await callApi({
-      action: 'getStaffData',
+    const res = await callApi('getStaffData', {
       category: gStaffCategory,
       page: gStaffPage,
       limit: gStaffLimit,
@@ -130,12 +104,12 @@ async function loadStaffData(useCache = false) {
       renderStaffTable(gStaffData);
       renderStaffPagination(res.totalRows || 0);
     } else {
-      showToast(res.message || "Staff ဒေတာ ရယူ၍ မရပါ", "error");
+      showToast("ERROR", res.message || "Staff ဒေတာ ရယူ၍ မရပါ");
     }
   } catch (err) {
-    showToast("Error loading staff data: " + err.message, "error");
+    showToast("ERROR", "Error loading staff data: " + err.message);
   } finally {
-    showLoading(false);
+    if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
@@ -272,7 +246,7 @@ function onSearchInputStaff() {
 
 async function populateDropdownsStaff() {
   try {
-    const res = await callApi({ action: 'getPayrollSettings' });
+    const res = await callApi('getPayrollSettings', {});
     if (res && res.success && res.data) {
       gPayrollSettings = res.data;
     }
@@ -421,8 +395,9 @@ async function saveStaffForm(event) {
   event.preventDefault();
 
   const uid = document.getElementById('staff-uniqueId')?.value || '';
+  const actionName = uid ? 'updateStaffEntry' : 'saveStaffEntry';
+
   const payload = {
-    action: uid ? 'updateStaffEntry' : 'saveStaffEntry',
     category: gStaffCategory,
     uniqueId: uid,
     joinDate: document.getElementById('staff-joindate')?.value || '',
@@ -442,19 +417,19 @@ async function saveStaffForm(event) {
   };
 
   try {
-    showLoading(true);
-    const res = await callApi(payload);
+    if (typeof toggleLoading === 'function') toggleLoading(true);
+    const res = await callApi(actionName, payload);
     if (res && res.success) {
-      showToast("ဝန်ထမ်းအချက်အလက် သိမ်းဆည်းပြီးပါပြီ", "success");
+      showToast("SUCCESS", "ဝန်ထမ်းအချက်အလက် သိမ်းဆည်းပြီးပါပြီ");
       closeStaffModal();
       loadStaffData(false);
     } else {
-      showToast(res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ", "error");
+      showToast("ERROR", res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ");
     }
   } catch (err) {
-    showToast("Save Error: " + err.message, "error");
+    showToast("ERROR", "Save Error: " + err.message);
   } finally {
-    showLoading(false);
+    if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
@@ -462,29 +437,28 @@ async function deleteStaffEntry(uniqueId) {
   if (!confirm("ဤဝန်ထမ်းမှတ်တမ်းကို ဖျက်ရန် သေချာပါသလား?")) return;
 
   try {
-    showLoading(true);
-    const res = await callApi({
-      action: 'deleteStaffEntry',
+    if (typeof toggleLoading === 'function') toggleLoading(true);
+    const res = await callApi('deleteStaffEntry', {
       uniqueId: uniqueId,
       category: gStaffCategory
     });
 
     if (res && res.success) {
-      showToast("ဝန်ထမ်းမှတ်တမ်း ဖျက်ပြီးပါပြီ", "success");
+      showToast("SUCCESS", "ဝန်ထမ်းမှတ်တမ်း ဖျက်ပြီးပါပြီ");
       loadStaffData(false);
     } else {
-      showToast(res.message || "ဖျက်ဆီးမှု မအောင်မြင်ပါ", "error");
+      showToast("ERROR", res.message || "ဖျက်ဆီးမှု မအောင်မြင်ပါ");
     }
   } catch (err) {
-    showToast("Delete Error: " + err.message, "error");
+    showToast("ERROR", "Delete Error: " + err.message);
   } finally {
-    showLoading(false);
+    if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
 function exportToCSVStaff() {
   if (!gStaffData || gStaffData.length === 0) {
-    showToast("Export ပြုလုပ်ရန် ဒေတာ မရှိပါ", "warning");
+    showToast("ERROR", "Export ပြုလုပ်ရန် ဒေတာ မရှိပါ");
     return;
   }
   let csv = "NO,JOIN_DATE,STAFF_IDNAME,POSITION,PHONE,STATUS\n";
