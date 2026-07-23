@@ -1,9 +1,34 @@
 /**
- * GOLDEN ERP SYSTEM - HR MODULE
+ * GOLDEN ERP SYSTEM - HR PAYROLL MODULE
  * File: js/hr.js
  */
 
-let gHrSubTab = 'payroll'; // 'payroll', 'fulltime', 'parttime'
+// 💡 Loading & Toast Safe Guards
+if (typeof window.showLoading !== 'function') {
+  window.showLoading = function(show) {
+    const el = document.getElementById('loading-overlay');
+    if (el) el.classList.toggle('hidden', !show);
+  };
+}
+
+if (typeof window.showToast !== 'function') {
+  window.showToast = function(msg, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (container) {
+      const toast = document.createElement('div');
+      toast.className = `p-3 rounded-lg text-xs font-bold text-white shadow-xl ${
+        type === 'error' ? 'bg-rose-600' : type === 'success' ? 'bg-emerald-600' : 'bg-indigo-600'
+      }`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    } else {
+      console.log(`[Toast - ${type}]: ${msg}`);
+    }
+  };
+}
+
+let gHrSubTab = 'payroll';
 let gPayrollPage = 1;
 let gPayrollLimit = 30;
 let gPayrollSearch = '';
@@ -23,7 +48,6 @@ function switchHrSubTab(subTab) {
   const secPayroll = document.getElementById('hr-payroll-section');
   const secStaff = document.getElementById('hr-staff-section');
 
-  // Reset Button Styles
   [btnPayroll, btnFulltime, btnParttime].forEach(btn => {
     if (btn) {
       btn.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2";
@@ -45,7 +69,6 @@ function switchHrSubTab(subTab) {
     if (secPayroll) secPayroll.classList.add('hidden');
     if (secStaff) secStaff.classList.remove('hidden');
 
-    // Delegate to staff module
     if (typeof switchStaffCategory === 'function') {
       switchStaffCategory(subTab === 'fulltime' ? 'Full Time' : 'Part Time');
     }
@@ -211,7 +234,6 @@ async function onStaffIdChangePayroll() {
 
         if (creditInput) creditInput.value = autoCredit;
 
-        // Auto Description
         const d = new Date(dateVal || Date.now());
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const myStr = `${months[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
