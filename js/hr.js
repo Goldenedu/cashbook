@@ -1,281 +1,199 @@
-/**
- * GOLDEN ERP SYSTEM - HR PAYROLL MODULE
- * File: js/hr.js
- */
+<!-- views/hr.html -->
+<div class="space-y-5">
 
-let gHrSubTab = 'payroll';
-let gPayrollPage = 1;
-let gPayrollLimit = 30;
-let gPayrollSearch = '';
-let gPayrollData = [];
+  <!-- ၁။ Sub-Tabs Navigation Bar -->
+  <div class="flex items-center gap-2 p-1.5 bg-[#0c1322] border border-slate-800 rounded-xl w-fit">
+    <button onclick="switchHrSubTab('payroll')" id="hr-tab-payroll" class="hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-teal-600 text-white flex items-center gap-2">
+      <i class="fa-solid fa-money-check-dollar"></i> HR Payroll Exp Book
+    </button>
+    <button onclick="switchHrSubTab('fulltime')" id="hr-tab-fulltime" class="hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
+      <i class="fa-solid fa-user-check text-blue-400"></i> Full Time Staff List (FID)
+    </button>
+    <button onclick="switchHrSubTab('parttime')" id="hr-tab-parttime" class="hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
+      <i class="fa-solid fa-user-clock text-indigo-400"></i> Part Time Staff List (PID)
+    </button>
+  </div>
 
-function initHrPage() {
-  switchHrSubTab('payroll');
-}
+  <!-- SECTION A: HR PAYROLL EXP BOOK SECTION -->
+  <div id="hr-payroll-section" class="space-y-5">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="stats-card p-5 rounded-xl flex items-start gap-4">
+        <div class="p-3.5 rounded-lg bg-emerald-500/10 text-emerald-400"><i class="fa-solid fa-arrow-trend-up text-xl"></i></div>
+        <div><p class="text-[10px] uppercase font-bold text-slate-500">Total Income</p><h3 id="hr-pay-total-income" class="text-base font-extrabold text-white mt-1">0 MMK</h3></div>
+      </div>
+      <div class="stats-card p-5 rounded-xl flex items-start gap-4">
+        <div class="p-3.5 rounded-lg bg-rose-500/10 text-rose-400"><i class="fa-solid fa-arrow-trend-down text-xl"></i></div>
+        <div><p class="text-[10px] uppercase font-bold text-slate-500">Total Expense</p><h3 id="hr-pay-total-expense" class="text-base font-extrabold text-white mt-1">0 MMK</h3></div>
+      </div>
+      <div class="stats-card p-5 rounded-xl flex items-start gap-4">
+        <div class="p-3.5 rounded-lg bg-indigo-500/10 text-indigo-400"><i class="fa-solid fa-scale-balanced text-xl"></i></div>
+        <div><p class="text-[10px] uppercase font-bold text-slate-500">Balances</p><h3 id="hr-pay-balance" class="text-base font-extrabold text-white mt-1">0 MMK</h3></div>
+      </div>
+      <div class="stats-card p-5 rounded-xl flex items-start gap-4">
+        <div class="p-3.5 rounded-lg bg-sky-500/10 text-sky-400"><i class="fa-solid fa-list-check text-xl"></i></div>
+        <div><p class="text-[10px] uppercase font-bold text-slate-500">Total Entries</p><h3 id="hr-pay-entries-count" class="text-base font-extrabold text-white mt-1">0</h3></div>
+      </div>
+    </div>
 
-function switchHrSubTab(subTab) {
-  gHrSubTab = subTab;
+    <div class="flex flex-col md:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
+      <div class="relative w-full md:w-[450px]">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+        <input type="text" id="hr-payroll-search" oninput="onSearchInputHrPayroll()" placeholder="Search staff name, description, VR NO..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
+      </div>
 
-  const btnPayroll = document.getElementById('hr-tab-payroll');
-  const btnFulltime = document.getElementById('hr-tab-fulltime');
-  const btnParttime = document.getElementById('hr-tab-parttime');
+      <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
+        <button onclick="loadHrPayrollData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-rotate text-xs"></i> Refresh</button>
+        <button onclick="exportToCSVHrPayroll()" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-file-export text-xs"></i> Export CSV</button>
+        <button onclick="sendMonthlyPayslipsToStaff()" class="p-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-lg shadow-teal-600/10"><i class="fa-solid fa-paper-plane text-xs"></i> Send Payslips</button>
+        <button onclick="openAddModalHrPayroll()" class="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-black flex items-center gap-1.5 shadow-lg shadow-indigo-600/10 transition-all"><i class="fa-solid fa-plus text-xs"></i> Add Payroll Entry</button>
+      </div>
+    </div>
 
-  const secPayroll = document.getElementById('hr-payroll-section');
-  const secStaff = document.getElementById('hr-staff-section');
+    <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
+      <table class="w-full text-left border-collapse min-w-[1600px]">
+        <thead>
+          <tr class="bg-[#0e172a]">
+            <th scope="col" class="w-12 text-center text-slate-400 text-xs py-3">NO</th>
+            <th scope="col" class="w-28 text-slate-400 text-xs py-3">DATE</th>
+            <th scope="col" class="w-40 text-slate-400 text-xs py-3">CATEGORY</th>
+            <th scope="col" class="min-w-[280px] text-slate-400 text-xs py-3">DESCRIPTION</th>
+            <th scope="col" class="w-24 text-slate-400 text-xs py-3">METHOD</th>
+            <th scope="col" class="w-32 text-right text-emerald-400 text-xs py-3">DEBIT</th>
+            <th scope="col" class="w-32 text-right text-rose-400 text-xs py-3">CREDIT</th>
+            <th scope="col" class="w-36 text-right text-slate-400 text-xs py-3">BALANCES</th>
+            <th scope="col" class="w-32 text-right text-emerald-400 text-xs py-3">UNPAID BONUS</th>
+            <th scope="col" class="w-32 text-right text-teal-400 text-xs py-3">UNPAID FUND</th>
+            <th scope="col" class="w-28 text-center text-slate-400 text-xs py-3">SEND MAIL</th>
+            <th scope="col" class="w-36 text-slate-400 text-xs py-3">VR NO</th>
+            <th scope="col" class="w-24 text-slate-400 text-xs py-3">MY</th>
+            <th scope="col" class="w-28 text-slate-400 text-xs py-3">FY</th>
+            <th scope="col" class="w-24 text-center text-slate-400 text-xs py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">ACTION</th>
+          </tr>
+        </thead>
+        <tbody id="hr-payroll-table-body" class="divide-y divide-slate-800/40 text-slate-300"></tbody>
+      </table>
+    </div>
 
-  [btnPayroll, btnFulltime, btnParttime].forEach(btn => {
-    if (btn) {
-      btn.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2";
-    }
-  });
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-[#0c1322] border border-slate-800 px-6 py-3.5 rounded-xl">
+      <div id="hr-pay-pagination-info" class="text-xs font-semibold text-slate-400 tracking-wide">Showing entries...</div>
+      <div class="flex items-center gap-2">
+        <button onclick="changePageHrPayroll(-1)" id="hr-pay-btn-prev" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold transition-all text-xs"><i class="fa-solid fa-chevron-left text-[10px]"></i> Previous</button>
+        <button onclick="changePageHrPayroll(1)" id="hr-pay-btn-next" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold transition-all text-xs">Next <i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+      </div>
+    </div>
+  </div>
 
-  if (subTab === 'payroll') {
-    if (btnPayroll) btnPayroll.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-teal-600 text-white flex items-center gap-2";
-    if (secPayroll) secPayroll.classList.remove('hidden');
-    if (secStaff) secStaff.classList.add('hidden');
-    loadHrPayrollData(false);
-  } else {
-    if (subTab === 'fulltime' && btnFulltime) {
-      btnFulltime.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white flex items-center gap-2";
-    } else if (subTab === 'parttime' && btnParttime) {
-      btnParttime.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white flex items-center gap-2";
-    }
-    
-    if (secPayroll) secPayroll.classList.add('hidden');
-    if (secStaff) secStaff.classList.remove('hidden');
+  <!-- SECTION B: STAFF LIST SECTION -->
+  <div id="hr-staff-section" class="space-y-5 hidden">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="staff-kpi-grid"></div>
 
-    if (typeof switchStaffCategory === 'function') {
-      switchStaffCategory(subTab === 'fulltime' ? 'Full Time' : 'Part Time');
-    }
-  }
-}
+    <div class="flex flex-col md:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
+      <div class="relative w-full md:w-[450px]">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+        <input type="text" id="staff-search-input" oninput="onSearchInputStaff()" placeholder="Search staff name, position, phone..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
+      </div>
 
-async function loadHrPayrollData(useCache = false) {
-  try {
-    if (typeof toggleLoading === 'function') toggleLoading(true);
-    const res = await callApi('getExpenseData', {
-      bookName: 'HR Payroll Exp Book',
-      page: gPayrollPage,
-      limit: gPayrollLimit,
-      searchVal: gPayrollSearch
-    });
+      <div class="flex items-center gap-2.5 w-full md:w-auto justify-end flex-wrap">
+        <button onclick="loadStaffData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-rotate text-xs"></i> Refresh</button>
+        <button onclick="openGradeModal()" id="btn-edit-grade-hr" class="p-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-lg shadow-amber-600/10"><i class="fa-solid fa-sliders text-xs"></i> Edit Salary Grade</button>
+        <button onclick="exportToCSVStaff()" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-file-export text-xs"></i> Export CSV</button>
+        <button onclick="openAddModalStaff()" class="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-black flex items-center gap-1.5 shadow-lg shadow-indigo-600/10 transition-all"><i class="fa-solid fa-plus text-xs"></i> Add Staff Record</button>
+      </div>
+    </div>
 
-    if (res && res.success) {
-      gPayrollData = res.data || [];
-      renderHrPayrollCards(res.stats || {});
-      renderHrPayrollTable(gPayrollData);
-      renderHrPayrollPagination(res.totalRows || 0);
-    } else {
-      showToast("ERROR", res.message || "Payroll ဒေတာ ရယူ၍ မရပါ");
-    }
-  } catch (err) {
-    showToast("ERROR", "Error loading Payroll data: " + err.message);
-  } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
-  }
-}
+    <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
+      <table class="w-full text-left border-collapse min-w-[1800px]">
+        <thead id="staff-table-head"></thead>
+        <tbody id="staff-table-body" class="divide-y divide-slate-800/40 text-slate-300"></tbody>
+      </table>
+    </div>
 
-function renderHrPayrollCards(stats) {
-  const inc = document.getElementById('hr-pay-total-income');
-  const exp = document.getElementById('hr-pay-total-expense');
-  const bal = document.getElementById('hr-pay-balance');
-  const cnt = document.getElementById('hr-pay-entries-count');
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-[#0c1322] border border-slate-800 px-6 py-3.5 rounded-xl">
+      <div id="staff-pagination-info" class="text-xs font-semibold text-slate-400 tracking-wide">Showing entries...</div>
+      <div class="flex items-center gap-2">
+        <button onclick="changePageStaff(-1)" id="staff-btn-prev" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold transition-all text-xs"><i class="fa-solid fa-chevron-left text-[10px]"></i> Previous</button>
+        <button onclick="changePageStaff(1)" id="staff-btn-next" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold transition-all text-xs">Next <i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+      </div>
+    </div>
+  </div>
 
-  if (inc) inc.textContent = `${(stats.totalIncome || 0).toLocaleString()} MMK`;
-  if (exp) exp.textContent = `${(stats.totalExpense || 0).toLocaleString()} MMK`;
-  if (bal) bal.textContent = `${(stats.balance || 0).toLocaleString()} MMK`;
-  if (cnt) cnt.textContent = (gPayrollData ? gPayrollData.length : 0);
-}
+</div>
 
-function renderHrPayrollTable(data) {
-  const tbody = document.getElementById('hr-payroll-table-body');
-  if (!tbody) return;
+<!-- ADD / EDIT HR PAYROLL MODAL -->
+<div id="hr-payroll-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+  <div class="bg-[#0c1322] border border-slate-800 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+    <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-[#0e172a] shrink-0">
+      <h3 id="hr-payroll-form-title" class="text-sm font-black text-white uppercase tracking-wider">Add HR Payroll Entry</h3>
+      <button onclick="closeHrPayrollModal()" class="text-slate-500 hover:text-white transition"><i class="fa-solid fa-xmark text-sm"></i></button>
+    </div>
 
-  if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="15" class="text-center py-8 text-slate-500 font-bold">Payroll စာရင်း မရှိသေးပါ</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = data.map((item, idx) => `
-    <tr class="hover:bg-slate-800/40 transition">
-      <td class="text-center text-slate-400 py-3">${item.no || (idx + 1)}</td>
-      <td class="font-mono text-slate-300 py-3">${item.date || ''}</td>
-      <td class="font-bold text-teal-400 py-3">${item.category || ''}</td>
-      <td class="text-slate-200 py-3 font-semibold">${item.description || ''}</td>
-      <td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.method === 'Bank' ? 'bg-sky-500/10 text-sky-400' : 'bg-amber-500/10 text-amber-400'}">${item.method || 'Cash'}</span></td>
-      <td class="text-right font-bold text-emerald-400 py-3">${(item.debit || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-rose-400 py-3">${(item.credit || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-slate-200 py-3">${(item.balances || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-emerald-400 py-3">${(item.unpaidBonus || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-teal-400 py-3">${(item.unpaidFund || 0).toLocaleString()}</td>
-      <td class="text-center py-3">${item.sendMail ? '<i class="fa-solid fa-circle-check text-emerald-400"></i>' : '<i class="fa-solid fa-circle-minus text-slate-600"></i>'}</td>
-      <td class="font-mono text-xs text-indigo-300 py-3">${item.vrNo || ''}</td>
-      <td class="text-slate-400 py-3">${item.my || ''}</td>
-      <td class="text-slate-400 py-3">${item.fy || ''}</td>
-      <td class="text-center py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">
-        <div class="flex items-center justify-center gap-2">
-          ${item.isLocked ? '<span class="text-[10px] text-slate-500 font-bold">Locked</span>' : `
-            <button onclick="editHrPayrollEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded transition"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-            <button onclick="deleteHrPayrollEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
-          `}
+    <form id="hr-payroll-form" onsubmit="saveHrPayrollForm(event)" class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+      <input type="hidden" id="hr-pay-uniqueId">
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="font-bold text-slate-400 uppercase tracking-wide">Date</label>
+          <input type="date" id="hr-pay-date" onchange="onStaffIdChangePayroll()" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
         </div>
-      </td>
-    </tr>
-  `).join('');
-}
+        <div class="flex flex-col gap-1">
+          <label class="font-bold text-slate-400 uppercase tracking-wide">Category</label>
+          <select id="hr-pay-category" onchange="onStaffIdChangePayroll()" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
+            <option value="Full Time Salary">Full Time Salary</option>
+            <option value="Part Time Salary">Part Time Salary</option>
+            <option value="Full Time Bonus">Full Time Bonus</option>
+            <option value="Full Time Fund">Full Time Fund</option>
+            <option value="Opening">Opening</option>
+            <option value="Closing">Closing</option>
+            <option value="Transfer">Transfer</option>
+          </select>
+        </div>
+      </div>
 
-function renderHrPayrollPagination(totalRows) {
-  const info = document.getElementById('hr-pay-pagination-info');
-  const btnPrev = document.getElementById('hr-pay-btn-prev');
-  const btnNext = document.getElementById('hr-pay-btn-next');
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="font-bold text-indigo-400 uppercase tracking-wide">Staff ID (ဂဏန်းသန့်သန့် / ID ရိုက်ရန်)</label>
+          <input type="number" id="hr-pay-staff-id" oninput="onStaffIdChangePayroll()" placeholder="e.g. 1" required class="w-full font-bold text-indigo-300 bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 outline-none focus:border-indigo-500">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="font-bold text-slate-400 uppercase tracking-wide">Method</label>
+          <select id="hr-pay-method" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
+            <option value="Cash">Cash</option>
+            <option value="Bank">Bank</option>
+          </select>
+        </div>
+      </div>
 
-  const totalPages = Math.ceil(totalRows / gPayrollLimit) || 1;
-  if (info) info.textContent = `Showing Page ${gPayrollPage} of ${totalPages} (${totalRows} total entries)`;
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="font-bold text-emerald-400 uppercase tracking-wide">Unpaid Bonus (Accrued)</label>
+          <input type="number" id="hr-pay-unpaid-bonus" value="0" readonly class="w-full text-right font-bold text-emerald-400 bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 cursor-not-allowed">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="font-bold text-teal-400 uppercase tracking-wide">Unpaid Fund (Accrued)</label>
+          <input type="number" id="hr-pay-unpaid-fund" value="0" readonly class="w-full text-right font-bold text-teal-400 bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 cursor-not-allowed">
+        </div>
+      </div>
 
-  if (btnPrev) btnPrev.disabled = (gPayrollPage <= 1);
-  if (btnNext) btnNext.disabled = (gPayrollPage >= totalPages);
-}
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="font-bold text-emerald-400 uppercase tracking-wide">Debit (ရရှိငွေ)</label>
+          <input type="number" step="0.01" id="hr-pay-debit" value="0" class="w-full text-right text-emerald-400 font-bold bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 outline-none focus:border-emerald-500">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="font-bold text-rose-400 uppercase tracking-wide">Credit (ထုတ်ပေးလစာ - Auto)</label>
+          <input type="number" step="0.01" id="hr-pay-credit" value="0" readonly required class="w-full text-right text-rose-400 font-bold bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 cursor-not-allowed">
+        </div>
+      </div>
 
-function changePageHrPayroll(delta) {
-  gPayrollPage += delta;
-  if (gPayrollPage < 1) gPayrollPage = 1;
-  loadHrPayrollData(false);
-}
+      <div class="flex flex-col gap-1">
+        <label class="font-bold text-slate-400 uppercase tracking-wide">Description (Auto-generated)</label>
+        <textarea id="hr-pay-description" rows="2" readonly required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 placeholder-slate-500 rounded-lg p-2.5 cursor-not-allowed" placeholder="[FID 001 Daw Thin Za Li, Salary Jul-26]..."></textarea>
+      </div>
 
-function onSearchInputHrPayroll() {
-  const input = document.getElementById('hr-payroll-search');
-  gPayrollSearch = input ? input.value : '';
-  gPayrollPage = 1;
-  loadHrPayrollData(false);
-}
-
-function openAddModalHrPayroll() {
-  const form = document.getElementById('hr-payroll-form');
-  if (form) form.reset();
-  const uid = document.getElementById('hr-pay-uniqueId');
-  if (uid) uid.value = '';
-
-  const dateInput = document.getElementById('hr-pay-date');
-  if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
-
-  const title = document.getElementById('hr-payroll-form-title');
-  if (title) title.textContent = 'Add HR Payroll Entry';
-
-  const modal = document.getElementById('hr-payroll-modal');
-  if (modal) modal.classList.remove('hidden');
-}
-
-function closeHrPayrollModal() {
-  const modal = document.getElementById('hr-payroll-modal');
-  if (modal) modal.classList.add('hidden');
-}
-
-async function onStaffIdChangePayroll() {
-  const staffIdInput = document.getElementById('hr-pay-staff-id');
-  const categoryInput = document.getElementById('hr-pay-category');
-  const dateInput = document.getElementById('hr-pay-date');
-
-  const staffId = staffIdInput ? parseInt(staffIdInput.value, 10) : 0;
-  const category = categoryInput ? categoryInput.value : '';
-  const dateVal = dateInput ? dateInput.value : '';
-
-  if (!staffId || isNaN(staffId)) return;
-
-  const isFT = category.startsWith('Full Time');
-  const staffCat = isFT ? 'Full Time' : 'Part Time';
-
-  try {
-    const res = await callApi('getStaffData', { category: staffCat, page: 1, limit: 1000 });
-    if (res && res.data) {
-      const staffObj = res.data.find(s => parseInt(s.staffId, 10) === staffId);
-      if (staffObj) {
-        const unpaidBonusInput = document.getElementById('hr-pay-unpaid-bonus');
-        const unpaidFundInput = document.getElementById('hr-pay-unpaid-fund');
-        const creditInput = document.getElementById('hr-pay-credit');
-        const descInput = document.getElementById('hr-pay-description');
-
-        if (unpaidBonusInput) unpaidBonusInput.value = staffObj.unpaidBonus || 0;
-        if (unpaidFundInput) unpaidFundInput.value = staffObj.unpaidFund || 0;
-
-        let autoCredit = 0;
-        if (category === 'Full Time Salary' || category === 'Part Time Salary') {
-          autoCredit = staffObj.totalSalary || 0;
-        } else if (category === 'Full Time Bonus') {
-          autoCredit = staffObj.unpaidBonus || 0;
-        } else if (category === 'Full Time Fund') {
-          autoCredit = staffObj.unpaidFund || 0;
-        }
-
-        if (creditInput) creditInput.value = autoCredit;
-
-        const d = new Date(dateVal || Date.now());
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const myStr = `${months[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
-        
-        if (descInput) {
-          descInput.value = `[${staffObj.staffIdName || staffObj.name}, ${category} ${myStr}]`;
-        }
-      }
-    }
-  } catch (err) {
-    console.warn("Error matching staff ID:", err);
-  }
-}
-
-async function saveHrPayrollForm(event) {
-  event.preventDefault();
-  
-  const uid = document.getElementById('hr-pay-uniqueId')?.value || '';
-  const actionName = uid ? 'updateExpenseEntry' : 'saveExpenseEntry';
-
-  const payload = {
-    bookName: 'HR Payroll Exp Book',
-    uniqueId: uid,
-    date: document.getElementById('hr-pay-date')?.value || '',
-    category: document.getElementById('hr-pay-category')?.value || '',
-    id: document.getElementById('hr-pay-staff-id')?.value || '',
-    method: document.getElementById('hr-pay-method')?.value || 'Cash',
-    debit: parseFloat(document.getElementById('hr-pay-debit')?.value || 0),
-    credit: parseFloat(document.getElementById('hr-pay-credit')?.value || 0),
-    unpaidBonus: parseFloat(document.getElementById('hr-pay-unpaid-bonus')?.value || 0),
-    unpaidFund: parseFloat(document.getElementById('hr-pay-unpaid-fund')?.value || 0),
-    description: document.getElementById('hr-pay-description')?.value || ''
-  };
-
-  try {
-    if (typeof toggleLoading === 'function') toggleLoading(true);
-    const res = await callApi(actionName, payload);
-    if (res && res.success) {
-      showToast("SUCCESS", "Payroll စာရင်း အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ");
-      closeHrPayrollModal();
-      loadHrPayrollData(false);
-    } else {
-      showToast("ERROR", res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ");
-    }
-  } catch (err) {
-    showToast("ERROR", "Save Error: " + err.message);
-  } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
-  }
-}
-
-function exportToCSVHrPayroll() {
-  if (!gPayrollData || gPayrollData.length === 0) {
-    showToast("ERROR", "Export ပြုလုပ်ရန် စာရင်း မရှိပါ");
-    return;
-  }
-  let csv = "NO,DATE,CATEGORY,DESCRIPTION,METHOD,DEBIT,CREDIT,BALANCES,VR_NO\n";
-  gPayrollData.forEach(r => {
-    csv += `"${r.no}","${r.date}","${r.category}","${r.description}","${r.method}",${r.debit},${r.credit},${r.balances},"${r.vrNo}"\n`;
-  });
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `Payroll_Export_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-}
-
-function sendMonthlyPayslipsToStaff() {
-  showToast("SUCCESS", "Resend API ဖြင့် မေးလ်ပို့ဆောင်ခြင်း စတင်နေပါပြီ...");
-}
+      <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-800">
+        <button type="button" onclick="closeHrPayrollModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">Cancel</button>
+        <button type="submit" class="px-5 py-2 rounded-lg text-xs font-black bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/10 transition-all">Confirm</button>
+      </div>
+    </form>
+  </div>
+</div>
