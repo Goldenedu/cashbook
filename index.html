@@ -7,24 +7,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GOLDEN CASH BOOK - ERP SYSTEM</title>
 
-  <!-- 💡 Instant Anti-Flicker Sync Script (First Frame မပေါ်မီ တန်းစီ သတ်မှတ်ပေးမည်) -->
+  <!-- 💡 Instant Anti-Flicker Sync Script -->
   <script>
     (function() {
       var token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
       if (token) {
-        document.documentElement.classList.add('is-authed');
+        document.documentElement.className = 'dark is-authed';
       } else {
-        document.documentElement.classList.add('not-authed');
+        document.documentElement.className = 'dark not-authed';
       }
     })();
   </script>
 
   <style>
-    /* 💡 Instant Anti-Flicker CSS (FOUC & Layout Shift ကာကွယ်ရန်) */
-    html.is-authed #login-overlay { display: none !important; }
-    html.is-authed #erp-workspace { display: flex !important; }
-    html.not-authed #login-overlay { display: flex !important; }
-    html.not-authed #erp-workspace { display: none !important; }
+    /* 💡 Dynamic CSS Specificity (No !important lock) */
+    html.is-authed #login-overlay { display: none; }
+    html.is-authed #erp-workspace { display: flex; }
+    html.not-authed #login-overlay { display: flex; }
+    html.not-authed #erp-workspace { display: none; }
   </style>
   
   <!-- Tailwind CSS CDN -->
@@ -40,7 +40,6 @@
     <div class="w-full max-w-sm bg-[#0c1322] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 text-slate-300">
       
       <div class="text-center space-y-1.5">
-        <!-- 💡 LOGO: ဘွဲ့ရ ဦးထုပ် Icon (fa-graduation-cap) ပြောင်းလဲထားပါသည် -->
         <div class="inline-flex p-3.5 bg-indigo-500/10 text-indigo-400 rounded-2xl mb-1 shadow-lg shadow-indigo-500/5">
           <i class="fa-solid fa-graduation-cap text-3xl"></i>
         </div>
