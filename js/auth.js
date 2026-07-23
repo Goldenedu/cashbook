@@ -33,6 +33,7 @@ async function handleLoginSubmit(e) {
       localStorage.setItem('erp_token', response.token);
       localStorage.setItem('erp_role', response.role);
 
+      // 💡 1. Switch UI Workspace immediately
       showWorkspace();
       applyRoleRestrictions();
 
@@ -70,6 +71,9 @@ function applyRoleRestrictions() {
   }
 }
 
+/**
+ * 💡 BULLETPROOF WORKSPACE TOGGLER (Tailwind .flex / .hidden Collision Resolution)
+ */
 function showWorkspace() {
   document.documentElement.className = 'dark is-authed';
 
@@ -77,12 +81,15 @@ function showWorkspace() {
   const ws = document.getElementById('erp-workspace');
 
   if (overlay) {
+    overlay.classList.remove('flex');
     overlay.classList.add('hidden');
-    overlay.style.display = 'none';
+    overlay.style.setProperty('display', 'none', 'important');
   }
+
   if (ws) {
     ws.classList.remove('hidden');
-    ws.style.display = 'flex';
+    ws.classList.add('flex');
+    ws.style.setProperty('display', 'flex', 'important');
   }
 }
 
@@ -94,20 +101,20 @@ function showLogin() {
 
   if (overlay) {
     overlay.classList.remove('hidden');
-    overlay.style.display = 'flex';
+    overlay.classList.add('flex');
+    overlay.style.setProperty('display', 'flex', 'important');
   }
+
   if (ws) {
+    ws.classList.remove('flex');
     ws.classList.add('hidden');
-    ws.style.display = 'none';
+    ws.style.setProperty('display', 'none', 'important');
   }
 
   const passwordInput = document.getElementById('login-password');
   if (passwordInput) passwordInput.value = '';
 }
 
-/**
- * 💡 BULLETPROOF LOGOUT (Token များ ရှင်းထုတ်ပြီး Page ပါ Auto Reload ပြုလုပ်ပေးမည်)
- */
 function handleLogout() {
   if (confirm("စနစ်မှ ထွက်ခွာလိုပါသလားရှင်?")) {
     localStorage.removeItem('golden_user_name');
