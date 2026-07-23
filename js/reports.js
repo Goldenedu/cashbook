@@ -1,5 +1,5 @@
 /**
- * GOLDEN ERP SYSTEM - REPORTING ENGINE
+ * GOLDEN ERP SYSTEM - REPORTING ENGINE & CSV EXPORT
  * File: js/reports.js
  */
 
@@ -155,10 +155,37 @@ function compileReportFinancialData() {
 }
 
 function onSearchInputReportFinancial() { compileReportFinancialData(); }
-function exportToCSVReportFinancial() { showToast("SUCCESS", "CSV Exported successfully."); }
+
+/**
+ * 💡 FINANCIAL STATEMENT CSV FILE DOWNLOAD
+ */
+function exportToCSVReportFinancial() {
+  const rData = window.erpCache['financial-report'];
+  if (!rData) { showToast("ERROR", "ထုတ်ယူရန် မည်သည့်ဒေတာမျှ မရှိသေးပါ!"); return; }
+
+  let csv = "--- SECTION 1: INCOME BY CATEGORY ---\nNO,CATEGORY,TOTAL AMOUNT\n";
+  csv += `1,"Boarder Income",${cleanNum(rData.categories?.boarder)}\n`;
+  csv += `2,"Semi Boarder Income",${cleanNum(rData.categories?.semiBoarder)}\n`;
+  csv += `3,"Day Student Income",${cleanNum(rData.categories?.dayStudent)}\n`;
+  csv += `,"TOTAL CATEGORY INCOME",${cleanNum(rData.categories?.total)}\n\n`;
+
+  csv += "--- SECTION 2: INCOME BY ACCOUNT ---\nNO,ACCOUNT NAME,TOTAL AMOUNT\n";
+  csv += `1,"Registration",${cleanNum(rData.accounts?.registration)}\n`;
+  csv += `2,"Services",${cleanNum(rData.accounts?.services)}\n`;
+  csv += `3,"Ferry",${cleanNum(rData.accounts?.ferry)}\n`;
+  csv += `4,"Night Study Fees",${cleanNum(rData.accounts?.nightStudy)}\n`;
+  csv += `5,"Others",${cleanNum(rData.accounts?.others)}\n`;
+  csv += `,"TOTAL ACCOUNT INCOME",${cleanNum(rData.accounts?.total)}\n\n`;
+
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `Financial_Statement_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+}
 
 // ============================================================================
-// 2️⃣ INCOME DETAIL REPORT (InDetail Sheet A5:AD5000 Dynamic Columns)
+// 2️⃣ INCOME DETAIL REPORT (InDetail Sheet A5:AD5000)
 // ============================================================================
 
 async function loadReportIncomeData(isSilent = false) {
@@ -228,10 +255,30 @@ function compileReportIncomeData() {
 }
 
 function onSearchInputReportIncome() { compileReportIncomeData(); }
-function exportToCSVReportIncome() { showToast("SUCCESS", "InDetail CSV Exported."); }
+
+/**
+ * 💡 INDETAIL CSV FILE DOWNLOAD
+ */
+function exportToCSVReportIncome() {
+  const rData = window.erpCache['income-detail-report'];
+  if (!rData || !rData.headers || !rData.data) {
+    showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိသေးပါ!");
+    return;
+  }
+  let csv = rData.headers.join(",") + "\n";
+  rData.data.forEach(row => {
+    const escaped = row.map(c => `"${String(c || '').replace(/"/g, '""')}"`);
+    csv += escaped.join(",") + "\n";
+  });
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `Income_Detail_InDetail_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+}
 
 // ============================================================================
-// 3️⃣ MONTHLY INCOME REPORT (InRep Sheet A5:O50 - 2 Tables Distinct Theme)
+// 3️⃣ MONTHLY INCOME REPORT (InRep Sheet A5:O50 - 2 Tables)
 // ============================================================================
 
 async function loadReportGeneralData(isSilent = false) {
@@ -255,7 +302,7 @@ async function loadReportGeneralData(isSilent = false) {
 function compileReportGeneralData() {
   const rData = window.erpCache['monthly-income-report'] || {};
   
-  // 💡 Table 1 Render (A5:O19 - Emerald/Teal Theme)
+  // Table 1 Render (A5:O19 - Emerald Theme)
   const t1 = document.getElementById('report-general-table-1');
   if (t1 && rData.table1) {
     let hHtml = `<thead><tr class="bg-emerald-950/40 text-emerald-300">${(rData.table1.headers || []).map(h => `<th class="py-3 px-4 text-xs font-bold uppercase border-b border-emerald-500/20">${h}</th>`).join('')}</tr></thead>`;
@@ -276,7 +323,7 @@ function compileReportGeneralData() {
     t1.innerHTML = hHtml + bHtml;
   }
 
-  // 💡 Table 2 Render (A20:O36 - Indigo/Purple Theme - Distinct Color)
+  // Table 2 Render (A20:O36 - Indigo Theme)
   const t2 = document.getElementById('report-general-table-2');
   if (t2 && rData.table2) {
     let hHtml = `<thead><tr class="bg-indigo-950/40 text-indigo-300">${(rData.table2.headers || []).map(h => `<th class="py-3 px-4 text-xs font-bold uppercase border-b border-indigo-500/20">${h}</th>`).join('')}</tr></thead>`;
@@ -298,7 +345,35 @@ function compileReportGeneralData() {
   }
 }
 
-function exportToCSVReportGeneral() { showToast("SUCCESS", "InRep CSV Exported."); }
+/**
+ * 💡 INREP MONTHLY INCOME CSV FILE DOWNLOAD (TABLE 1 + TABLE 2)
+ */
+function exportToCSVReportGeneral() {
+  const rData = window.erpCache['monthly-income-report'];
+  if (!rData || !rData.table1) {
+    showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိသေးပါ!");
+    return;
+  }
+  let csv = "--- TABLE 1: PRIMARY REVENUE BREAKDOWN ---\n";
+  csv += (rData.table1.headers || []).join(",") + "\n";
+  (rData.table1.data || []).forEach(row => {
+    csv += row.map(c => `"${String(c || '').replace(/"/g, '""')}"`).join(",") + "\n";
+  });
+
+  if (rData.table2) {
+    csv += "\n--- TABLE 2: SECONDARY CATEGORY SUMMARY ---\n";
+    csv += (rData.table2.headers || []).join(",") + "\n";
+    (rData.table2.data || []).forEach(row => {
+      csv += row.map(c => `"${String(c || '').replace(/"/g, '""')}"`).join(",") + "\n";
+    });
+  }
+
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `Monthly_Income_InRep_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+}
 
 // ============================================================================
 // 4️⃣ STUDENT DEMOGRAPHICS & CLASS AMOUNT REPORT
@@ -397,7 +472,6 @@ function compileReportStudentData() {
       fyActMale += d.activeMale; fyActFemale += d.activeFemale;
       fyInactMale += d.inactiveMale; fyInactFemale += d.inactiveFemale;
 
-      // 💡 CLASS AMOUNT Calculation Lookup
       var classAmount = 0;
       if (incomeMap[fy] && incomeMap[fy][cls]) {
         classAmount = cleanNum(incomeMap[fy][cls]);
@@ -445,10 +519,67 @@ function compileReportStudentData() {
 }
 
 function onSearchInputReportStudent() { compileReportStudentData(); }
-function exportToCSVReportStudent() { showToast("SUCCESS", "Demographics CSV Exported."); }
+
+/**
+ * 💡 STUDENT DEMOGRAPHICS CSV FILE DOWNLOAD
+ */
+function exportToCSVReportStudent() {
+  const cache = window.erpCache['student-report-details'] || {};
+  const students = cache.students || [];
+  const incomeMap = cache.incomeMap || {};
+
+  if (students.length === 0) { showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှမရှိပါ!"); return; }
+
+  var fyGroups = {};
+  students.forEach(s => {
+    var fy = s.fy || "Unknown-FY";
+    var cls = s.class || "Unknown-Class";
+    var status = String(s.status || "").trim().toLowerCase();
+    var gender = String(s.gender || "").trim().toLowerCase();
+
+    if (!fyGroups[fy]) fyGroups[fy] = {};
+    if (!fyGroups[fy][cls]) fyGroups[fy][cls] = { activeMale: 0, activeFemale: 0, inactiveMale: 0, inactiveFemale: 0 };
+
+    if (status === "active") {
+      if (gender === "male") fyGroups[fy][cls].activeMale++;
+      else if (gender === "female") fyGroups[fy][cls].activeFemale++;
+    } else {
+      if (gender === "male") fyGroups[fy][cls].inactiveMale++;
+      else if (gender === "female") fyGroups[fy][cls].inactiveFemale++;
+    }
+  });
+
+  var sortedFYs = Object.keys(fyGroups).sort((a, b) => b.localeCompare(a));
+  let csv = "";
+
+  sortedFYs.forEach(fy => {
+    csv += `--- FISCAL YEAR: ${fy} ---\n`;
+    csv += "NO,FY,CLASS,CLASS AMOUNT,ACTIVE MALE,ACTIVE FEMALE,ACTIVE TOTAL,INACTIVE MALE,INACTIVE FEMALE,INACTIVE TOTAL\n";
+    
+    var classes = Object.keys(fyGroups[fy]).sort();
+    var idx = 1;
+
+    classes.forEach(cls => {
+      var d = fyGroups[fy][cls];
+      var actTot = d.activeMale + d.activeFemale;
+      var inactTot = d.inactiveMale + d.inactiveFemale;
+
+      var classAmount = 0;
+      if (incomeMap[fy] && incomeMap[fy][cls]) classAmount = cleanNum(incomeMap[fy][cls]);
+
+      csv += `${idx++},${fy},"${cls}",${classAmount},${d.activeMale},${d.activeFemale},${actTot},${d.inactiveMale},${d.inactiveFemale},${inactTot}\n`;
+    });
+  });
+
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `Student_Demographics_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+}
 
 // ============================================================================
-// 5️⃣ STANDALONE STAFF FUND REPORT (Left Sidebar "Staff Fund Report" Page)
+// 5️⃣ STANDALONE STAFF FUND REPORT
 // ============================================================================
 
 async function loadReportStaffFundData(isSilent = false) {
@@ -520,7 +651,6 @@ function compileReportStaffFundData() {
     `;
   }).join('');
 
-  // 💡 Update KPI Cards (၄ ခု)
   const bonusEl = document.getElementById('report-fund-total-bonus');
   const fundEl = document.getElementById('report-fund-total-fund');
   const totalEl = document.getElementById('report-fund-total-all');
@@ -533,4 +663,26 @@ function compileReportStaffFundData() {
 }
 
 function onSearchInputReportStaffFund() { compileReportStaffFundData(); }
-function exportToCSVReportStaffFund() { showToast("SUCCESS", "Staff Fund CSV Exported."); }
+
+/**
+ * 💡 STAFF FUND CSV FILE DOWNLOAD
+ */
+function exportToCSVReportStaffFund() {
+  const fundData = window.erpCache['staff-fund-report'] || [];
+  if (fundData.length === 0) { showToast("ERROR", "ထုတ်ယူရန် မည်သည့်ဒေတာမျှ မရှိသေးပါ!"); return; }
+
+  let csv = "NO,FUND DATE,STAFF ID,NAME,BONUS BALANCE,FUND BALANCE,TOTAL BALANCES,STATUS\n";
+  let idx = 1;
+  fundData.forEach(row => {
+    const bonus = cleanNum(row.bonusBalance);
+    const fund = cleanNum(row.fundBalance);
+    const total = bonus + fund;
+    csv += `${idx++},${row.fundDate || ''},${row.staffId || ''},"${row.name || ''}",${bonus},${fund},${total},${row.status || 'Active'}\n`;
+  });
+
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `Staff_Fund_Report_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+}
