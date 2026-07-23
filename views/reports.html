@@ -1,26 +1,18 @@
 <!-- views/reports.html -->
 <div class="space-y-5">
 
-  <!-- Sub-Panel Selector Tabs -->
-  <div class="flex flex-wrap items-center gap-2 p-1.5 bg-[#0c1322] border border-slate-800 rounded-xl">
-    <button onclick="showReportPanel('panel-report-financial')"
-      class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all bg-emerald-600 text-white flex items-center gap-1.5">
+  <!-- 💡 Sub-Panel Selector Tabs (၄ ခုသန့်သန့်) -->
+  <div class="flex flex-wrap items-center gap-2 p-1.5 bg-[#0c1322] border border-slate-800 rounded-xl w-fit">
+    <button onclick="showReportPanel('panel-report-financial')" id="btn-rep-fin" class="rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-emerald-600 text-white flex items-center gap-2">
       <i class="fa-solid fa-chart-pie"></i> Financial Statement
     </button>
-    <button onclick="showReportPanel('panel-report-income-detail')"
-      class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5">
+    <button onclick="showReportPanel('panel-report-income-detail')" id="btn-rep-indetail" class="rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
       <i class="fa-solid fa-file-invoice-dollar text-sky-400"></i> Income Detail (InDetail)
     </button>
-    <button onclick="showReportPanel('panel-report-monthly-income')"
-      class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5">
+    <button onclick="showReportPanel('panel-report-monthly-income')" id="btn-rep-inrep" class="rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
       <i class="fa-solid fa-calendar-check text-indigo-400"></i> Monthly Income (InRep)
     </button>
-    <button onclick="showReportPanel('panel-report-staff-fund')"
-      class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5">
-      <i class="fa-solid fa-hand-holding-dollar text-teal-400"></i> Staff Fund Report
-    </button>
-    <button onclick="showReportPanel('panel-report-student')"
-      class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-1.5">
+    <button onclick="showReportPanel('panel-report-student')" id="btn-rep-student" class="rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
       <i class="fa-solid fa-users-rectangle text-amber-400"></i> Student Demographics
     </button>
   </div>
@@ -29,41 +21,35 @@
   <!-- 1️⃣ FINANCIAL STATEMENT REPORT PANEL                                          -->
   <!-- ============================================================================ -->
   <div id="panel-report-financial" class="report-panel space-y-5">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div class="flex flex-col sm:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
+      <div class="relative w-full sm:w-80">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+        <input type="text" id="report-financial-search" oninput="onSearchInputReportFinancial()" placeholder="Search financial items..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
+      </div>
+      <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+        <button onclick="loadReportFinancialData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-rotate text-xs"></i> Refresh</button>
+        <button onclick="exportToCSVReportFinancial()" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-file-export text-xs"></i> Export CSV</button>
+      </div>
+    </div>
 
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
       <!-- Income Side -->
       <div class="space-y-5">
         <div class="bg-[#0c1322] border border-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
-          <h3 class="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-            <i class="fa-solid fa-graduation-cap"></i> (က) Income by Student Category
-          </h3>
+          <h3 class="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-graduation-cap"></i> (က) Income by Student Category</h3>
           <div class="overflow-x-auto table-container">
             <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="border-b border-slate-800 text-slate-500">
-                  <th class="py-2.5 w-12 text-center font-bold uppercase">NO</th>
-                  <th class="py-2.5 font-bold uppercase">Category</th>
-                  <th class="py-2.5 text-right font-bold uppercase">Amount</th>
-                </tr>
-              </thead>
+              <thead><tr class="border-b border-slate-800 text-slate-500"><th class="py-2.5 w-12 text-center font-bold uppercase">NO</th><th class="py-2.5 font-bold uppercase">Category</th><th class="py-2.5 text-right font-bold uppercase pr-2">Amount</th></tr></thead>
               <tbody id="report-fin-inc-cat-body" class="divide-y divide-slate-800/40 text-slate-300"></tbody>
             </table>
           </div>
         </div>
 
         <div class="bg-[#0c1322] border border-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
-          <h3 class="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-            <i class="fa-solid fa-file-invoice-dollar"></i> (ခ) Income by Account Name
-          </h3>
+          <h3 class="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar"></i> (ခ) Income by Account Name</h3>
           <div class="overflow-x-auto table-container">
             <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="border-b border-slate-800 text-slate-500">
-                  <th class="py-2.5 w-12 text-center font-bold uppercase">NO</th>
-                  <th class="py-2.5 font-bold uppercase">Account Name</th>
-                  <th class="py-2.5 text-right font-bold uppercase">Amount</th>
-                </tr>
-              </thead>
+              <thead><tr class="border-b border-slate-800 text-slate-500"><th class="py-2.5 w-12 text-center font-bold uppercase">NO</th><th class="py-2.5 font-bold uppercase">Account Name</th><th class="py-2.5 text-right font-bold uppercase pr-2">Amount</th></tr></thead>
               <tbody id="report-fin-inc-acc-body" class="divide-y divide-slate-800/40 text-slate-300"></tbody>
             </table>
           </div>
@@ -72,23 +58,14 @@
 
       <!-- Expense Side -->
       <div class="bg-[#0c1322] border border-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
-        <h3 class="text-xs font-black text-rose-400 uppercase tracking-wider flex items-center gap-2">
-          <i class="fa-solid fa-basket-shopping"></i> (ဂ) Expense Breakdown
-        </h3>
+        <h3 class="text-xs font-black text-rose-400 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-basket-shopping"></i> (ဂ) Expense Breakdown</h3>
         <div class="overflow-x-auto table-container">
           <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="border-b border-slate-800 text-slate-500">
-                <th class="py-2.5 w-12 text-center font-bold uppercase">NO</th>
-                <th class="py-2.5 font-bold uppercase">Expense Head</th>
-                <th class="py-2.5 text-right font-bold uppercase">Amount</th>
-              </tr>
-            </thead>
+            <thead><tr class="border-b border-slate-800 text-slate-500"><th class="py-2.5 w-12 text-center font-bold uppercase">NO</th><th class="py-2.5 font-bold uppercase">Expense Head</th><th class="py-2.5 text-right font-bold uppercase pr-2">Amount</th></tr></thead>
             <tbody id="report-fin-exp-body" class="divide-y divide-slate-800/40 text-slate-300"></tbody>
           </table>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -96,8 +73,21 @@
   <!-- 2️⃣ INCOME DETAIL MATRIX REPORT PANEL                                         -->
   <!-- ============================================================================ -->
   <div id="panel-report-income-detail" class="report-panel hidden space-y-5">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="report-income-kpi"></div>
+
+    <div class="flex flex-col sm:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
+      <div class="relative w-full sm:w-80">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+        <input type="text" id="report-income-search" oninput="onSearchInputReportIncome()" placeholder="Search FYID, Name, Class..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
+      </div>
+      <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+        <button onclick="loadReportIncomeData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-rotate text-xs"></i> Refresh</button>
+        <button onclick="exportToCSVReportIncome()" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-file-export text-xs"></i> Export CSV</button>
+      </div>
+    </div>
+
     <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
-      <table class="w-full text-left border-collapse min-w-[200px]" id="report-income-detail-table"></table>
+      <table class="w-full text-left border-collapse min-w-[1500px]" id="report-income-main-table"></table>
     </div>
   </div>
 
@@ -105,67 +95,46 @@
   <!-- 3️⃣ MONTHLY INCOME REPORT PANEL                                               -->
   <!-- ============================================================================ -->
   <div id="panel-report-monthly-income" class="report-panel hidden space-y-5">
-    <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
-      <table class="w-full text-left border-collapse min-w-[1500px]" id="report-monthly-income-table"></table>
-    </div>
-  </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="report-general-kpi"></div>
 
-  <!-- ============================================================================ -->
-  <!-- 4️⃣ STAFF FUND REPORT PANEL                                                   -->
-  <!-- ============================================================================ -->
-  <div id="panel-report-staff-fund" class="report-panel hidden space-y-5">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="stats-card p-5 rounded-xl flex items-start gap-4">
-        <div class="p-3.5 rounded-lg bg-emerald-500/10 text-emerald-400"><i class="fa-solid fa-gift text-xl"></i></div>
-        <div>
-          <p class="text-[10px] uppercase font-bold text-slate-500">Total Bonus Balance</p>
-          <h3 id="report-fund-total-bonus" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
-        </div>
+    <div class="flex flex-col sm:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
+      <div class="relative w-full sm:w-80">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+        <input type="text" id="report-general-search" oninput="onSearchInputReportGeneral()" placeholder="Search month, category..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
       </div>
-      <div class="stats-card p-5 rounded-xl flex items-start gap-4">
-        <div class="p-3.5 rounded-lg bg-teal-500/10 text-teal-400"><i class="fa-solid fa-piggy-bank text-xl"></i></div>
-        <div>
-          <p class="text-[10px] uppercase font-bold text-slate-500">Total Fund Balance</p>
-          <h3 id="report-fund-total-fund" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
-        </div>
-      </div>
-      <div class="stats-card p-5 rounded-xl flex items-start gap-4">
-        <div class="p-3.5 rounded-lg bg-indigo-500/10 text-indigo-400"><i class="fa-solid fa-wallet text-xl"></i></div>
-        <div>
-          <p class="text-[10px] uppercase font-bold text-slate-500">Grand Total Balances</p>
-          <h3 id="report-fund-total-all" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
-        </div>
+      <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+        <button onclick="loadReportGeneralData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-rotate text-xs"></i> Refresh</button>
+        <button onclick="exportToCSVReportGeneral()" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-file-export text-xs"></i> Export CSV</button>
       </div>
     </div>
 
     <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
-      <table class="w-full text-left border-collapse min-w-[1200px]">
-        <thead>
-          <tr class="bg-[#0e172a]">
-            <th scope="col" class="w-12 text-center text-slate-400 text-xs py-3">NO</th>
-            <th scope="col" class="w-28 text-center text-slate-400 text-xs py-3">FUND DATE</th>
-            <th scope="col" class="w-28 text-slate-400 text-xs py-3">STAFF ID</th>
-            <th scope="col" class="min-w-[200px] text-slate-400 text-xs py-3">NAME</th>
-            <th scope="col" class="w-32 text-right text-emerald-400 text-xs py-3">BONUS BALANCE</th>
-            <th scope="col" class="w-32 text-right text-teal-400 text-xs py-3">FUND BALANCE</th>
-            <th scope="col" class="w-36 text-right text-indigo-400 text-xs py-3 bg-indigo-500/5 pr-4">TOTAL BALANCES
-            </th>
-            <th scope="col" class="w-24 text-slate-400 text-xs py-3">STATUS</th>
-          </tr>
-        </thead>
-        <tbody id="report-staff-fund-table-body" class="divide-y divide-slate-800/40 text-slate-300"></tbody>
-      </table>
+      <table class="w-full text-left border-collapse min-w-[1200px]" id="report-general-eff-table"></table>
     </div>
   </div>
 
   <!-- ============================================================================ -->
-  <!-- 5️⃣ STUDENT DEMOGRAPHICS REPORT PANEL                                         -->
+  <!-- 4️⃣ STUDENT DEMOGRAPHICS & CLASS AMOUNT REPORT PANEL                           -->
   <!-- ============================================================================ -->
   <div id="panel-report-student" class="report-panel hidden space-y-5">
-    <div id="report-student-container" class="space-y-6"></div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="report-student-kpi"></div>
+
+    <div class="flex flex-col sm:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
+      <div class="relative w-full sm:w-80">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+        <input type="text" id="report-student-search" oninput="onSearchInputReportStudent()" placeholder="Search FY, Class..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
+      </div>
+      <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+        <button onclick="loadReportStudentData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-rotate text-xs"></i> Refresh</button>
+        <button onclick="exportToCSVReportStudent()" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-file-export text-xs"></i> Export CSV</button>
+      </div>
+    </div>
+
+    <!-- 💡 Tables Container (CLASS AMOUNT ပါဝင်သော ဇယားများ) -->
+    <div id="report-student-tables-container" class="space-y-6"></div>
   </div>
 
 </div>
 
 <!-- 💡 AUTO-LOAD TRIGGER: Safe Data-URI Trigger (404 Error မတက်ပါ) -->
-<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="if(typeof switchHrSubTab==='function'){switchHrSubTab('payroll');} this.remove();" class="hidden">
+<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="if(typeof initReportsPage==='function'){initReportsPage();} this.remove();" class="hidden">
