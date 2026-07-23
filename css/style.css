@@ -9,13 +9,20 @@
 ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #334155; }
 
-/* Navigation Buttons */
-.nav-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-.nav-btn:hover { padding-left: 1.25rem; background-color: rgba(30, 41, 59, 0.6); }
+/* 💡 Navigation Buttons (Font Size ပိုမိုကြီးမားထင်ရှားအောင် တိုးမြှင့်ထားပါသည်) */
+.nav-btn { 
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+  font-size: 0.8125rem !important; /* 13px - Clearer and larger font size */
+  font-weight: 600 !important;
+}
+.nav-btn:hover { 
+  padding-left: 1.25rem; 
+  background-color: rgba(30, 41, 59, 0.6); 
+}
 .nav-btn.active { 
   background-color: #1e293b !important; 
   color: #ffffff !important; 
-  font-weight: 700; 
+  font-weight: 700 !important; 
   border-left: 4px solid #6366f1; 
 }
 
