@@ -1,103 +1,183 @@
 /**
- * GOLDEN ERP SYSTEM - PROMOTION REFERENCE MATRIX MODULE
+ * GOLDEN ERP SYSTEM - PROMOTION MATRIX MODULE
  * File: js/promotion.js
  */
 
-window.PromotionState = {
-  page: 1,
-  limit: 50,
-  totalRows: 0,
-  activeData: [],
-  searchVal: '',
-  filterFy: '',
-  filterCategory: '',
-  stats: { totalRates: 0, averageOriginalPrice: 0, uniqueFYs: 0 }
-};
+let gPromotionData = [];
+let gPromotionSearch = '';
+let gPromotionFyFilter = '';
+let gPromotionCatFilter = '';
 
 /**
- * 💡 Load Promotion Data
+ * 💡 3 နှစ်စာ Dynamic Fiscal Years တွက်ချက်ပေးသည့် Helper (March to April)
  */
-async function loadPromotionData(isSilent = false) {
-  if (!isSilent) toggleLoading(true);
+function getDynamicFiscalYears() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const currentStart = (month >= 4) ? year : year - 1;
 
-  const state = window.PromotionState;
+  const prevFY = `${currentStart - 1}-${currentStart}`;
+  const currFY = `${currentStart}-${currentStart + 1}`;
+  const nextFY = `${currentStart + 1}-${currentStart + 2}`;
 
-  try {
-    const response = await callApi('getPromotionData', {
-      page: state.page,
-      limit: state.limit,
-      searchVal: state.searchVal
-    }, 'GET');
-
-    if (!isSilent) toggleLoading(false);
-
-    if (response && response.data) {
-      state.activeData = response.data;
-      state.totalRows = response.totalRows || 0;
-      state.stats = response.stats || { totalRates: 0, averageOriginalPrice: 0, uniqueFYs: 0 };
-
-      renderPromotionTable();
-    }
-  } catch (err) {
-    if (!isSilent) toggleLoading(false);
-    console.error("Error loading Promotion data:", err);
-  }
+  return [
+    { value: prevFY, label: prevFY },
+    { value: currFY, label: currFY, selected: true },
+    { value: nextFY, label: nextFY }
+  ];
 }
 
 /**
- * 💡 Render Promotion Matrix Table
+ * 💡 Dropdown များကို Dynamic ဖြည့်ပေးခြင်း
  */
-function renderPromotionTable() {
-  const tableBody = document.getElementById('promo-table-body');
-  if (!tableBody) return;
+function populatePromotionDropdowns() {
+  const fys = getDynamicFiscalYears();
+  
+  const fySelect = document.getElementById('promo-fy');
+  if (fySelect) {
+    fySelect.innerHTML = fys.map(f => `<option value="${f.value}" ${f.selected ? 'selected' : ''}>${f.label}</option>`).join('');
+  }
 
-  const state = window.PromotionState;
-  const searchVal = (document.getElementById('promo-search') ? document.getElementById('promo-search').value : '').toLowerCase().trim();
-  const filterFy = document.getElementById('promo-filter-fy') ? document.getElementById('promo-filter-fy').value : '';
-  const filterCat = document.getElementById('promo-filter-cat') ? document.getElementById('promo-filter-cat').value : '';
+  const fyFilter = document.getElementById('promo-filter-fy');
+  if (fyFilter) {
+    let filterHtml = '<option value="">-- All FY --</option>';
+    fys.forEach(f => {
+      filterHtml += `<option value="${f.value}">${f.label}</option>`;
+    });
+    fyFilter.innerHTML = filterHtml;
+  }
 
-  const filtered = (state.activeData || []).filter(row => {
-    if (filterFy && row.fy !== filterFy) return false;
-    if (filterCat && row.category !== filterCat) return false;
-    if (searchVal) {
-      const cls = (row.class || '').toLowerCase();
-      const cat = (row.category || '').toLowerCase();
-      if (!cls.includes(searchVal) && !cat.includes(searchVal)) return false;
+  const classes = window.DROPDOWNS?.student?.class || ["Pre School", "KG Student", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"];
+  const validClasses = classes.filter(c => c !== "Non");
+
+  const classSelect = document.getElementById('promo-class');
+  if (classSelect) {
+    classSelect.innerHTML = validClasses.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+
+  const cats = window.DROPDOWNS?.student?.category || ["Boarder", "Semi Boarder", "Day Student"];
+
+  const catSelect = document.getElementById('promo-category');
+  if (catSelect) {
+    catSelect.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+
+  const catFilter = document.getElementById('promo-filter-cat');
+  if (catFilter) {
+    let filterHtml = '<option value="">-- All Categories --</option>';
+    cats.forEach(c => {
+      filterHtml += `<option value="${c}">${c}</option>`;
+    });
+    catFilter.innerHTML = filterHtml;
+  }
+}
+
+async function loadPromotionData(useCache = false) {
+  try {
+    if (typeof toggleLoading === 'function') toggleLoading(true);
+    populatePromotionDropdowns();
+
+    const res = await callApi('getPromotionData', {});
+
+    if (res && res.success) {
+      gPromotionData = res.data || [];
+      applyPromotionFilters();
+    } else {
+      showToast("ERROR", res.message || "Promotion ဒေတာ ရယူ၍ မရပါ");
     }
-    return true;
-  });
+  } catch (err) {
+    showToast("ERROR", "Error loading Promotion data: " + err.message);
+  } finally {
+    if (typeof toggleLoading === 'function') toggleLoading(false);
+  }
+}
 
-  const countEl = document.getElementById('promo-total-count');
-  if (countEl) countEl.innerText = filtered.length;
+function applyPromotionFilters() {
+  const searchInput = document.getElementById('promo-search');
+  const fyFilter = document.getElementById('promo-filter-fy');
+  const catFilter = document.getElementById('promo-filter-cat');
 
-  if (filtered.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="15" class="text-center py-8 text-slate-500 font-bold">No promotion reference records found.</td></tr>`;
+  gPromotionSearch = searchInput ? searchInput.value.toLowerCase().trim() : '';
+  gPromotionFyFilter = fyFilter ? fyFilter.value : '';
+  gPromotionCatFilter = catFilter ? catFilter.value : '';
+
+  let filtered = gPromotionData;
+
+  if (gPromotionSearch) {
+    filtered = filtered.filter(item => (item.class || '').toLowerCase().includes(gPromotionSearch));
+  }
+
+  if (gPromotionFyFilter) {
+    filtered = filtered.filter(item => item.fy === gPromotionFyFilter);
+  }
+
+  if (gPromotionCatFilter) {
+    filtered = filtered.filter(item => item.category === gPromotionCatFilter);
+  }
+
+  renderPromotionTable(filtered);
+}
+
+/**
+ * 💡 FY မျဉ်းခြားပေးခြင်းနှင့် Color-Coded FY Badges ပါဝင်သော Table Render Engine
+ */
+function renderPromotionTable(data) {
+  const tbody = document.getElementById('promo-table-body');
+  const totalCountEl = document.getElementById('promo-total-count');
+
+  if (totalCountEl) totalCountEl.textContent = data ? data.length : 0;
+  if (!tbody) return;
+
+  if (!data || data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="15" class="text-center py-8 text-slate-500 font-bold">Promotion Matrix ဒေတာ မရှိသေးပါ</td></tr>`;
     return;
   }
 
-  const isViewer = (window.AppState.currentUserRole === "Viewer");
+  let previousFy = '';
 
-  tableBody.innerHTML = filtered.map((row) => {
+  tbody.innerHTML = data.map((item, idx) => {
+    // 💡 1. FY တစ်နှစ်နှင့်တစ်နှစ် ကူးပြောင်းချိန်တွင် အထက်ပါမျဉ်းထူ (`border-t-2 border-indigo-500/50`) တားပေးခြင်း
+    const isFyChanged = (idx > 0 && item.fy !== previousFy && item.fy && previousFy);
+    previousFy = item.fy || '';
+
+    const rowBorderClass = isFyChanged 
+      ? 'border-t-2 border-indigo-500/60 bg-indigo-500/5' 
+      : 'border-b border-slate-800/40';
+
+    // 💡 2. FY အလိုက် အရောင်ခွဲ တံဆိပ် (Badges) သတ်မှတ်ခြင်း
+    let fyBadgeStyle = 'bg-slate-800 text-slate-300 border-slate-700'; // Default / ယခင်နှစ်
+    
+    if (item.fy === '2026-2027') {
+      fyBadgeStyle = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 font-black'; // ယခုနှစ် (Active)
+    } else if (item.fy === '2027-2028') {
+      fyBadgeStyle = 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'; // နောက်နှစ် (Future)
+    }
+
     return `
-      <tr class="hover:bg-slate-800/20 text-slate-300">
-        <td class="text-center font-semibold text-slate-500">${row.no}</td>
-        <td class="font-bold text-slate-100">${escapeHtml(row.fy || '-')}</td>
-        <td class="font-bold text-slate-200">${escapeHtml(row.class || '-')}</td>
-        <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">${escapeHtml(row.category || '-')}</span></td>
-        <td class="text-right text-indigo-400 font-semibold">${Number(row.registration || 0).toLocaleString('en-US')}</td>
-        <td class="text-right text-slate-400 font-semibold">${Number(row.originalPrice || 0).toLocaleString('en-US')}</td>
-        <td class="text-right text-teal-400 font-medium">${row.proA ? Number(row.proA).toLocaleString('en-US') : '-'}</td>
-        <td class="text-right text-teal-400 font-medium">${row.proB ? Number(row.proB).toLocaleString('en-US') : '-'}</td>
-        <td class="text-right text-teal-400 font-medium">${row.proC ? Number(row.proC).toLocaleString('en-US') : '-'}</td>
-        <td class="text-right text-teal-400 font-medium">${row.proD ? Number(row.proD).toLocaleString('en-US') : '-'}</td>
-        <td class="text-right text-teal-400 font-medium">${row.proE ? Number(row.proE).toLocaleString('en-US') : '-'}</td>
-        <td class="text-right text-amber-400 font-semibold">${row.halfScholar ? Number(row.halfScholar).toLocaleString('en-US') : '-'}</td>
-        <td class="text-right text-emerald-400 font-semibold">${row.fullScholar ? Number(row.fullScholar).toLocaleString('en-US') : '-'}</td>
-        <td class="max-w-xs truncate text-slate-500 text-xs" title="${escapeHtml(row.remark || '')}">${escapeHtml(row.remark || '-')}</td>
-        <td class="right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg text-center">
-          <div class="flex items-center justify-center gap-3 ${isViewer ? 'hidden' : ''}">
-            <button onclick="editPromotionEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition"><i class="fa-solid fa-pen-to-square"></i></button>
-            <button onclick="deletePromotionEntry('${row.uniqueId}')" class="text-rose-400 hover:text-rose-300 transition"><i class="fa-solid fa-trash"></i></button>
+      <tr class="hover:bg-slate-800/40 transition ${rowBorderClass}">
+        <td class="text-center text-slate-400 py-3">${item.no || (idx + 1)}</td>
+        <td class="py-3">
+          <span class="inline-block px-2 py-0.5 rounded text-[10px] border ${fyBadgeStyle}">
+            ${item.fy || 'N/A'}
+          </span>
+        </td>
+        <td class="font-bold text-white py-3">${item.class || ''}</td>
+        <td class="text-slate-300 py-3">${item.category || ''}</td>
+        <td class="text-right font-bold text-indigo-400 font-mono py-3">${(item.registration || 0).toLocaleString()}</td>
+        <td class="text-right font-bold text-slate-200 font-mono py-3">${(item.originalPrice || 0).toLocaleString()}</td>
+        <td class="text-right font-bold text-teal-400 font-mono py-3">${(item.proA || 0).toLocaleString()}</td>
+        <td class="text-right font-bold text-teal-400 font-mono py-3">${(item.proB || 0).toLocaleString()}</td>
+        <td class="text-right font-bold text-teal-400 font-mono py-3">${(item.proC || 0).toLocaleString()}</td>
+        <td class="text-right font-bold text-teal-400 font-mono py-3">${(item.proD || 0).toLocaleString()}</td>
+        <td class="text-right font-bold text-teal-400 font-mono py-3">${(item.proE || 0).toLocaleString()}</td>
+        <td class="text-right font-bold text-amber-400 font-mono py-3">${(item.halfScholar || 0).toLocaleString()}</td>
+        <td class="text-right font-bold text-emerald-400 font-mono py-3">${(item.fullScholar || 0).toLocaleString()}</td>
+        <td class="text-slate-400 py-3">${item.remark || ''}</td>
+        <td class="text-center py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">
+          <div class="flex items-center justify-center gap-2">
+            <button onclick="editPromotionEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded transition"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+            <button onclick="deletePromotionEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
           </div>
         </td>
       </tr>
@@ -105,143 +185,130 @@ function renderPromotionTable() {
   }).join('');
 }
 
-let searchTimeoutPromo;
 function onSearchInputPromotion() {
-  clearTimeout(searchTimeoutPromo);
-  searchTimeoutPromo = setTimeout(() => { renderPromotionTable(); }, 300);
-}
-
-function applyPromotionFilters() {
-  renderPromotionTable();
-}
-
-/**
- * 💡 Save / Update Promotion Entry
- */
-async function savePromotionForm(e) {
-  e.preventDefault();
-  closePromotionModal();
-
-  const uniqueId = document.getElementById('promo-uniqueId').value;
-  const isAdd = (!uniqueId);
-
-  const entry = {
-    uniqueId: uniqueId,
-    fy: document.getElementById('promo-fy').value,
-    class: document.getElementById('promo-class').value,
-    category: document.getElementById('promo-category').value,
-    registration: parseFloat(document.getElementById('promo-registration').value) || 0,
-    originalPrice: parseFloat(document.getElementById('promo-original-price').value) || 0,
-    proA: parseFloat(document.getElementById('promo-pro-a').value) || 0,
-    proB: parseFloat(document.getElementById('promo-pro-b').value) || 0,
-    proC: parseFloat(document.getElementById('promo-pro-c').value) || 0,
-    proD: parseFloat(document.getElementById('promo-pro-d').value) || 0,
-    proE: parseFloat(document.getElementById('promo-pro-e').value) || 0,
-    halfScholar: parseFloat(document.getElementById('promo-half-scholar').value) || 0,
-    fullScholar: parseFloat(document.getElementById('promo-full-scholar').value) || 0,
-    remark: document.getElementById('promo-remark').value,
-    createdBy: window.AppState.currentUser || "System"
-  };
-
-  const action = isAdd ? 'savePromotionEntry' : 'updatePromotionEntry';
-  showToast("SUCCESS", "Promotion Matrix ဒေတာ သိမ်းဆည်းနေပါသည်...");
-
-  try {
-    const response = await callApi(action, entry);
-    if (response && response.success) {
-      showToast("SUCCESS", isAdd ? "Promotion နှုန်းထားသစ် သိမ်းဆည်းပြီးပါပြီရှင်။" : "Promotion နှုန်းထား ပြင်ဆင်ပြီးပါပြီရှင်။");
-      loadPromotionData(true);
-    } else {
-      showToast("ERROR", "မအောင်မြင်ပါ: " + (response.message || ""));
-    }
-  } catch (err) {
-    showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
-  }
+  applyPromotionFilters();
 }
 
 function openAddModalPromotion() {
+  populatePromotionDropdowns();
+
   const form = document.getElementById('promo-form');
   if (form) form.reset();
 
-  document.getElementById('promo-uniqueId').value = "";
-  document.getElementById('promo-modal').classList.remove('hidden');
+  const uid = document.getElementById('promo-uniqueId');
+  if (uid) uid.value = '';
+
+  const title = document.getElementById('promo-form-title');
+  if (title) title.textContent = 'Add Promotion Rate';
+
+  const modal = document.getElementById('promo-modal');
+  if (modal) modal.classList.remove('hidden');
 }
 
 function closePromotionModal() {
-  document.getElementById('promo-modal').classList.add('hidden');
+  const modal = document.getElementById('promo-modal');
+  if (modal) modal.classList.add('hidden');
 }
 
-/**
- * 💡 Edit Promotion Entry
- */
 function editPromotionEntry(uniqueId) {
-  const row = window.PromotionState.activeData.find(item => item.uniqueId === uniqueId);
-  if (!row) {
-    showToast("ERROR", "မူရင်းဒေတာကို ရှာမတွေ့ပါရှင်။");
-    return;
-  }
+  const item = gPromotionData.find(p => p.uniqueId === uniqueId);
+  if (!item) return;
 
   openAddModalPromotion();
 
-  document.getElementById('promo-uniqueId').value = row.uniqueId;
-  document.getElementById('promo-fy').value = row.fy || "";
-  document.getElementById('promo-class').value = row.class || "";
-  document.getElementById('promo-category').value = row.category || "";
-  document.getElementById('promo-registration').value = row.registration || 0;
-  document.getElementById('promo-original-price').value = row.originalPrice || 0;
-  document.getElementById('promo-pro-a').value = row.proA || 0;
-  document.getElementById('promo-pro-b').value = row.proB || 0;
-  document.getElementById('promo-pro-c').value = row.proC || 0;
-  document.getElementById('promo-pro-d').value = row.proD || 0;
-  document.getElementById('promo-pro-e').value = row.proE || 0;
-  document.getElementById('promo-half-scholar').value = row.halfScholar || 0;
-  document.getElementById('promo-full-scholar').value = row.fullScholar || 0;
-  document.getElementById('promo-remark').value = row.remark || "";
+  const title = document.getElementById('promo-form-title');
+  if (title) title.textContent = 'Edit Promotion Rate';
+
+  document.getElementById('promo-uniqueId').value = item.uniqueId || '';
+  document.getElementById('promo-fy').value = item.fy || '';
+  document.getElementById('promo-class').value = item.class || '';
+  document.getElementById('promo-category').value = item.category || '';
+  document.getElementById('promo-registration').value = item.registration || 0;
+  document.getElementById('promo-original-price').value = item.originalPrice || 0;
+  document.getElementById('promo-pro-a').value = item.proA || 0;
+  document.getElementById('promo-pro-b').value = item.proB || 0;
+  document.getElementById('promo-pro-c').value = item.proC || 0;
+  document.getElementById('promo-pro-d').value = item.proD || 0;
+  document.getElementById('promo-pro-e').value = item.proE || 0;
+  document.getElementById('promo-half-scholar').value = item.halfScholar || 0;
+  document.getElementById('promo-full-scholar').value = item.fullScholar || 0;
+  document.getElementById('promo-remark').value = item.remark || '';
 }
 
-/**
- * 💡 Delete Promotion Entry
- */
-async function deletePromotionEntry(uniqueId) {
-  if (confirm("ဤ Promotion နှုန်းထားမှတ်တမ်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလားရှင်?")) {
-    showToast("SUCCESS", "မှတ်တမ်းကို ဖျက်သိမ်းနေပါသည်...");
-    try {
-      const response = await callApi('deletePromotionEntry', { uniqueId });
-      if (response && response.success) {
-        showToast("SUCCESS", "Promotion နှုန်းထားအား ဖျက်သိမ်းပြီးပါပြီရှင်။");
-        loadPromotionData(true);
-      } else {
-        showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response.message || ""));
-      }
-    } catch (err) {
-      showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
+async function savePromotionForm(event) {
+  event.preventDefault();
+
+  const uid = document.getElementById('promo-uniqueId')?.value || '';
+  const actionName = uid ? 'updatePromotionEntry' : 'savePromotionEntry';
+
+  const payload = {
+    uniqueId: uid,
+    fy: document.getElementById('promo-fy')?.value || '',
+    class: document.getElementById('promo-class')?.value || '',
+    category: document.getElementById('promo-category')?.value || '',
+    registration: parseFloat(document.getElementById('promo-registration')?.value || 0),
+    originalPrice: parseFloat(document.getElementById('promo-original-price')?.value || 0),
+    proA: parseFloat(document.getElementById('promo-pro-a')?.value || 0),
+    proB: parseFloat(document.getElementById('promo-pro-b')?.value || 0),
+    proC: parseFloat(document.getElementById('promo-pro-c')?.value || 0),
+    proD: parseFloat(document.getElementById('promo-pro-d')?.value || 0),
+    proE: parseFloat(document.getElementById('promo-pro-e')?.value || 0),
+    halfScholar: parseFloat(document.getElementById('promo-half-scholar')?.value || 0),
+    fullScholar: parseFloat(document.getElementById('promo-full-scholar')?.value || 0),
+    remark: document.getElementById('promo-remark')?.value || ''
+  };
+
+  try {
+    if (typeof toggleLoading === 'function') toggleLoading(true);
+    const res = await callApi(actionName, payload);
+
+    if (res && res.success) {
+      showToast("SUCCESS", "Promotion Rate နှုန်းထား သိမ်းဆည်းပြီးပါပြီ");
+      closePromotionModal();
+      loadPromotionData(false);
+    } else {
+      showToast("ERROR", res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ");
     }
+  } catch (err) {
+    showToast("ERROR", "Save Error: " + err.message);
+  } finally {
+    if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
-/**
- * 💡 CSV Export
- */
+async function deletePromotionEntry(uniqueId) {
+  if (!confirm("ဤ Promotion နှုန်းထားကို ဖျက်ရန် သေချာပါသလား?")) return;
+
+  try {
+    if (typeof toggleLoading === 'function') toggleLoading(true);
+    const res = await callApi('deletePromotionEntry', { uniqueId });
+
+    if (res && res.success) {
+      showToast("SUCCESS", "Promotion နှုန်းထား ဖျက်ပြီးပါပြီ");
+      loadPromotionData(false);
+    } else {
+      showToast("ERROR", res.message || "ဖျက်ဆီးမှု မအောင်မြင်ပါ");
+    }
+  } catch (err) {
+    showToast("ERROR", "Delete Error: " + err.message);
+  } finally {
+    if (typeof toggleLoading === 'function') toggleLoading(false);
+  }
+}
+
 function exportToCSVPromotion() {
-  const data = window.PromotionState.activeData;
-  if (!data || data.length === 0) {
-    showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါရှင်။");
+  if (!gPromotionData || gPromotionData.length === 0) {
+    showToast("ERROR", "Export ပြုလုပ်ရန် စာရင်း မရှိပါ");
     return;
   }
-
-  let csv = "NO,FY,CLASS,CATEGORY,REGISTRATION,ORIGINAL PRICE,PRO A,PRO B,PRO C,PRO D,PRO E,HALF SCHOLAR,FULL SCHOLAR,REMARK,UNIQUEID\n";
-  data.forEach(row => {
-    let remark = `"${(row.remark || '').replace(/"/g, '""')}"`;
-    csv += `${row.no},${row.fy || ''},${row.class || ''},${row.category || ''},${row.registration || 0},${row.originalPrice || 0},${row.proA || 0},${row.proB || 0},${row.proC || 0},${row.proD || 0},${row.proE || 0},${row.halfScholar || 0},${row.fullScholar || 0},${remark},${row.uniqueId}\n`;
+  let csv = "NO,FY,CLASS,CATEGORY,REGISTRATION,ORIGINAL_PRICE,PRO_A,PRO_B,PRO_C,PRO_D,PRO_E,HALF_SCHOLAR,FULL_SCHOLAR,REMARK\n";
+  gPromotionData.forEach(r => {
+    csv += `"${r.no}","${r.fy}","${r.class}","${r.category}",${r.registration},${r.originalPrice},${r.proA},${r.proB},${r.proC},${r.proD},${r.proE},${r.halfScholar},${r.fullScholar},"${r.remark}"\n`;
   });
-
-  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  link.setAttribute("href", url);
-  link.setAttribute("download", `promotion_matrix_${new Date().toISOString().slice(0,10)}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Promotion_Matrix_Export_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
 }
