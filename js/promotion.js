@@ -8,9 +8,6 @@ let gPromotionSearch = '';
 let gPromotionFyFilter = '';
 let gPromotionCatFilter = '';
 
-/**
- * 💡 3 နှစ်စာ Dynamic Fiscal Years တွက်ချက်ပေးသည့် Helper (March to April)
- */
 function getDynamicFiscalYears() {
   const d = new Date();
   const year = d.getFullYear();
@@ -28,9 +25,6 @@ function getDynamicFiscalYears() {
   ];
 }
 
-/**
- * 💡 Dropdown များကို Dynamic ဖြည့်ပေးခြင်း
- */
 function populatePromotionDropdowns() {
   const fys = getDynamicFiscalYears();
   
@@ -42,9 +36,7 @@ function populatePromotionDropdowns() {
   const fyFilter = document.getElementById('promo-filter-fy');
   if (fyFilter) {
     let filterHtml = '<option value="">-- All FY --</option>';
-    fys.forEach(f => {
-      filterHtml += `<option value="${f.value}">${f.label}</option>`;
-    });
+    fys.forEach(f => { filterHtml += `<option value="${f.value}">${f.label}</option>`; });
     fyFilter.innerHTML = filterHtml;
   }
 
@@ -66,9 +58,7 @@ function populatePromotionDropdowns() {
   const catFilter = document.getElementById('promo-filter-cat');
   if (catFilter) {
     let filterHtml = '<option value="">-- All Categories --</option>';
-    cats.forEach(c => {
-      filterHtml += `<option value="${c}">${c}</option>`;
-    });
+    cats.forEach(c => { filterHtml += `<option value="${c}">${c}</option>`; });
     catFilter.innerHTML = filterHtml;
   }
 }
@@ -119,9 +109,6 @@ function applyPromotionFilters() {
   renderPromotionTable(filtered);
 }
 
-/**
- * 💡 FY မျဉ်းခြားပေးခြင်းနှင့် Color-Coded FY Badges ပါဝင်သော Table Render Engine
- */
 function renderPromotionTable(data) {
   const tbody = document.getElementById('promo-table-body');
   const totalCountEl = document.getElementById('promo-total-count');
@@ -137,7 +124,6 @@ function renderPromotionTable(data) {
   let previousFy = '';
 
   tbody.innerHTML = data.map((item, idx) => {
-    // 💡 1. FY တစ်နှစ်နှင့်တစ်နှစ် ကူးပြောင်းချိန်တွင် အထက်ပါမျဉ်းထူ (`border-t-2 border-indigo-500/50`) တားပေးခြင်း
     const isFyChanged = (idx > 0 && item.fy !== previousFy && item.fy && previousFy);
     previousFy = item.fy || '';
 
@@ -145,23 +131,17 @@ function renderPromotionTable(data) {
       ? 'border-t-2 border-indigo-500/60 bg-indigo-500/5' 
       : 'border-b border-slate-800/40';
 
-    // 💡 2. FY အလိုက် အရောင်ခွဲ တံဆိပ် (Badges) သတ်မှတ်ခြင်း
-    let fyBadgeStyle = 'bg-slate-800 text-slate-300 border-slate-700'; // Default / ယခင်နှစ်
-    
+    let fyBadgeStyle = 'bg-slate-800 text-slate-300 border-slate-700';
     if (item.fy === '2026-2027') {
-      fyBadgeStyle = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 font-black'; // ယခုနှစ် (Active)
+      fyBadgeStyle = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 font-black';
     } else if (item.fy === '2027-2028') {
-      fyBadgeStyle = 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'; // နောက်နှစ် (Future)
+      fyBadgeStyle = 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold';
     }
 
     return `
       <tr class="hover:bg-slate-800/40 transition ${rowBorderClass}">
         <td class="text-center text-slate-400 py-3">${item.no || (idx + 1)}</td>
-        <td class="py-3">
-          <span class="inline-block px-2 py-0.5 rounded text-[10px] border ${fyBadgeStyle}">
-            ${item.fy || 'N/A'}
-          </span>
-        </td>
+        <td class="py-3"><span class="inline-block px-2 py-0.5 rounded text-[10px] border ${fyBadgeStyle}">${item.fy || 'N/A'}</span></td>
         <td class="font-bold text-white py-3">${item.class || ''}</td>
         <td class="text-slate-300 py-3">${item.category || ''}</td>
         <td class="text-right font-bold text-indigo-400 font-mono py-3">${(item.registration || 0).toLocaleString()}</td>
@@ -210,11 +190,14 @@ function closePromotionModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+/**
+ * 💡 EDIT PRE-FILL FIX: မူလ ဒေတာများ Form ထဲသို့ အပြည့်အဝ ဝင်ရောက်လာစေခြင်း
+ */
 function editPromotionEntry(uniqueId) {
-  const item = gPromotionData.find(p => p.uniqueId === uniqueId);
+  const item = gPromotionData.find(p => String(p.uniqueId).trim() === String(uniqueId).trim());
   if (!item) return;
 
-  openAddModalPromotion();
+  populatePromotionDropdowns();
 
   const title = document.getElementById('promo-form-title');
   if (title) title.textContent = 'Edit Promotion Rate';
@@ -233,6 +216,9 @@ function editPromotionEntry(uniqueId) {
   document.getElementById('promo-half-scholar').value = item.halfScholar || 0;
   document.getElementById('promo-full-scholar').value = item.fullScholar || 0;
   document.getElementById('promo-remark').value = item.remark || '';
+
+  const modal = document.getElementById('promo-modal');
+  if (modal) modal.classList.remove('hidden');
 }
 
 async function savePromotionForm(event) {
