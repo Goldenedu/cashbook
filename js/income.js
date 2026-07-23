@@ -1,6 +1,6 @@
 /**
  * GOLDEN ERP SYSTEM - MAIN INCOME BOOK MODULE
- * File: js/income.js
+ * File: js/income.js     
  */
 
 let gIncomeData = [];
