@@ -79,7 +79,7 @@
   <div class="flex flex-col md:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
     <div class="relative w-full md:w-[500px]">
       <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
-      <input type="text" id="income-search" oninput="onSearchInputIncome()" placeholder="Search student name, FYID, remark..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
+      <input type="text" id="income-search" oninput="onSearchInputIncome()" placeholder="Search student name, FYID, remark..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
     </div>
 
     <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
@@ -161,48 +161,44 @@
       <div class="grid grid-cols-3 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Select FY</label>
-          <select id="inc-fy" onchange="onStudentIdOrFYChangeIncome()" required class="w-full">
-            <option value="2025-2026">2025-2026</option>
-            <option value="2026-2027" selected>2026-2027</option>
-            <option value="2027-2028">2027-2028</option>
-          </select>
+          <select id="inc-fy" onchange="onStudentIdOrFYChangeIncome()" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold"></select>
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Student ID</label>
-          <input type="number" id="inc-id-search" oninput="onStudentIdOrFYChangeIncome()" required placeholder="e.g. 1" class="w-full font-bold text-slate-100">
+          <input type="number" id="inc-id-search" lang="en" oninput="onStudentIdOrFYChangeIncome()" required placeholder="e.g. 1" class="w-full font-bold text-slate-100 font-mono bg-[#0f172a] border border-slate-800 rounded-lg p-2.5 outline-none focus:border-indigo-500">
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Date</label>
-          <input type="date" id="inc-date" required class="w-full">
+          <input type="date" id="inc-date" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
         </div>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Generated FYID</label>
-          <input type="text" id="inc-fyid-show" readonly placeholder="Auto-generated..." class="w-full bg-slate-950/40 text-indigo-400 border border-slate-800 cursor-not-allowed font-bold">
+          <input type="text" id="inc-fyid-show" readonly placeholder="Auto-generated..." class="w-full bg-slate-950/40 text-indigo-400 border border-slate-800 cursor-not-allowed font-bold font-mono rounded-lg p-2.5">
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Student Name</label>
-          <input type="text" id="inc-fyidname-show" readonly placeholder="Auto-detecting..." class="w-full bg-slate-950/40 text-slate-300 border border-slate-800 cursor-not-allowed font-bold">
+          <input type="text" id="inc-fyidname-show" readonly placeholder="Auto-detecting..." class="w-full bg-slate-950/40 text-slate-300 border border-slate-800 cursor-not-allowed font-bold rounded-lg p-2.5">
         </div>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Effect Date</label>
-          <input type="date" id="inc-effdate" class="w-full">
+          <input type="date" id="inc-effdate" class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Class</label>
-          <input type="text" id="inc-class" readonly class="w-full bg-slate-950/40 text-slate-400 border border-slate-800 cursor-not-allowed">
+          <input type="text" id="inc-class" readonly class="w-full bg-slate-950/40 text-slate-400 border border-slate-800 cursor-not-allowed font-bold rounded-lg p-2.5">
         </div>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Category</label>
-          <select id="inc-category" onchange="onAccountNameOrCategoryChangeIncome()" required class="w-full">
+          <select id="inc-category" onchange="onAccountNameOrCategoryChangeIncome()" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
             <option value="Boarder">Boarder</option>
             <option value="Semi Boarder">Semi Boarder</option>
             <option value="Day Student">Day Student</option>
@@ -211,14 +207,14 @@
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Promo Plan</label>
-          <input type="text" id="inc-promo" readonly class="w-full bg-slate-950/40 text-slate-400 border border-slate-800 cursor-not-allowed">
+          <input type="text" id="inc-promo" readonly class="w-full bg-slate-950/40 text-slate-400 border border-slate-800 cursor-not-allowed font-bold rounded-lg p-2.5">
         </div>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Account Name</label>
-          <select id="inc-account" onchange="onAccountNameOrCategoryChangeIncome()" required class="w-full">
+          <select id="inc-account" onchange="onAccountNameOrCategoryChangeIncome()" required class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
             <option value="Registration">Registration</option>
             <option value="Services">Services</option>
             <option value="Ferry">Ferry</option>
@@ -226,14 +222,15 @@
             <option value="Others">Others</option>
           </select>
         </div>
+        <!-- 💡 STANDARD AUT AMOUNT (Promo Sheet မှ Auto တွက်ချက်ပြသမည်) -->
         <div class="flex flex-col gap-1">
           <label class="font-bold text-indigo-400 uppercase tracking-wide">Standard AUT Amount</label>
-          <input type="number" id="inc-autamount" readonly class="w-full bg-indigo-500/10 text-indigo-400 font-extrabold text-right border border-indigo-500/20 cursor-not-allowed">
+          <input type="number" id="inc-autamount" lang="en" readonly class="w-full bg-indigo-500/10 text-indigo-400 font-extrabold text-right font-mono border border-indigo-500/20 cursor-not-allowed rounded-lg p-2.5">
         </div>
       </div>
 
       <!-- Split Payment Checkbox -->
-      <div class="flex items-center gap-2 py-1.5 px-3 bg-slate-900 border border-slate-800 rounded-lg">
+      <div class="flex items-center gap-2 py-2 px-3 bg-slate-900 border border-slate-800 rounded-lg">
         <input type="checkbox" id="inc-is-split" onchange="toggleSplitPaymentIncome()" class="cursor-pointer h-4 w-4">
         <label for="inc-is-split" class="text-xs font-bold text-slate-200 cursor-pointer">ခွဲပြီးပေးချေမည် (Cash + Bank ရောပေးမည်)</label>
       </div>
@@ -242,18 +239,18 @@
       <div class="grid grid-cols-3 gap-4" id="inc-normal-payment-div">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-slate-400 uppercase tracking-wide">Method</label>
-          <select id="inc-method" class="w-full">
+          <select id="inc-method" class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500">
             <option value="Cash">Cash</option>
             <option value="Bank">Bank</option>
           </select>
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-rose-400 uppercase tracking-wide">Debit (ပြန်အမ်း)</label>
-          <input type="number" id="inc-debit" value="0" class="w-full text-right text-rose-400 font-bold">
+          <input type="number" id="inc-debit" value="0" lang="en" class="w-full text-right text-rose-400 font-bold font-mono bg-[#0f172a] border border-slate-800 rounded-lg p-2.5">
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-emerald-400 uppercase tracking-wide">Credit (ပေးချေငွေ)</label>
-          <input type="number" id="inc-credit" value="0" class="w-full text-right text-emerald-400 font-bold">
+          <input type="number" id="inc-credit" value="0" lang="en" class="w-full text-right text-emerald-400 font-bold font-mono bg-[#0f172a] border border-slate-800 rounded-lg p-2.5">
         </div>
       </div>
 
@@ -261,17 +258,17 @@
       <div class="grid grid-cols-2 gap-4 hidden" id="inc-split-payment-div">
         <div class="flex flex-col gap-1">
           <label class="font-bold text-emerald-400 uppercase tracking-wide">Cash Paid Amount</label>
-          <input type="number" id="inc-cash-amount" value="0" class="w-full text-right font-bold text-emerald-400 bg-emerald-500/5 border border-emerald-500/20">
+          <input type="number" id="inc-cash-amount" value="0" lang="en" class="w-full text-right font-bold text-emerald-400 font-mono bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-2.5">
         </div>
         <div class="flex flex-col gap-1">
           <label class="font-bold text-sky-400 uppercase tracking-wide">Bank Paid Amount</label>
-          <input type="number" id="inc-bank-amount" value="0" class="w-full text-right font-bold text-sky-400 bg-sky-500/5 border border-sky-500/20">
+          <input type="number" id="inc-bank-amount" value="0" lang="en" class="w-full text-right font-bold text-sky-400 font-mono bg-sky-500/5 border border-sky-500/20 rounded-lg p-2.5">
         </div>
       </div>
 
       <div class="flex flex-col gap-1">
         <label class="font-bold text-slate-400 uppercase tracking-wide">Remark (မှတ်ချက်)</label>
-        <textarea id="inc-remark" rows="2" placeholder="အသေးစိတ် မှတ်ချက်..." class="w-full"></textarea>
+        <textarea id="inc-remark" rows="2" placeholder="အသေးစိတ် မှတ်ချက်..." class="w-full bg-[#0f172a] border border-slate-800 text-slate-100 rounded-lg p-2.5 outline-none focus:border-indigo-500"></textarea>
       </div>
 
       <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-800">
@@ -282,94 +279,5 @@
   </div>
 </div>
 
-<!-- 💡 DUAL-COPY PRINT RECEIPT LAYOUT -->
-<div id="invoice-print-area" class="bg-white text-black font-sans text-xs">
-  <!-- Copy 1: CUSTOMER COPY -->
-  <div class="invoice-section">
-    <div class="space-y-3">
-      <div class="text-center font-black text-sm tracking-widest border-b border-black pb-1 uppercase">CUSTOMER COPY (ကျောင်းသားမိဘအတွက်ပြေစာ)</div>
-      
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <p class="font-bold">Name (အမည်) : <span id="print-customer-name" class="font-semibold px-2"></span></p>
-          <p class="font-bold mt-1">Class (အတန်း) : <span id="print-customer-class" class="font-semibold px-2"></span></p>
-          <p class="font-bold mt-1">Category (အမျိုးအစား) : <span id="print-customer-category" class="font-semibold px-2"></span></p>
-        </div>
-        <div class="text-right">
-          <p class="font-bold">Date : <span id="print-customer-date" class="font-semibold"></span></p>
-          <p class="font-bold mt-1">Student ID : <span id="print-customer-id" class="font-mono font-semibold"></span></p>
-        </div>
-      </div>
-      
-      <table class="w-full text-left border-collapse border border-black mt-2">
-        <thead>
-          <tr class="bg-slate-100 border-b border-black">
-            <th scope="col" class="border border-black p-1 text-center font-bold text-[9px] w-12">NO</th>
-            <th scope="col" class="border border-black p-1 font-bold text-[9px]">DESCRIPTION</th>
-            <th scope="col" class="border border-black p-1 text-center font-bold text-[9px] w-20">MONTH</th>
-            <th scope="col" class="border border-black p-1 text-center font-bold text-[9px] w-28">METHOD</th>
-            <th scope="col" class="border border-black p-1 text-right font-bold text-[9px] w-32">AMOUNT</th>
-          </tr>
-        </thead>
-        <tbody id="print-customer-table-body"></tbody>
-      </table>
-      
-      <div class="text-right font-bold text-xs mt-1">
-        Total: <span id="print-customer-total" class="border-b-2 border-double border-black px-2"></span>
-      </div>
-    </div>
-    
-    <div class="grid grid-cols-2 gap-4 pt-4 pb-2">
-      <div class="text-center"><p class="border-t border-black w-32 mx-auto font-bold pt-1 text-[9px]">Received BY (ငွေကိုင်)</p></div>
-      <div class="text-center"><p class="border-t border-black w-32 mx-auto font-bold pt-1 text-[9px]">Paid By (ငွေပေးသွင်းသူ)</p></div>
-    </div>
-  </div>
-
-  <div class="invoice-divider border-t border-dashed border-slate-400 text-center text-slate-400 select-none text-[10px]">
-    ✂ - - - - - - - - - - - - - - - - - Cut Here - - - - - - - - - - - - - - - - - ✂
-  </div>
-
-  <!-- Copy 2: RECEIVED COPY -->
-  <div class="invoice-section">
-    <div class="space-y-3">
-      <div class="text-center font-black text-sm tracking-widest border-b border-black pb-1 uppercase">RECEIVED COPY (ကျောင်းတွင်းသိမ်းဆည်းရန်ပြေစာ)</div>
-      
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <p class="font-bold">Name (အမည်) : <span id="print-received-name" class="font-semibold px-2"></span></p>
-          <p class="font-bold mt-1">Class (အတန်း) : <span id="print-received-class" class="font-semibold px-2"></span></p>
-          <p class="font-bold mt-1">Category (အမျိုးအစား) : <span id="print-received-category" class="font-semibold px-2"></span></p>
-        </div>
-        <div class="text-right">
-          <p class="font-bold">Date : <span id="print-received-date" class="font-semibold"></span></p>
-          <p class="font-bold mt-1">Student ID : <span id="print-received-id" class="font-mono font-semibold"></span></p>
-        </div>
-      </div>
-      
-      <table class="w-full text-left border-collapse border border-black mt-2">
-        <thead>
-          <tr class="bg-slate-100 border-b border-black">
-            <th scope="col" class="border border-black p-1 text-center font-bold text-[9px] w-12">NO</th>
-            <th scope="col" class="border border-black p-1 font-bold text-[9px]">DESCRIPTION</th>
-            <th scope="col" class="border border-black p-1 text-center font-bold text-[9px] w-20">MONTH</th>
-            <th scope="col" class="border border-black p-1 text-center font-bold text-[9px] w-28">METHOD</th>
-            <th scope="col" class="border border-black p-1 text-right font-bold text-[9px] w-32">AMOUNT</th>
-          </tr>
-        </thead>
-        <tbody id="print-received-table-body"></tbody>
-      </table>
-      
-      <div class="text-right font-bold text-xs mt-1">
-        Total: <span id="print-received-total" class="border-b-2 border-double border-black px-2"></span>
-      </div>
-    </div>
-    
-    <div class="grid grid-cols-2 gap-4 pt-4 pb-2">
-      <div class="text-center"><p class="border-t border-black w-32 mx-auto font-bold pt-1 text-[9px]">Received BY (ငွေကိုင်)</p></div>
-      <div class="text-center"><p class="border-t border-black w-32 mx-auto font-bold pt-1 text-[9px]">Paid By (ငွေပေးသွင်းသူ)</p></div>
-    </div>
-  </div>
-</div>
-
-<!-- 💡 AUTO-LOAD TRIGGER: Safe Data-URI Trigger (404 Error မတက်ပါ) -->
-<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="if(typeof switchHrSubTab==='function'){switchHrSubTab('payroll');} this.remove();" class="hidden">
+<!-- 💡 AUTO-LOAD TRIGGER -->
+<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="if(typeof loadIncomeData==='function'){loadIncomeData(false);} this.remove();" class="hidden">
