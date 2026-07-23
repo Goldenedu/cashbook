@@ -2,38 +2,47 @@
 <html lang="my" class="dark">
 <head>
   <meta charset="UTF-8">
+  <!-- Favicon Icon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230c1322'/><path d='M50 20 L90 38 L50 56 L10 38 Z' fill='%23818cf8'/><path d='M25 46.5 V65 C25 75 75 75 75 65 V46.5' fill='none' stroke='%23818cf8' stroke-width='6' stroke-linecap='round'/><circle cx='82' cy='55' r='4' fill='%23fbbf24'/><path d='M82 55 V75' stroke='%23fbbf24' stroke-width='3' stroke-linecap='round'/></svg>">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GOLDEN CASH BOOK - ERP SYSTEM</title>
-  
-  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="css/style.css">
 
+  <!-- 💡 Instant Anti-Flicker Sync Script (First Frame မပေါ်မီ တန်းစီ သတ်မှတ်ပေးမည်) -->
   <script>
     (function() {
       var token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
-      window.addEventListener('DOMContentLoaded', function() {
-        var loginOverlay = document.getElementById('login-overlay');
-        var erpWorkspace = document.getElementById('erp-workspace');
-        if (token) {
-          if (loginOverlay) loginOverlay.classList.add('hidden');
-          if (erpWorkspace) erpWorkspace.classList.remove('hidden');
-        } else {
-          if (loginOverlay) loginOverlay.classList.remove('hidden');
-          if (erpWorkspace) erpWorkspace.classList.add('hidden');
-        }
-      });
+      if (token) {
+        document.documentElement.classList.add('is-authed');
+      } else {
+        document.documentElement.classList.add('not-authed');
+      }
     })();
   </script>
+
+  <style>
+    /* 💡 Instant Anti-Flicker CSS (FOUC & Layout Shift ကာကွယ်ရန်) */
+    html.is-authed #login-overlay { display: none !important; }
+    html.is-authed #erp-workspace { display: flex !important; }
+    html.not-authed #login-overlay { display: flex !important; }
+    html.not-authed #erp-workspace { display: none !important; }
+  </style>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+  <!-- Font Awesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="bg-[#090d16] font-sans flex h-screen overflow-hidden text-slate-300">
 
+  <!-- LOGIN OVERLAY -->
   <div id="login-overlay" class="fixed inset-0 bg-[#090d16] z-[100] flex items-center justify-center p-4">
     <div class="w-full max-w-sm bg-[#0c1322] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 text-slate-300">
+      
       <div class="text-center space-y-1.5">
-        <div class="inline-flex p-3 bg-indigo-500/10 text-indigo-400 rounded-xl mb-1">
-          <i class="fa-solid fa-shield-halved text-2xl"></i>
+        <!-- 💡 LOGO: ဘွဲ့ရ ဦးထုပ် Icon (fa-graduation-cap) ပြောင်းလဲထားပါသည် -->
+        <div class="inline-flex p-3.5 bg-indigo-500/10 text-indigo-400 rounded-2xl mb-1 shadow-lg shadow-indigo-500/5">
+          <i class="fa-solid fa-graduation-cap text-3xl"></i>
         </div>
         <h2 class="text-base font-extrabold text-white tracking-wide">GOLDEN CASH BOOK</h2>
         <p class="text-[10px] text-slate-500 uppercase tracking-wider">Secure Authorization Portal</p>
@@ -68,7 +77,8 @@
     </div>
   </div>
 
-  <div id="erp-workspace" class="hidden flex h-full w-full">
+  <!-- MAIN ERP WORKSPACE -->
+  <div id="erp-workspace" class="flex h-full w-full">
     <aside class="w-64 bg-[#0c1322] border-r border-slate-800 flex flex-col h-full shadow-2xl shrink-0">
       <div class="h-[60px] px-4 border-b border-slate-800 flex items-center justify-between text-white bg-[#0e172a]">
         <div class="flex items-center gap-2.5 font-extrabold text-sm tracking-wide">
@@ -121,7 +131,6 @@
           <i class="fa-solid fa-coins text-yellow-400 w-4 text-center"></i> Promotion List
         </button>
 
-        <!-- 💡 REPORTING SECTION (သန့်ရှင်းစွာ ၂ ခုသာ ထားရှိထားပါသည်) -->
         <p class="text-[9px] font-black text-slate-600 px-4 uppercase tracking-widest mt-5 mb-2">Reporting</p>
         <button onclick="switchTab('report-financial')" id="btn-report-financial" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-400 hover:text-white flex items-center gap-3 text-xs">
           <i class="fa-solid fa-chart-pie text-emerald-400 w-4 text-center"></i> Financial Statement Report
