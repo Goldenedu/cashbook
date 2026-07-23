@@ -35,6 +35,7 @@ window.MAGIC_NUMBERS = {
 
 window.CONFIG = {
   API_URL: "https://cashbook-api.goldeneduprivateschool.workers.dev/",
+  API_BASE_URL: "https://cashbook-api.goldeneduprivateschool.workers.dev/",
 
   TITLE_MAP: {
     'dashboard': 'Home Dashboard',
@@ -77,7 +78,7 @@ window.CONFIG = {
     },
     payroll: {
       bookName: "HR Payroll Exp Book", prefix: "SAL", sheetName: "Payroll",
-      requiredHeaders: ["NO", "DATE", "CATEGORY", "DESCRIPTION", "METHOD", "DEBIT", "CREDIT", "BALANCES", "UNPAID BONUS", "UNPAID FUND", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT","SEND MAIL", "UNIQUEID"]
+      requiredHeaders: ["NO", "DATE", "CATEGORY", "DESCRIPTION", "METHOD", "DEBIT", "CREDIT", "BALANCES", "UNPAID BONUS", "UNPAID FUND", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "SEND MAIL", "UNIQUEID"]
     },
     staffFullTime: {
       bookName: "Full Time Staff List", prefix: "FID", sheetName: "FullTime",
@@ -110,41 +111,52 @@ window.CONFIG = {
   }
 };
 
+// 💡 Compatibility Aliases
+window.CONFIG.books = window.CONFIG.sheets;
+var CONFIG = window.CONFIG;
+
 window.DROPDOWNS = {
   bankBook: {
-    category: ["Non","Opening","Transfer","Bank Loan", "Bank Fees","Other Income", "Income", "Closing" ],
-    method: ["Bank"], transfer: ["Cash Book", "Office Book", "Kitchen Book", "Salary Book"]
+    category: ["Non", "Opening", "Transfer", "Bank Loan", "Bank Fees", "Other Income", "Income", "Closing"],
+    method: ["Bank"],
+    transfer: ["Cash Book", "Office Exp Book", "Kitchen Exp Book", "HR Payroll Exp Book"]
   },
   cashBook: {
-    category: ["Non","Opening", "Transfer", "Cash Loan", "Other Income","Income",  "Closing"],
-    method: ["Cash"], transfer: ["Bank Book", "Office Book", "Kitchen Book", "Salary Book"]
+    category: ["Non", "Opening", "Transfer", "Cash Loan", "Other Income", "Income", "Closing"],
+    method: ["Cash"],
+    transfer: ["Bank Book", "Office Exp Book", "Kitchen Exp Book", "HR Payroll Exp Book"]
   },
   officeExpBook: {
-    category: ["Non","Adv / Ref", "Liabilities", "Admin Exp", "Vehicle Related Exp", "Assets Materials", "Donation & Social", "HR Staff Benefit", "Construction", "Student Refund", "Drawing Account 1", "Drawing Account 2", "Student Refund",  "Adv Capital Snack Shop", "Ferry Payment","Advance Unifrom","Opening", "Income","Closing", "Transfer" ],
-    method: ["Cash", "Bank"], transfer: ["Bank Book", "Cash Book"]
+    category: ["Non", "Adv / Ref", "Liabilities", "Admin Exp", "Vehicle Related Exp", "Assets Materials", "Donation & Social", "HR Staff Benefit", "Construction", "Student Refund", "Drawing Account 1", "Drawing Account 2", "Adv Capital Snack Shop", "Ferry Payment", "Advance Uniform", "Opening", "Income", "Closing", "Transfer"],
+    method: ["Cash", "Bank"],
+    transfer: ["Bank Book", "Cash Book"]
   },
   kitchenExpBook: {
-    category: ["Non","Rice & Oil", "Fish & meat/Eggs", "Beans/Vegetables", "Others", "HOME: 1 Exp", "HOME: 2 Exp", "Income","Opening",  "Closing", "Transfer"],
-    method: ["Cash", "Bank"], transfer: ["Bank Book", "Cash Book"]
+    category: ["Non", "Rice & Oil", "Fish & meat/Eggs", "Beans/Vegetables", "Others", "HOME: 1 Exp", "HOME: 2 Exp", "Income", "Opening", "Closing", "Transfer"],
+    method: ["Cash", "Bank"],
+    transfer: ["Bank Book", "Cash Book"]
   },
   hrPayrollExpBook: {
-    category: ["Non","Full Time Salary", "Part Time Salary", "Full Time Bonus", "Full Time Fund", "Income","Opening",  "Closing", "Transfer"],
-    method: ["Cash", "Bank"], transfer: ["Bank Book", "Cash Book"]
+    category: ["Non", "Full Time Salary", "Part Time Salary", "Full Time Bonus", "Full Time Fund", "Income", "Opening", "Closing", "Transfer"],
+    method: ["Cash", "Bank"],
+    transfer: ["Bank Book", "Cash Book"]
   },
   student: {
-    class: ["Non","Pre School", "KG Student", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"],
+    class: ["Non", "Pre School", "KG Student", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"],
     category: ["Boarder", "Semi Boarder", "Day Student"],
     promo: ["Original price", "Pro A", "Pro B", "Pro C", "Pro D", "Pro E", "Half scholar", "Full scholar"]
   },
   incomeBook: {
-    category: ["Non","Boarder", "Semi Boarder", "Day Student", "Others"],
+    category: ["Non", "Boarder", "Semi Boarder", "Day Student", "Others"],
     accountName: ["Registration", "Services", "Ferry", "Night Study Fees", "Others"],
     method: ["Cash", "Bank"]
   },
   staffCommon: {
-    education: ["Non","Phd", "Master", "Degree", "High Graduate", "Middle", "Primary", "High School"],
-    fullTimePositions: ["Non","Admin", "Teacher", "Finance", "Computer", "Log & Support", "Assistant Teacher", "Office", "Chef", "Assistant Chef", "Home Chef", "General"],
-    partTimePositions: ["Non","သင်ကြားရေး", "အခြား နည်းပြဆရာ", "Zumba Instructor", "တိုက်ကွမ်ဒိုနည်းပြ", "ဓမ္မစကူးလ်နည်းပြ", "ပန်းချီဆရာ", "အားကစားနည်းပြ", "အလုပ်သင်"],
-    salaryGrades: ["Non", "Grade A", "Grade B", "Grade C", "Grade D", "Grade E", "Grade F", "Grade G", "Grade H", "Grade I", "Grade J"]
+    education: ["Non", "Phd", "Master", "Degree", "High Graduate", "Middle", "Primary", "High School"],
+    fullTimePositions: ["Non", "Admin", "Teacher", "Finance", "Computer", "Log & Support", "Assistant Teacher", "Office", "Chef", "Assistant Chef", "Home Chef", "General"],
+    partTimePositions: ["Non", "သင်ကြားရေး", "အခြား နည်းပြဆရာ", "Zumba Instructor", "တိုက်ကွမ်ဒိုနည်းပြ", "ဓမ္မစကူးလ်နည်းပြ", "ပန်းချီဆရာ", "အားကစားနည်းပြ", "အလုပ်သင်"],
+    salaryGrades: ["Non", "Grade A", "Grade B", "Grade C", "Grade D", "Grade E", "Grade F", "Grade G", "Grade H", "Grade I", "Grade J", "Grade K"]
   }
 };
+
+var DROPDOWNS = window.DROPDOWNS;
