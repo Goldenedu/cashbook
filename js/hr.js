@@ -1,5 +1,5 @@
 /**
- * GOLDEN ERP SYSTEM - HR PAYROLL MODULE
+ * GOLDEN ERP SYSTEM - HR PAYROLL MODULE 
  * File: js/hr.js  
  */
 
