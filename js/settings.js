@@ -1,6 +1,6 @@
 /**
  * GOLDEN ERP SYSTEM - SYSTEM SETTINGS & EOY RESET CONTROLLER
- * File: js/settings.js
+ * File: js/settings.js (DUAL-MODE RESET CONTROLLER)
  */
 
 /**
@@ -18,7 +18,7 @@ async function triggerManualBackup() {
     if (res && res.success) {
       showToast("SUCCESS", res.message || "Manual Backup အောင်မြင်စွာ ပြုလုပ်ပြီးပါပြီရှင်။");
 
-      // 💡 1. စက်ထဲသို့ Excel (.xlsx) ဖိုင် တိုက်ရိုက် ဒေါင်းလုဒ် ဆွဲပေးခြင်း
+      // 💡 Direct Excel file download on browser
       if (res.backupUrl) {
         window.open(res.backupUrl, '_blank');
       }
@@ -33,31 +33,77 @@ async function triggerManualBackup() {
 }
 
 /**
- * 💡 Safe Trigger End of Year (EOY) Fiscal Reset
+ * 💡 Open EOY Dual-Mode Reset Modal
  */
-async function triggerEOYReset() {
+function openEOYModal() {
   const userRole = localStorage.getItem('golden_user_role');
   if (!["Owner", "Admin"].includes(userRole)) {
     showToast("ERROR", "Forbidden: EOY Reset ကို Owner နှင့် Admin သာ ပြုလုပ်ခွင့်ရှိပါသည်ရှင်။");
     return;
   }
 
-  const confirm1 = confirm("⚠️ သတိပေးချက်- ဘဏ္ဍာရေးနှစ်သစ် စာရင်းဖွင့်လှစ်ရန် သေချာပါသလားရှင်။\n\n(ယခင်နှစ် စာရင်းဟောင်းများကို goldeneduprivateschool@gmail.com သို့ အီးမေးလ်ဖြင့် အလိုအလျောက် Backup ပို့ပေးမည်ဖြစ်ပြီး၊ ဘဏ်နှင့် ငွေသား စတင်လက်ကျန်ငွေများကို အလိုအလျောက် သယ်ဆောင်ပေးပါမည်။)");
-  if (!confirm1) return;
+  const modal = document.getElementById('eoy-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+}
 
-  const promptText = prompt("အတည်ပြုရန်အတွက် 'RESET' ဟု စာလုံးကြီးဖြင့် ရိုက်ထည့်ပေးပါရှင် -");
-  if (promptText !== "RESET") {
-    showToast("ERROR", "အတည်ပြုချက် စာလုံး မမှန်ကန်သဖြင့် EOY Reset ကို ရပ်တန့်လိုက်ပါသည်ရှင်။");
+/**
+ * 💡 Close EOY Dual-Mode Reset Modal
+ */
+function closeEOYModal() {
+  const modal = document.getElementById('eoy-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+/**
+ * 💡 Confirm and Execute EOY Fiscal Reset with Selected Mode
+ */
+async function confirmEOYResetModal() {
+  const userRole = localStorage.getItem('golden_user_role');
+  if (!["Owner", "Admin"].includes(userRole)) {
+    showToast("ERROR", "Forbidden: EOY Reset ကို Owner နှင့် Admin သာ ပြုလုပ်ခွင့်ရှိပါသည်ရှင်။");
+    closeEOYModal();
+    return;
+  }
+
+  // Read Selected Reset Mode from Radio Inputs
+  const selectedRadio = document.querySelector('input[name="eoy-reset-mode"]:checked');
+  const resetMode = selectedRadio ? selectedRadio.value : "ANNUAL_FY";
+
+  const modeLabelMap = {
+    'ANNUAL_FY': '၁။ နှစ်ပတ်လည် ဘဏ္ဍာရေးနှစ်အလိုက် (Annual Fiscal Reset)',
+    'ADHOC_CUTOFF': '၂။ ယနေ့ ရက်စွဲဖြင့် စာရင်းဖြတ်တောက် (Ad-hoc Cut-off Reset)'
+  };
+
+  const selectedModeLabel = modeLabelMap[resetMode] || 'Annual Fiscal Reset';
+
+  closeEOYModal();
+
+  // Double Confirmation Prompt (မှားယွင်းနှိပ်မိခြင်းမှ ကာကွယ်ရန်)
+  const confirmText = prompt(`⚠️ သတိပေးချက်- အောက်ပါ ရွေးချယ်မှုဖြင့် စာရင်း ပိတ်သိမ်းရန် သေချာပါသလားရှင်။\n\n📌 ရွေးချယ်မှု: ${selectedModeLabel}\n\nအတည်ပြုပါက 'RESET' ဟု စာလုံးကြီးဖြင့် ရိုက်ထည့်ပေးပါရှင် -`);
+
+  if (confirmText !== "RESET") {
+    showToast("ERROR", "အတည်ပြုချက် စာလုံး မမှန်ကန်သဖြင့် စာရင်းပိတ်သိမ်းမှုကို ရပ်တန့်လိုက်ပါသည်ရှင်။");
     return;
   }
 
   try {
     toggleLoading(true);
-    const res = await callApi('triggerEOYReset', {});
+
+    const res = await callApi('triggerEOYReset', { resetMode: resetMode });
 
     if (res && res.success) {
-      showToast("SUCCESS", res.message);
-      alert(`🎉 EOY Reset အောင်မြင်ပါပြီရှင်!\n\ngoldeneduprivateschool@gmail.com သို့ အီးမေးလ် ပေးပို့ခဲ့ပါသည်ရှင်။\nBank Opening: ${Number(res.bankOpeningBalance || 0).toLocaleString('en-US')} MMK\nCash Opening: ${Number(res.cashOpeningBalance || 0).toLocaleString('en-US')} MMK`);
+      showToast("SUCCESS", res.message || "EOY Reset အောင်မြင်စွာ ပြီးမြောက်ပါပြီရှင်။");
+
+      const bankOpeningStr = Number(res.bankOpeningBalance || 0).toLocaleString('en-US');
+      const cashOpeningStr = Number(res.cashOpeningBalance || 0).toLocaleString('en-US');
+      const officeOpeningStr = Number(res.officeOpeningBalance || 0).toLocaleString('en-US');
+
+      alert(`🎉 EOY Reset အောင်မြင်ပါပြီရှင်!\n\n📌 ပိတ်သိမ်းမှု အမျိုးအစား: ${selectedModeLabel}\n\n📊 စတင်လက်ကျန်ငွေများ (Opening Balances):\n• Main Bank Book: ${bankOpeningStr} MMK\n• Main Cash Book: ${cashOpeningStr} MMK\n• Office Exp Book: ${officeOpeningStr} MMK\n\ngoldeneduprivateschool@gmail.com သို့ အရန်သိမ်းဆည်းမှု မဂ္ဂဇင်း ပေးပို့ခဲ့ပြီးပါပြီရှင်။`);
+
       location.reload();
     } else {
       throw new Error(res?.message || "EOY Reset မအောင်မြင်ပါ။");
