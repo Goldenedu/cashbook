@@ -6,7 +6,7 @@
     <h2 class="text-base font-extrabold text-white tracking-wide uppercase flex items-center gap-2">
       <i class="fa-solid fa-gears text-indigo-400"></i> System Control Center
     </h2>
-    <p class="text-xs text-slate-500">ERP စနစ်၏ နောက်ကွယ်ဒေတာများကို အရန်သင့်သိမ်းဆည်းခြင်း၊ လစာစာရွက်များကို အီးမေးလ် ပေးပို့ခြင်းနှင့် ဘဏ္ဍာရေးနှစ်သစ်စာရင်းဖွင့်ခြင်းများကို ဤနေရာတွင် ဆောင်ရွက်နိုင်ပါသည်။</p>
+    <p class="text-xs text-slate-500">ERP စနစ်၏ နောက်ကွယ်ဒေတာများကို အရန်သင့်သိမ်းဆည်းခြင်းနှင့် ဘဏ္ဍာရေးနှစ်သစ်စာရင်းဖွင့်ခြင်းများကို ဤနေရာတွင် ဆောင်ရွက်နိုင်ပါသည်။</p>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -29,26 +29,8 @@
       </div>
     </div>
 
-    <!-- Box 2: Monthly Payroll Dispatcher via Resend API -->
-    <div class="bg-[#0c1322] border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4 flex flex-col justify-between">
-      <div class="space-y-2">
-        <div class="inline-flex p-3 bg-indigo-500/10 text-indigo-400 rounded-xl">
-          <i class="fa-solid fa-paper-plane text-2xl"></i>
-        </div>
-        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Monthly Staff Payslip Dispatcher (Resend API)</h3>
-        <p class="text-xs text-slate-400 leading-relaxed">
-          Full Time နှင့် Part Time ဝန်ထမ်းများထံသို့ ယခုလအတွက် လစာဖြတ်ပိုင်းများကို အီးမေးလ်ဖြင့် ပေးပို့ပါမည်။ Resend.com API ကို အသုံးပြု၍ တစ်လလျှင် တစ်ကြိမ်သာ အဆင်ပြေစွာ ပို့ဆောင်ပေးမည် ဖြစ်ပါသည်။
-        </p>
-      </div>
-      <div class="pt-4 border-t border-slate-800/60">
-        <button onclick="triggerSendPayslips()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/10">
-          <i class="fa-solid fa-envelope-circle-check"></i> Send Monthly Payslips Now
-        </button>
-      </div>
-    </div>
-
-    <!-- Box 3: Fiscal Year Close-out & Rollforward (EOY Reset) - Admin Only -->
-    <div class="col-span-1 md:col-span-2 bg-[#0c1322] border border-rose-500/20 p-6 rounded-2xl shadow-xl space-y-4 flex flex-col justify-between bg-rose-500/5">
+    <!-- Box 2: Fiscal Year Close-out & Rollforward (EOY Reset) - Admin Only -->
+    <div class="bg-[#0c1322] border border-rose-500/20 p-6 rounded-2xl shadow-xl space-y-4 flex flex-col justify-between bg-rose-500/5">
       <div class="space-y-2">
         <div class="inline-flex p-3 bg-rose-500/10 text-rose-400 rounded-xl">
           <i class="fa-solid fa-calendar-check text-2xl"></i>
@@ -56,7 +38,7 @@
         <h3 class="text-sm font-black text-rose-400 uppercase tracking-wider">Run EOY Fiscal Year Reset (ဘဏ္ဍာရေးနှစ်သစ် စာရင်းဖွင့်ခြင်း - Admin သီးသန့်)</h3>
         <p class="text-xs text-slate-400 leading-relaxed">
           မတ်လအကုန် ဧပြီလအစ (March to April) ဘဏ္ဍာရေးနှစ်ကူးပြောင်းမှုအတွက် သမိုင်းကြောင်း စာရင်းဟောင်းများကို စနစ်တကျ ပိတ်သိမ်းပါမည်။ 
-          လုပ်ဆောင်ချက်စတင်သည်နှင့် စာရင်းဟောင်းဒေတာများကို Google Drive ထဲသို့ **အလိုအလျောက် Backup ပွားယူ သိမ်းဆည်းမည်** ဖြစ်ပြီး၊ ၎င်းနောက် စာအုပ်များမှ ရရန်ကျန်/ပေးရန်ကျန် ချေးငွေများနှင့် ရန်ပုံငွေများကို dynamic တွက်ချက်ကာ **Opening လက်ကျန်အသစ်များအဖြစ် စာရင်းသစ်ပြန်လည် တည်ဆောက်ပေးမည် ဖြစ်ပါတယ်။**
+          လုပ်ဆောင်ချက်စတင်သည်နှင့် စာရင်းဟောင်းဒေတာများကို Google Drive ထဲသို့ အလိုအလျောက် Backup ပွားယူ သိမ်းဆည်းမည် ဖြစ်ပြီး စာရင်းသစ် ပြန်လည် တည်ဆောက်ပေးမည် ဖြစ်ပါသည်။
         </p>
         <p class="text-[11px] font-black text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg">
           ⚠️ သတိပေးချက်- ဤလုပ်ငန်းစဉ်သည် ယခင်နှစ်ဒေတာဟောင်းများကို ဖျက်ဆီးပြီး စာရင်းသစ်ဖွင့်လှစ်မည်ဖြစ်သဖြင့် လှည့်လည်ပြင်ဆင်ခွင့် ရှိမည်မဟုတ်ပါ။ Admin သာ လုပ်ဆောင်ခွင့် ရှိပါသည်။
@@ -72,6 +54,3 @@
   </div>
 
 </div>
-
-<!-- 💡 AUTO-LOAD TRIGGER: Safe Data-URI Trigger (404 Error မတက်ပါ) -->
-<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="if(typeof switchHrSubTab==='function'){switchHrSubTab('payroll');} this.remove();" class="hidden">
