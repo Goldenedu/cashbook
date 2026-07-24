@@ -92,7 +92,7 @@ function renderHrPayrollTable(data) {
   if (!tbody) return;
 
   if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="15" class="text-center py-8 text-slate-500 font-bold">Payroll စာရင်း မရှိသေးပါ</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-slate-500 font-bold">Payroll စာရင်း မရှိသေးပါ</td></tr>`;
     return;
   }
 
@@ -103,17 +103,18 @@ function renderHrPayrollTable(data) {
       <td class="font-bold text-teal-400 py-3">${item.category || ''}</td>
       <td class="text-slate-200 py-3 font-semibold">${item.description || ''}</td>
       <td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.method === 'Bank' ? 'bg-sky-500/10 text-sky-400' : 'bg-amber-500/10 text-amber-400'}">${item.method || 'Cash'}</span></td>
-      <td class="text-right font-bold text-emerald-400 py-3">${(item.debit || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-rose-400 py-3">${(item.credit || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-slate-200 py-3">${(item.balances || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-emerald-400 py-3">${(item.unpaidBonus || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-teal-400 py-3">${(item.unpaidFund || 0).toLocaleString()}</td>
-      <td class="text-center py-3">${item.sendMail ? '<i class="fa-solid fa-circle-check text-emerald-400"></i>' : '<i class="fa-solid fa-circle-minus text-slate-600"></i>'}</td>
+      <td class="text-right font-bold text-emerald-400 font-mono py-3">${(item.debit || 0).toLocaleString()}</td>
+      <td class="text-right font-bold text-rose-400 font-mono py-3">${(item.credit || 0).toLocaleString()}</td>
+      <td class="text-right font-bold text-slate-200 font-mono py-3">${(item.balances || 0).toLocaleString()}</td>
+      <td class="text-right font-bold text-emerald-400 font-mono py-3">${(item.unpaidBonus || 0).toLocaleString()}</td>
+      <td class="text-right font-bold text-teal-400 font-mono py-3">${(item.unpaidFund || 0).toLocaleString()}</td>
       <td class="font-mono text-xs text-indigo-300 py-3">${item.vrNo || ''}</td>
       <td class="text-slate-400 py-3">${item.my || ''}</td>
       <td class="text-slate-400 py-3">${item.fy || ''}</td>
       <td class="text-center py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">
         <div class="flex items-center justify-center gap-2">
+          <!-- 💡 PRINT PAYSLIP BUTTON -->
+          <button onclick="printPayslipHr('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded transition" title="Print Payslip"><i class="fa-solid fa-print text-xs"></i></button>
           ${item.isLocked ? '<span class="text-[10px] text-slate-500 font-bold">Locked</span>' : `
             <button onclick="editHrPayrollEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded transition"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
             <button onclick="deleteHrPayrollEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
@@ -277,26 +278,48 @@ function exportToCSVHrPayroll() {
 }
 
 /**
- * 💡 [REAL API DISPATCHER] HR Payroll Exp Book ထဲမှ အီးမေးလ် ပေးပို့မှု Engine အစစ်
+ * 💡 [A4 DUAL-COPY PAYSLIP PRINT ENGINE]
  */
-async function sendMonthlyPayslipsToStaff() {
-  if (!confirm("Active ဝန်ထမ်းများထံသို့ ယခုလ လစာဖြတ်ပိုင်း အီးမေးလ်များ ပေးပို့ရန် သေချာပါသလားရှင်?")) return;
-
-  try {
-    if (typeof toggleLoading === 'function') toggleLoading(true);
-    showToast("SUCCESS", "လစာဖြတ်ပိုင်းများကို စိစစ်ပေးပို့နေပါသည်...");
-
-    const res = await callApi('sendMonthlyPayslipsToStaff', {});
-
-    if (res && res.success) {
-      showToast("SUCCESS", res.message || "လစာဖြတ်ပိုင်း အီးမေးလ်များ အောင်မြင်စွာ ပေးပို့ပြီးပါပြီ။");
-      loadHrPayrollData(false);
-    } else {
-      showToast("ERROR", "မအောင်မြင်ပါ: " + (res.message || "အီးမေးလ် ပေးပို့၍ မရပါ"));
-    }
-  } catch (err) {
-    showToast("ERROR", "Payslips Dispatch Error: " + err.message);
-  } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
+function printPayslipHr(uniqueId) {
+  const item = gPayrollData.find(p => p.uniqueId === uniqueId);
+  if (!item) {
+    showToast("ERROR", "Payslip ထုတ်ယူရန် စာရင်း ရှာမတွေ့ပါ!");
+    return;
   }
+
+  const isPartTime = String(item.category || '').toLowerCase().includes('part time');
+
+  // Category Display String
+  let displayCategory = "Salary";
+  if (String(item.category).toLowerCase().includes("bonus")) displayCategory = "Bonus";
+  else if (String(item.category).toLowerCase().includes("fund")) displayCategory = "Fund";
+
+  const setEl = (id, txt) => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = txt;
+  };
+
+  const setDisplay = (id, show) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? 'block' : 'none';
+  };
+
+  ['top', 'bot'].forEach(part => {
+    setEl(`print-pay-desc-${part}`, item.description || '-');
+    setEl(`print-pay-date-${part}`, item.date || '-');
+    setEl(`print-pay-month-${part}`, item.my || '-');
+    setEl(`print-pay-cat-${part}`, displayCategory);
+    setEl(`print-pay-net-${part}`, (item.credit || 0).toLocaleString('en-US') + " MMK");
+
+    // 💡 Part Time ဖြစ်ပါက Bonus & Fund အကွက် လုံးဝ မပါပါ
+    if (isPartTime) {
+      setDisplay(`print-pay-notes-${part}`, false);
+    } else {
+      setDisplay(`print-pay-notes-${part}`, true);
+      setEl(`print-pay-bonus-${part}`, (item.unpaidBonus || 0).toLocaleString('en-US') + " MMK");
+      setEl(`print-pay-fund-${part}`, (item.unpaidFund || 0).toLocaleString('en-US') + " MMK");
+    }
+  });
+
+  window.print();
 }
