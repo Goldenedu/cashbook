@@ -1,13 +1,13 @@
 /**
  * GOLDEN ERP SYSTEM - MAIN INCOME BOOK MODULE
- * File: js/income.js     
+ * File: js/income.js
  */
 
 let gIncomeData = [];
 let gIncomePage = 1;
 let gIncomeLimit = 30;
 let gIncomeSearch = '';
-let gPromotionDataCache = []; // Cache promo matrix data for quick lookup
+let gPromotionDataCache = [];
 
 function getDynamicFiscalYearsIncome() {
   const d = new Date();
@@ -103,8 +103,10 @@ function renderIncomeTable(data) {
       <td class="text-slate-400 py-3">${item.remark || ''}</td>
       <td class="text-center py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">
         <div class="flex items-center justify-center gap-2">
-          <button onclick="editIncomeEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded transition"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-          <button onclick="deleteIncomeEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
+          <!-- 💡 PRINT RECEIPT BUTTON -->
+          <button onclick="printInvoiceIncome('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded transition" title="Print Invoice"><i class="fa-solid fa-print text-xs"></i></button>
+          <button onclick="editIncomeEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded transition" title="Edit"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+          <button onclick="deleteIncomeEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition" title="Delete"><i class="fa-solid fa-trash-can text-xs"></i></button>
         </div>
       </td>
     </tr>
@@ -136,9 +138,6 @@ function onSearchInputIncome() {
   loadIncomeData(false);
 }
 
-/**
- * 💡 STUDENT DETECTOR & DYNAMIC FIELD PRE-FILL
- */
 async function onStudentIdOrFYChangeIncome() {
   const fySelect = document.getElementById('inc-fy');
   const idInput = document.getElementById('inc-id-search');
@@ -163,7 +162,6 @@ async function onStudentIdOrFYChangeIncome() {
         document.getElementById('inc-category').value = student.category || '';
         document.getElementById('inc-promo').value = student.promo || '';
 
-        // Auto calculate Standard AUT Amount
         await calculateStandardAutAmountIncome();
       }
     }
@@ -176,9 +174,6 @@ async function onAccountNameOrCategoryChangeIncome() {
   await calculateStandardAutAmountIncome();
 }
 
-/**
- * 💡 STANDARD AUT AMOUNT AUTOMATIC LOOKUP & CALCULATION ENGINE
- */
 async function calculateStandardAutAmountIncome() {
   const fy = document.getElementById('inc-fy')?.value || '';
   const studentClass = document.getElementById('inc-class')?.value || '';
@@ -194,7 +189,6 @@ async function calculateStandardAutAmountIncome() {
     return;
   }
 
-  // Ensure Promo matrix data is cached
   if (!gPromotionDataCache || gPromotionDataCache.length === 0) {
     try {
       const res = await callApi('getPromotionData', {});
@@ -209,7 +203,6 @@ async function calculateStandardAutAmountIncome() {
   let autAmount = 0;
 
   if (accountName === 'Registration') {
-    // 💡 Rule 1: Match FY + Class -> Get Registration Column
     const match = gPromotionDataCache.find(p => 
       String(p.fy).trim() === String(fy).trim() && 
       String(p.class).trim().toLowerCase() === String(studentClass).trim().toLowerCase()
@@ -219,7 +212,6 @@ async function calculateStandardAutAmountIncome() {
     }
 
   } else if (accountName === 'Services') {
-    // 💡 Rule 2: Match FY + Class + Category -> Get column matching Promo Plan
     const match = gPromotionDataCache.find(p => 
       String(p.fy).trim() === String(fy).trim() && 
       String(p.class).trim().toLowerCase() === String(studentClass).trim().toLowerCase() &&
@@ -240,13 +232,11 @@ async function calculateStandardAutAmountIncome() {
       else autAmount = match.originalPrice || 0;
     }
   } else {
-    // 💡 Rule 3: Other accounts (Ferry, Night Study Fees, Others) -> 0
     autAmount = 0;
   }
 
   autAmountInput.value = autAmount;
 
-  // Auto pre-fill Credit (Paid Amount) if it's currently 0
   const creditInput = document.getElementById('inc-credit');
   if (creditInput && (parseFloat(creditInput.value || 0) === 0)) {
     creditInput.value = autAmount;
@@ -385,3 +375,56 @@ function exportToCSVIncome() {
   a.click();
 }
 
+/**
+ * 💡 [PRINT RECEIPT ENGINE]
+ */
+function printInvoiceIncome(uniqueId) {
+  const row = gIncomeData.find(item => item.uniqueId === uniqueId);
+  if (!row) {
+    showToast("ERROR", "ပြေစာထုတ်ယူရန် ဒေတာ ရှာမတွေ့ပါ!");
+    return;
+  }
+
+  let displayAmount = row.credit || 0;
+  let displayDesc = row.accountName || 'Fee Payment';
+
+  if (row.debit > 0) {
+    displayAmount = -row.debit;
+    displayDesc = (row.accountName || 'Fee') + " (Student Refund)";
+  }
+
+  ['customer', 'received'].forEach(copy => {
+    const nameEl = document.getElementById(`print-${copy}-name`);
+    if (nameEl) nameEl.innerText = row.fyidName || row.name || '-';
+
+    const dateEl = document.getElementById(`print-${copy}-date`);
+    if (dateEl) dateEl.innerText = row.date || '-';
+
+    const classEl = document.getElementById(`print-${copy}-class`);
+    if (classEl) classEl.innerText = row.class || '-';
+
+    const catEl = document.getElementById(`print-${copy}-category`);
+    if (catEl) catEl.innerText = row.category || '-';
+
+    const idEl = document.getElementById(`print-${copy}-id`);
+    if (idEl) idEl.innerText = row.fyid || '-';
+
+    const bodyEl = document.getElementById(`print-${copy}-table-body`);
+    if (bodyEl) {
+      bodyEl.innerHTML = `
+        <tr class="border-b border-black">
+          <td class="border border-black p-1.5 text-center font-bold text-[10px]">1</td>
+          <td class="border border-black p-1.5 font-semibold text-[10px]">${displayDesc}</td>
+          <td class="border border-black p-1.5 text-center text-[10px]">${row.my || '-'}</td>
+          <td class="border border-black p-1.5 text-center font-bold text-[10px]">${row.method || '-'}</td>
+          <td class="border border-black p-1.5 text-right font-bold text-[10px]">${Number(displayAmount).toLocaleString('en-US')}</td>
+        </tr>
+      `;
+    }
+
+    const totEl = document.getElementById(`print-${copy}-total`);
+    if (totEl) totEl.innerText = Number(displayAmount).toLocaleString('en-US') + " MMK";
+  });
+
+  window.print();
+}
