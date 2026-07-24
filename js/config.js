@@ -78,7 +78,7 @@ window.CONFIG = {
     },
     payroll: {
       bookName: "HR Payroll Exp Book", prefix: "SAL", sheetName: "Payroll",
-      requiredHeaders: ["NO", "DATE", "CATEGORY", "DESCRIPTION", "METHOD", "DEBIT", "CREDIT", "BALANCES", "UNPAID BONUS", "UNPAID FUND", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "SEND MAIL", "UNIQUEID"]
+      requiredHeaders: ["NO", "DATE", "CATEGORY", "DESCRIPTION", "METHOD", "DEBIT", "CREDIT", "BALANCES", "UNPAID BONUS", "UNPAID FUND", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "UNIQUEID"]
     },
     staffFullTime: {
       bookName: "Full Time Staff List", prefix: "FID", sheetName: "FullTime",
