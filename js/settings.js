@@ -102,7 +102,7 @@ async function confirmEOYResetModal() {
       const cashOpeningStr = Number(res.cashOpeningBalance || 0).toLocaleString('en-US');
       const officeOpeningStr = Number(res.officeOpeningBalance || 0).toLocaleString('en-US');
 
-      alert(`🎉 EOY Reset အောင်မြင်ပါပြီရှင်!\n\n📌 ပိတ်သိမ်းမှု အမျိုးအစား: ${selectedModeLabel}\n\n📊 စတင်လက်ကျန်ငွေများ (Opening Balances):\n• Main Bank Book: ${bankOpeningStr} MMK\n• Main Cash Book: ${cashOpeningStr} MMK\n• Office Exp Book: ${officeOpeningStr} MMK\n\ngoldeneduprivateschool@gmail.com သို့ အရန်သိမ်းဆည်းမှု မဂ္ဂဇင်း ပေးပို့ခဲ့ပြီးပါပြီရှင်။`);
+      alert(`🎉 EOY Reset အောင်မြင်ပါပြီရှင်!\n\n📌 ပိတ်သိမ်းမှု အမျိုးအစား: ${selectedModeLabel}\n\n📊 စတင်လက်ကျန်ငွေများ (Opening Balances):\n• Main Bank Book: ${bankOpeningStr} MMK\n• Main Cash Book: ${cashOpeningStr} MMK\n• Office Exp Book: ${officeOpeningStr} MMK\n\ngoldeneduprivateschool@gmail.com နှင့် Google Drive ထဲသို့ အရန်သိမ်းဆည်းမှု မဂ္ဂဇင်းများ ပေးပို့ခဲ့ပြီးပါပြီရှင်။`);
 
       location.reload();
     } else {
