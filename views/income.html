@@ -1,48 +1,7 @@
 <!-- views/income.html -->
-<style>
-  /* Print Receipt Styling */
-  #invoice-print-area { display: none; }
-
-  @media print {
-    #erp-workspace, #loading-overlay, .nav-btn, .view-panel, header {
-      display: none !important;
-    }
-    #invoice-print-area, #invoice-print-area * {
-      visibility: visible !important;
-    }
-    #invoice-print-area {
-      display: flex !important;
-      flex-direction: column !important;
-      justify-content: space-between !important;
-      position: absolute !important;
-      left: 0 !important; top: 0 !important;
-      width: 100% !important; height: 100vh !important;
-      background-color: white !important; color: black !important;
-      padding: 0 !important;
-    }
-    .invoice-section {
-      height: 47vh !important;
-      display: flex !important;
-      flex-direction: column !important;
-      justify-content: space-between !important;
-    }
-    .invoice-divider {
-      height: 6vh !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-    }
-    table th, table td {
-      padding: 4px 6px !important;
-      font-size: 10px !important;
-      border: 1px solid black !important;
-      color: black !important;
-    }
-  }
-</style>
-
 <div class="space-y-5">
 
+  <!-- ၁။ Top KPI Cards Grid -->
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
       <div class="p-3.5 rounded-lg bg-emerald-500/10 text-emerald-400"><i class="fa-solid fa-arrow-trend-up text-xl"></i></div>
@@ -62,6 +21,7 @@
     </div>
   </div>
 
+  <!-- ၂။ Search & Action Controls Bar -->
   <div class="flex flex-col md:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
     <div class="relative w-full md:w-[500px]">
       <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
@@ -75,6 +35,7 @@
     </div>
   </div>
 
+  <!-- ၃။ 19-Column Table Grid -->
   <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
     <table class="w-full text-left border-collapse min-w-[1900px]">
       <thead>
@@ -104,6 +65,7 @@
     </table>
   </div>
 
+  <!-- ၄။ Pagination Tray -->
   <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-[#0c1322] border border-slate-800 px-6 py-3.5 rounded-xl">
     <div id="inc-pagination-info" class="text-xs font-semibold text-slate-400 tracking-wide">Showing entries...</div>
     <div class="flex items-center gap-2">
@@ -114,7 +76,7 @@
 
 </div>
 
-<!-- ADD / EDIT INCOME ENTRY MODAL -->
+<!-- ၅။ ADD / EDIT INCOME ENTRY MODAL -->
 <div id="income-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
   <div class="bg-[#0c1322] border border-slate-800 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
     <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-[#0e172a] shrink-0">
@@ -242,80 +204,5 @@
         <button type="submit" class="px-5 py-2 rounded-lg text-xs font-black bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/10 transition-all">Confirm</button>
       </div>
     </form>
-  </div>
-</div>
-
-<!-- DUAL-COPY PRINT RECEIPT LAYOUT -->
-<div id="invoice-print-area" class="bg-white text-black font-sans text-xs">
-  <div class="invoice-section">
-    <div class="space-y-3">
-      <div class="text-center font-black text-sm tracking-widest border-b border-black pb-1 uppercase">CUSTOMER COPY (ကျောင်းသားမိဘအတွက်ပြေစာ)</div>
-      <div class="grid grid-cols-2 gap-4 font-bold">
-        <div>
-          <p>Name (အမည်) : <span id="print-customer-name" class="font-semibold px-2"></span></p>
-          <p class="mt-1">Class (အတန်း) : <span id="print-customer-class" class="font-semibold px-2"></span></p>
-          <p class="mt-1">Category (အမျိုးအစား) : <span id="print-customer-category" class="font-semibold px-2"></span></p>
-        </div>
-        <div class="text-right">
-          <p>Date : <span id="print-customer-date" class="font-semibold"></span></p>
-          <p class="mt-1">Student ID : <span id="print-customer-id" class="font-mono font-semibold"></span></p>
-        </div>
-      </div>
-      <table class="w-full text-left border-collapse border border-black mt-2">
-        <thead>
-          <tr class="bg-slate-100 border-b border-black">
-            <th class="border border-black p-1 text-center font-bold text-[9px] w-12">NO</th>
-            <th class="border border-black p-1 font-bold text-[9px]">DESCRIPTION</th>
-            <th class="border border-black p-1 text-center font-bold text-[9px] w-20">MONTH</th>
-            <th class="border border-black p-1 text-center font-bold text-[9px] w-28">METHOD</th>
-            <th class="border border-black p-1 text-right font-bold text-[9px] w-32">AMOUNT</th>
-          </tr>
-        </thead>
-        <tbody id="print-customer-table-body"></tbody>
-      </table>
-      <div class="text-right font-bold text-xs mt-1">Total: <span id="print-customer-total" class="border-b-2 border-double border-black px-2"></span></div>
-    </div>
-    <div class="grid grid-cols-2 gap-4 pt-4 pb-2">
-      <div class="text-center"><p class="border-t border-black w-32 mx-auto font-bold pt-1 text-[9px]">Received BY (ငွေကိုင်)</p></div>
-      <div class="text-center"><p class="border-t border-black w-32 mx-auto font-bold pt-1 text-[9px]">Paid By (ငွေပေးသွင်းသူ)</p></div>
-    </div>
-  </div>
-
-  <div class="invoice-divider border-t border-dashed border-slate-400 text-center text-slate-400 select-none text-[10px]">
-    ✂ - - - - - - - - - - - - - - - - - Cut Here - - - - - - - - - - - - - - - - - ✂
-  </div>
-
-  <div class="invoice-section">
-    <div class="space-y-3">
-      <div class="text-center font-black text-sm tracking-widest border-b border-black pb-1 uppercase">RECEIVED COPY (ကျောင်းတွင်းသိမ်းဆည်းရန်ပြေစာ)</div>
-      <div class="grid grid-cols-2 gap-4 font-bold">
-        <div>
-          <p>Name (အမည်) : <span id="print-received-name" class="font-semibold px-2"></span></p>
-          <p class="mt-1">Class (အတန်း) : <span id="print-received-class" class="font-semibold px-2"></span></p>
-          <p class="mt-1">Category (အမျိုးအစား) : <span id="print-received-category" class="font-semibold px-2"></span></p>
-        </div>
-        <div class="text-right">
-          <p>Date : <span id="print-received-date" class="font-semibold"></span></p>
-          <p class="mt-1">Student ID : <span id="print-received-id" class="font-mono font-semibold"></span></p>
-        </div>
-      </div>
-      <table class="w-full text-left border-collapse border border-black mt-2">
-        <thead>
-          <tr class="bg-slate-100 border-b border-black">
-            <th class="border border-black p-1 text-center font-bold text-[9px] w-12">NO</th>
-            <th class="border border-black p-1 font-bold text-[9px]">DESCRIPTION</th>
-            <th class="border border-black p-1 text-center font-bold text-[9px] w-20">MONTH</th>
-            <th class="border border-black p-1 text-center font-bold text-[9px] w-28">METHOD</th>
-            <th class="border border-black p-1 text-right font-bold text-[9px] w-32">AMOUNT</th>
-          </tr>
-        </thead>
-        <tbody id="print-received-table-body"></tbody>
-      </table>
-      <div class="text-right font-bold text-xs mt-1">Total: <span id="print-received-total" class="border-b-2 border-double border-black px-2"></span></div>
-    </div>
-    <div class="grid grid-cols-2 gap-4 pt-4 pb-2">
-      <div class="text-center"><p class="border-t border-black w-32 mx-auto font-bold pt-1 text-[9px]">Received BY (ငွေကိုင်)</p></div>
-      <div class="text-center"><p class="border-t border-black w-32 mx-auto font-bold pt-1 text-[9px]">Paid By (ငွေပေးသွင်းသူ)</p></div>
-    </div>
   </div>
 </div>
