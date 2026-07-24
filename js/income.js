@@ -135,7 +135,6 @@ async function onStudentIdOrFYChangeIncome() {
   const fyidShow = document.getElementById('inc-fyid-show');
   const fyidNameShow = document.getElementById('inc-fyidname-show');
 
-  // Load students cache if missing
   if (!allStudentsLookupCache) {
     if (fyidNameShow) fyidNameShow.value = "Searching student database...";
     try {
@@ -190,7 +189,6 @@ async function onAccountNameOrCategoryChangeIncome() {
     return;
   }
 
-  // Load Promo Matrix Cache if missing
   if (!promoMatrixCache) {
     try {
       const res = await callApi('getPromotionData', {});
@@ -258,7 +256,6 @@ function openAddModalIncome() {
   
   document.getElementById('inc-uniqueId').value = "";
   
-  // Set Today Date
   const today = new Date().toISOString().slice(0, 10);
   document.getElementById('inc-date').value = today;
   document.getElementById('inc-effdate').value = today;
@@ -468,7 +465,7 @@ function exportToCSVIncome() {
 }
 
 /**
- * 💡 RECEIPT PRINTER ENGINE (Dual Copy: Customer + Received Copy)
+ * 💡 RECEIPT PRINTER ENGINE (TARGETS INVOICE PRINT AREA ONLY)
  */
 function printInvoice(uniqueId) {
   const row = incomeActiveData.find(item => item.uniqueId === uniqueId);
@@ -477,14 +474,19 @@ function printInvoice(uniqueId) {
     return;
   }
 
-  // Extract clean student name
+  // 💡 [CRITICAL FIX] Activate ONLY Invoice Print Area and deactivate Payslip
+  const invArea = document.getElementById('invoice-print-area');
+  const payArea = document.getElementById('payslip-print-area');
+
+  if (payArea) payArea.classList.remove('active-print');
+  if (invArea) invArea.classList.add('active-print');
+
   const nameParts = (row.fyidName || '').split(" ");
   const studentName = nameParts.length > 3 ? nameParts.slice(3).join(" ") : row.fyidName;
 
   let displayAmount = row.credit || 0;
   let displayDesc = row.accountName || "Tuition & Fees";
 
-  // Handle student refund formatting
   if (row.debit > 0) {
     displayAmount = -row.debit;
     displayDesc = (row.accountName || 'Fee') + " (Student Refund)";
@@ -531,6 +533,6 @@ function printInvoice(uniqueId) {
     if (totEl) totEl.textContent = Number(displayAmount).toLocaleString('en-US') + " MMK";
   });
 
-  // Trigger Print Dialog
+  // Trigger Print
   window.print();
 }
