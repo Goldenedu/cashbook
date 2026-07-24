@@ -43,39 +43,25 @@
 
 <div class="space-y-5">
 
-  <!-- ၁။ Top KPI Stats Cards Grid -->
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
       <div class="p-3.5 rounded-lg bg-emerald-500/10 text-emerald-400"><i class="fa-solid fa-arrow-trend-up text-xl"></i></div>
-      <div>
-        <p class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Total Income</p>
-        <h3 id="inc-total-income" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
-      </div>
+      <div><p class="text-[10px] uppercase font-bold text-slate-500">Total Income</p><h3 id="inc-total-income" class="text-base font-extrabold text-white mt-1">0 MMK</h3></div>
     </div>
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
       <div class="p-3.5 rounded-lg bg-rose-500/10 text-rose-400"><i class="fa-solid fa-arrow-trend-down text-xl"></i></div>
-      <div>
-        <p class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Total Expense</p>
-        <h3 id="inc-total-expense" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
-      </div>
+      <div><p class="text-[10px] uppercase font-bold text-slate-500">Total Expense</p><h3 id="inc-total-expense" class="text-base font-extrabold text-white mt-1">0 MMK</h3></div>
     </div>
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
       <div class="p-3.5 rounded-lg bg-indigo-500/10 text-indigo-400"><i class="fa-solid fa-scale-balanced text-xl"></i></div>
-      <div>
-        <p class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Balances</p>
-        <h3 id="inc-balance" class="text-base font-extrabold text-white mt-1">0 MMK</h3>
-      </div>
+      <div><p class="text-[10px] uppercase font-bold text-slate-500">Balances</p><h3 id="inc-balance" class="text-base font-extrabold text-white mt-1">0 MMK</h3></div>
     </div>
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
       <div class="p-3.5 rounded-lg bg-sky-500/10 text-sky-400"><i class="fa-solid fa-list-check text-xl"></i></div>
-      <div>
-        <p class="text-[10px] uppercase font-bold tracking-wider text-slate-500">Total Entries</p>
-        <h3 id="inc-entries-count" class="text-base font-extrabold text-white mt-1">0</h3>
-      </div>
+      <div><p class="text-[10px] uppercase font-bold text-slate-500">Total Entries</p><h3 id="inc-entries-count" class="text-base font-extrabold text-white mt-1">0</h3></div>
     </div>
   </div>
 
-  <!-- ၂။ Control Search & Action Bar -->
   <div class="flex flex-col md:flex-row justify-between items-center bg-[#0c1322] border border-slate-800 p-4 rounded-xl gap-4">
     <div class="relative w-full md:w-[500px]">
       <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
@@ -83,21 +69,12 @@
     </div>
 
     <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
-      <button onclick="loadIncomeData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all">
-        <i class="fa-solid fa-rotate text-xs"></i> Refresh
-      </button>
-
-      <button onclick="exportToCSVIncome()" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all">
-        <i class="fa-solid fa-file-export text-xs"></i> Export CSV
-      </button>
-
-      <button onclick="openAddModalIncome()" class="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-black flex items-center gap-1.5 shadow-lg shadow-indigo-600/10 transition-all">
-        <i class="fa-solid fa-plus text-xs"></i> Add Income Entry
-      </button>
+      <button onclick="loadIncomeData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-rotate text-xs"></i> Refresh</button>
+      <button onclick="exportToCSVIncome()" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-file-export text-xs"></i> Export CSV</button>
+      <button onclick="openAddModalIncome()" class="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-black flex items-center gap-1.5 shadow-lg shadow-indigo-600/10 transition-all"><i class="fa-solid fa-plus text-xs"></i> Add Income Entry</button>
     </div>
   </div>
 
-  <!-- ၃။ 19-Column Data Grid Table -->
   <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
     <table class="w-full text-left border-collapse min-w-[1900px]">
       <thead>
@@ -123,31 +100,21 @@
           <th scope="col" class="w-32 text-center text-slate-400 text-xs py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">ACTION</th>
         </tr>
       </thead>
-      <tbody id="income-table-body" class="divide-y divide-slate-800/40 text-slate-300">
-        <!-- Dynamic Rows generated by js/income.js -->
-      </tbody>
+      <tbody id="income-table-body" class="divide-y divide-slate-800/40 text-slate-300"></tbody>
     </table>
   </div>
 
-  <!-- ၄။ Pagination Tray -->
   <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-[#0c1322] border border-slate-800 px-6 py-3.5 rounded-xl">
-    <div id="inc-pagination-info" class="text-xs font-semibold text-slate-400 tracking-wide">
-      Showing entries...
-    </div>
-    
+    <div id="inc-pagination-info" class="text-xs font-semibold text-slate-400 tracking-wide">Showing entries...</div>
     <div class="flex items-center gap-2">
-      <button onclick="changePageIncome(-1)" id="inc-btn-prev" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold transition-all disabled:opacity-30 disabled:pointer-events-none text-xs">
-        <i class="fa-solid fa-chevron-left text-[10px]"></i> Previous
-      </button>
-      <button onclick="changePageIncome(1)" id="inc-btn-next" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold transition-all disabled:opacity-30 disabled:pointer-events-none text-xs">
-        Next <i class="fa-solid fa-chevron-right text-[10px]"></i>
-      </button>
+      <button onclick="changePageIncome(-1)" id="inc-btn-prev" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold transition-all text-xs"><i class="fa-solid fa-chevron-left text-[10px]"></i> Previous</button>
+      <button onclick="changePageIncome(1)" id="inc-btn-next" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold transition-all text-xs">Next <i class="fa-solid fa-chevron-right text-[10px]"></i></button>
     </div>
   </div>
 
 </div>
 
-<!-- ၅။ Add / Edit Income Entry Modal -->
+<!-- ADD / EDIT INCOME ENTRY MODAL -->
 <div id="income-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
   <div class="bg-[#0c1322] border border-slate-800 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
     <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-[#0e172a] shrink-0">
@@ -222,7 +189,6 @@
             <option value="Others">Others</option>
           </select>
         </div>
-        <!-- 💡 STANDARD AUT AMOUNT (Promo Sheet မှ Auto တွက်ချက်ပြသမည်) -->
         <div class="flex flex-col gap-1">
           <label class="font-bold text-indigo-400 uppercase tracking-wide">Standard AUT Amount</label>
           <input type="number" id="inc-autamount" lang="en" readonly class="w-full bg-indigo-500/10 text-indigo-400 font-extrabold text-right font-mono border border-indigo-500/20 cursor-not-allowed rounded-lg p-2.5">
@@ -279,5 +245,80 @@
   </div>
 </div>
 
-<!-- 💡 AUTO-LOAD TRIGGER -->
+<!-- DUAL-COPY PRINT RECEIPT LAYOUT -->
+<div id="invoice-print-area" class="bg-white text-black font-sans text-xs">
+  <div class="invoice-section">
+    <div class="space-y-3">
+      <div class="text-center font-black text-sm tracking-widest border-b border-black pb-1 uppercase">CUSTOMER COPY (ကျောင်းသားမိဘအတွက်ပြေစာ)</div>
+      <div class="grid grid-cols-2 gap-4 font-bold">
+        <div>
+          <p>Name (အမည်) : <span id="print-customer-name" class="font-semibold px-2"></span></p>
+          <p class="mt-1">Class (အတန်း) : <span id="print-customer-class" class="font-semibold px-2"></span></p>
+          <p class="mt-1">Category (အမျိုးအစား) : <span id="print-customer-category" class="font-semibold px-2"></span></p>
+        </div>
+        <div class="text-right">
+          <p>Date : <span id="print-customer-date" class="font-semibold"></span></p>
+          <p class="mt-1">Student ID : <span id="print-customer-id" class="font-mono font-semibold"></span></p>
+        </div>
+      </div>
+      <table class="w-full text-left border-collapse border border-black mt-2">
+        <thead>
+          <tr class="bg-slate-100 border-b border-black">
+            <th class="border border-black p-1 text-center font-bold text-[9px] w-12">NO</th>
+            <th class="border border-black p-1 font-bold text-[9px]">DESCRIPTION</th>
+            <th class="border border-black p-1 text-center font-bold text-[9px] w-20">MONTH</th>
+            <th class="border border-black p-1 text-center font-bold text-[9px] w-28">METHOD</th>
+            <th class="border border-black p-1 text-right font-bold text-[9px] w-32">AMOUNT</th>
+          </tr>
+        </thead>
+        <tbody id="print-customer-table-body"></tbody>
+      </table>
+      <div class="text-right font-bold text-xs mt-1">Total: <span id="print-customer-total" class="border-b-2 border-double border-black px-2"></span></div>
+    </div>
+    <div class="grid grid-cols-2 gap-4 pt-4 pb-2">
+      <div class="text-center"><p class="border-t border-black w-32 mx-auto font-bold pt-1 text-[9px]">Received BY (ငွေကိုင်)</p></div>
+      <div class="text-center"><p class="border-t border-black w-32 mx-auto font-bold pt-1 text-[9px]">Paid By (ငွေပေးသွင်းသူ)</p></div>
+    </div>
+  </div>
+
+  <div class="invoice-divider border-t border-dashed border-slate-400 text-center text-slate-400 select-none text-[10px]">
+    ✂ - - - - - - - - - - - - - - - - - Cut Here - - - - - - - - - - - - - - - - - ✂
+  </div>
+
+  <div class="invoice-section">
+    <div class="space-y-3">
+      <div class="text-center font-black text-sm tracking-widest border-b border-black pb-1 uppercase">RECEIVED COPY (ကျောင်းတွင်းသိမ်းဆည်းရန်ပြေစာ)</div>
+      <div class="grid grid-cols-2 gap-4 font-bold">
+        <div>
+          <p>Name (အမည်) : <span id="print-received-name" class="font-semibold px-2"></span></p>
+          <p class="mt-1">Class (အတန်း) : <span id="print-received-class" class="font-semibold px-2"></span></p>
+          <p class="mt-1">Category (အမျိုးအစား) : <span id="print-received-category" class="font-semibold px-2"></span></p>
+        </div>
+        <div class="text-right">
+          <p>Date : <span id="print-received-date" class="font-semibold"></span></p>
+          <p class="mt-1">Student ID : <span id="print-received-id" class="font-mono font-semibold"></span></p>
+        </div>
+      </div>
+      <table class="w-full text-left border-collapse border border-black mt-2">
+        <thead>
+          <tr class="bg-slate-100 border-b border-black">
+            <th class="border border-black p-1 text-center font-bold text-[9px] w-12">NO</th>
+            <th class="border border-black p-1 font-bold text-[9px]">DESCRIPTION</th>
+            <th class="border border-black p-1 text-center font-bold text-[9px] w-20">MONTH</th>
+            <th class="border border-black p-1 text-center font-bold text-[9px] w-28">METHOD</th>
+            <th class="border border-black p-1 text-right font-bold text-[9px] w-32">AMOUNT</th>
+          </tr>
+        </thead>
+        <tbody id="print-received-table-body"></tbody>
+      </table>
+      <div class="text-right font-bold text-xs mt-1">Total: <span id="print-received-total" class="border-b-2 border-double border-black px-2"></span></div>
+    </div>
+    <div class="grid grid-cols-2 gap-4 pt-4 pb-2">
+      <div class="text-center"><p class="border-t border-black w-32 mx-auto font-bold pt-1 text-[9px]">Received BY (ငွေကိုင်)</p></div>
+      <div class="text-center"><p class="border-t border-black w-32 mx-auto font-bold pt-1 text-[9px]">Paid By (ငွေပေးသွင်းသူ)</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTO-LOAD TRIGGER -->
 <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="if(typeof loadIncomeData==='function'){loadIncomeData(false);} this.remove();" class="hidden">
