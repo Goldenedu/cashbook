@@ -3,246 +3,238 @@
  * File: js/income.js
  */
 
-let gIncomeData = [];
-let gIncomePage = 1;
-let gIncomeLimit = 30;
-let gIncomeSearch = '';
-let gPromotionDataCache = [];
+var incomePage = 1;
+var incomeLimit = 50;
+var incomeTotalRows = 0;
+var incomeActiveData = [];
+var allStudentsLookupCache = null;
+var promoMatrixCache = null;
 
-function getDynamicFiscalYearsIncome() {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = d.getMonth() + 1;
-  const currentStart = (month >= 4) ? year : year - 1;
+/**
+ * 💡 Load Main Income Book Data
+ */
+async function loadIncomeData(isSilent = false) {
+  const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
+  if (!token) return;
 
-  const prevFY = `${currentStart - 1}-${currentStart}`;
-  const currFY = `${currentStart}-${currentStart + 1}`;
-  const nextFY = `${currentStart + 1}-${currentStart + 2}`;
-
-  return [
-    { value: prevFY, label: prevFY },
-    { value: currFY, label: currFY, selected: true },
-    { value: nextFY, label: nextFY }
-  ];
-}
-
-function populateIncomeFyDropdown() {
-  const fys = getDynamicFiscalYearsIncome();
-  const fySelect = document.getElementById('inc-fy');
-  if (fySelect) {
-    fySelect.innerHTML = fys.map(f => `<option value="${f.value}" ${f.selected ? 'selected' : ''}>${f.label}</option>`).join('');
-  }
-}
-
-async function loadIncomeData(useCache = false) {
   try {
-    if (typeof toggleLoading === 'function') toggleLoading(true);
-    populateIncomeFyDropdown();
+    if (!isSilent) toggleLoading(true);
+
+    const searchInput = document.getElementById('income-search');
+    const searchVal = searchInput ? searchInput.value.trim() : '';
 
     const res = await callApi('getIncomeData', {
-      page: gIncomePage,
-      limit: gIncomeLimit,
-      searchVal: gIncomeSearch
+      page: incomePage,
+      limit: incomeLimit,
+      searchVal: searchVal
     });
 
-    if (res && res.success) {
-      gIncomeData = res.data || [];
-      renderIncomeCards(res.stats || {});
-      renderIncomeTable(gIncomeData);
-      renderIncomePagination(res.totalRows || 0);
-    } else {
-      showToast("ERROR", res.message || "Income ဒေတာ ရယူ၍ မရပါ");
+    if (!res || !res.success) {
+      throw new Error(res?.message || "Failed to load income data.");
     }
+
+    incomeActiveData = res.data || [];
+    incomeTotalRows = res.totalRows || 0;
+
+    renderStatsIncome(res.stats || { totalIncome: 0, totalExpense: 0, balance: 0 });
+    renderTableIncome();
+    updatePaginationUIIncome();
+
   } catch (err) {
-    showToast("ERROR", "Error loading Income data: " + err.message);
+    console.error("Income Data Load Error:", err);
+    if (!isSilent) showToast("ERROR", "ဝင်ငွေစာရင်း ဒေတာများ ဆွဲယူ၍ မရပါ: " + err.message);
   } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
+    if (!isSilent) toggleLoading(false);
   }
 }
 
-function renderIncomeCards(stats) {
-  const inc = document.getElementById('inc-total-income');
-  const exp = document.getElementById('inc-total-expense');
-  const bal = document.getElementById('inc-balance');
-  const cnt = document.getElementById('inc-entries-count');
+/**
+ * 💡 Render KPI Header Stats Cards
+ */
+function renderStatsIncome(stats) {
+  const incTotal = document.getElementById('inc-total-income');
+  const expTotal = document.getElementById('inc-total-expense');
+  const balTotal = document.getElementById('inc-balance');
+  const countTotal = document.getElementById('inc-entries-count');
 
-  if (inc) inc.textContent = `${(stats.totalIncome || 0).toLocaleString()} MMK`;
-  if (exp) exp.textContent = `${(stats.totalExpense || 0).toLocaleString()} MMK`;
-  if (bal) bal.textContent = `${(stats.balance || 0).toLocaleString()} MMK`;
-  if (cnt) cnt.textContent = (gIncomeData ? gIncomeData.length : 0);
+  if (incTotal) incTotal.textContent = Number(stats.totalIncome || 0).toLocaleString('en-US') + ' MMK';
+  if (expTotal) expTotal.textContent = Number(stats.totalExpense || 0).toLocaleString('en-US') + ' MMK';
+  if (balTotal) balTotal.textContent = Number(stats.balance || 0).toLocaleString('en-US') + ' MMK';
+  if (countTotal) countTotal.textContent = Number(incomeTotalRows || 0).toLocaleString('en-US');
 }
 
-function renderIncomeTable(data) {
+/**
+ * 💡 Render Table Grid Rows
+ */
+function renderTableIncome() {
   const tbody = document.getElementById('income-table-body');
   if (!tbody) return;
 
-  if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="19" class="text-center py-8 text-slate-500 font-bold">Income စာရင်း မရှိသေးပါ</td></tr>`;
+  if (!incomeActiveData || incomeActiveData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="19" class="text-center py-8 text-slate-500 font-bold">ဝင်ငွေစာရင်း မှတ်တမ်းများ မရှိသေးပါ။</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = data.map((item, idx) => `
-    <tr class="hover:bg-slate-800/40 transition">
-      <td class="text-center text-slate-400 py-3">${item.no || (idx + 1)}</td>
-      <td class="font-mono text-slate-300 py-3">${item.effDate || ''}</td>
-      <td class="font-mono text-slate-300 py-3">${item.date || ''}</td>
-      <td class="font-bold text-indigo-300 py-3">${item.fy || ''}</td>
-      <td class="font-bold text-slate-200 py-3">${item.id || ''}</td>
-      <td class="font-mono text-xs text-sky-400 py-3">${item.fyid || ''}</td>
-      <td class="font-bold text-white py-3">${item.fyidName || ''}</td>
-      <td class="text-slate-300 py-3">${item.class || ''}</td>
-      <td class="text-slate-300 py-3">${item.category || ''}</td>
-      <td class="font-bold text-teal-400 py-3">${item.accountName || ''}</td>
-      <td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.method === 'Bank' ? 'bg-sky-500/10 text-sky-400' : 'bg-amber-500/10 text-amber-400'}">${item.method || 'Cash'}</span></td>
-      <td class="text-right font-bold text-rose-400 font-mono py-3">${(item.debit || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-emerald-400 font-mono py-3">${(item.credit || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-indigo-400 font-mono py-3">${(item.autAmount || 0).toLocaleString()}</td>
-      <td class="text-slate-300 py-3">${item.promo || ''}</td>
-      <td class="text-slate-400 py-3">${item.my || ''}</td>
-      <td class="font-mono text-xs text-slate-400 py-3">${item.vrNo || ''}</td>
-      <td class="text-slate-400 py-3">${item.remark || ''}</td>
-      <td class="text-center py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">
-        <div class="flex items-center justify-center gap-2">
-          <!-- 💡 PRINT RECEIPT BUTTON -->
-          <button onclick="printInvoiceIncome('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded transition" title="Print Invoice"><i class="fa-solid fa-print text-xs"></i></button>
-          <button onclick="editIncomeEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded transition" title="Edit"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-          <button onclick="deleteIncomeEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition" title="Delete"><i class="fa-solid fa-trash-can text-xs"></i></button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = incomeActiveData.map((row) => {
+    const isViewer = (localStorage.getItem('golden_user_role') === "Viewer");
+    const lockClass = (row.isLocked || isViewer) ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
+    const lockTitle = row.isLocked ? "Older than 7 days (Locked)" : "";
+
+    return `
+      <tr class="hover:bg-slate-800/30 text-slate-300">
+        <td class="text-center font-semibold text-slate-500">${row.no || '-'}</td>
+        <td class="font-mono text-xs">${escapeHtml(row.effDate) || '-'}</td>
+        <td class="font-mono text-xs">${escapeHtml(row.date) || '-'}</td>
+        <td class="font-mono">${escapeHtml(row.fy) || '-'}</td>
+        <td class="font-mono font-bold">${escapeHtml(row.id) || '-'}</td>
+        <td class="font-mono font-bold text-indigo-400">${escapeHtml(row.fyid) || '-'}</td>
+        <td class="font-bold text-slate-100">${escapeHtml(row.fyidName) || '-'}</td>
+        <td>${escapeHtml(row.class) || '-'}</td>
+        <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">${escapeHtml(row.category) || '-'}</span></td>
+        <td class="font-semibold text-slate-200">${escapeHtml(row.accountName) || '-'}</td>
+        <td class="font-bold text-slate-400">${escapeHtml(row.method) || '-'}</td>
+        <td class="text-right text-rose-400 font-mono font-bold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US') : '-'}</td>
+        <td class="text-right text-emerald-400 font-mono font-bold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US') : '-'}</td>
+        <td class="text-right text-indigo-400 font-mono font-bold">${row.autAmount > 0 ? Number(row.autAmount).toLocaleString('en-US') : '-'}</td>
+        <td class="text-xs">${escapeHtml(row.promo) || '-'}</td>
+        <td class="font-mono text-xs">${escapeHtml(row.my) || '-'}</td>
+        <td class="font-mono text-xs text-slate-400">${escapeHtml(row.vrNo) || '-'}</td>
+        <td class="max-w-xs truncate text-xs text-slate-400" title="${escapeHtml(row.remark) || ''}">${escapeHtml(row.remark) || '-'}</td>
+        <td class="right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg text-center">
+          <div class="flex items-center justify-center gap-3">
+            <button onclick="printInvoice('${row.uniqueId}')" class="text-emerald-400 hover:text-emerald-300 transition" title="Print Receipt">
+              <i class="fa-solid fa-print"></i>
+            </button>
+            <button onclick="editIncomeEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition ${lockClass}" title="Edit ${lockTitle}" ${row.isLocked || isViewer ? 'disabled' : ''}>
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button onclick="deleteIncomeEntry('${row.uniqueId}')" class="text-rose-400 hover:text-rose-300 transition ${lockClass}" title="Delete ${lockTitle}" ${row.isLocked || isViewer ? 'disabled' : ''}>
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
-function renderIncomePagination(totalRows) {
-  const info = document.getElementById('inc-pagination-info');
-  const btnPrev = document.getElementById('inc-btn-prev');
-  const btnNext = document.getElementById('inc-btn-next');
-
-  const totalPages = Math.ceil(totalRows / gIncomeLimit) || 1;
-  if (info) info.textContent = `Showing Page ${gIncomePage} of ${totalPages} (${totalRows} total entries)`;
-
-  if (btnPrev) btnPrev.disabled = (gIncomePage <= 1);
-  if (btnNext) btnNext.disabled = (gIncomePage >= totalPages);
-}
-
-function changePageIncome(delta) {
-  gIncomePage += delta;
-  if (gIncomePage < 1) gIncomePage = 1;
-  loadIncomeData(false);
-}
-
-function onSearchInputIncome() {
-  const input = document.getElementById('income-search');
-  gIncomeSearch = input ? input.value : '';
-  gIncomePage = 1;
-  loadIncomeData(false);
-}
-
+/**
+ * 💡 Auto Student Lookup on Student ID or FY Change
+ */
 async function onStudentIdOrFYChangeIncome() {
-  const fySelect = document.getElementById('inc-fy');
-  const idInput = document.getElementById('inc-id-search');
+  const fyVal = document.getElementById('inc-fy')?.value;
+  const idVal = document.getElementById('inc-id-search')?.value.trim();
 
-  const fy = fySelect ? fySelect.value : '';
-  const studentId = idInput ? parseInt(idInput.value, 10) : 0;
+  if (!fyVal || !idVal) return;
 
-  if (!studentId || isNaN(studentId) || !fy) return;
+  const parts = fyVal.split("-");
+  const fyShort = parts[0].slice(-2) + "-" + (parts[1] ? parts[1].slice(-2) : "");
+  const paddedId = String(idVal).padStart(4, '0');
+  const targetFyid = "ID " + fyShort + " " + paddedId;
 
-  try {
-    const res = await callApi('getStudentData', { page: 1, limit: 5000 });
-    if (res && res.success && res.data) {
-      const student = res.data.find(s => 
-        parseInt(s.id, 10) === studentId && 
-        String(s.fy).trim() === String(fy).trim()
-      );
+  const fyidShow = document.getElementById('inc-fyid-show');
+  const fyidNameShow = document.getElementById('inc-fyidname-show');
 
-      if (student) {
-        document.getElementById('inc-fyid-show').value = student.fyid || '';
-        document.getElementById('inc-fyidname-show').value = student.fyidName || student.name || '';
-        document.getElementById('inc-class').value = student.class || '';
-        document.getElementById('inc-category').value = student.category || '';
-        document.getElementById('inc-promo').value = student.promo || '';
-
-        await calculateStandardAutAmountIncome();
+  // Load students cache if missing
+  if (!allStudentsLookupCache) {
+    if (fyidNameShow) fyidNameShow.value = "Searching student database...";
+    try {
+      const res = await callApi('getStudentData', { page: 1, limit: 5000 });
+      if (res && res.success) {
+        allStudentsLookupCache = res.data || [];
       }
+    } catch (e) {
+      console.error("Failed to load students lookup cache", e);
     }
-  } catch (err) {
-    console.warn("Error matching student ID:", err);
+  }
+
+  const student = (allStudentsLookupCache || []).find(s => s.fyid === targetFyid || String(s.id) === String(idVal));
+
+  if (student) {
+    if (fyidShow) fyidShow.value = student.fyid || targetFyid;
+    if (fyidNameShow) fyidNameShow.value = student.fyidName || student.name || '';
+
+    const classEl = document.getElementById('inc-class');
+    const catEl = document.getElementById('inc-category');
+    const promoEl = document.getElementById('inc-promo');
+
+    if (classEl) classEl.value = student.class || '';
+    if (catEl) catEl.value = student.category || 'Boarder';
+    if (promoEl) promoEl.value = student.promo || 'Original price';
+
+    onAccountNameOrCategoryChangeIncome();
+  } else {
+    if (fyidShow) fyidShow.value = targetFyid;
+    if (fyidNameShow) fyidNameShow.value = "ကျောင်းသား ရှာမတွေ့ပါ!";
+    
+    document.getElementById('inc-class').value = "";
+    document.getElementById('inc-promo').value = "";
+    document.getElementById('inc-autamount').value = 0;
   }
 }
 
+/**
+ * 💡 Promo Matrix Rate Auto-Calculation
+ */
 async function onAccountNameOrCategoryChangeIncome() {
-  await calculateStandardAutAmountIncome();
-}
+  const accountName = document.getElementById('inc-account')?.value;
+  const classVal = document.getElementById('inc-class')?.value;
+  const categoryVal = document.getElementById('inc-category')?.value;
+  const promoVal = document.getElementById('inc-promo')?.value;
+  const autAmtEl = document.getElementById('inc-autamount');
 
-async function calculateStandardAutAmountIncome() {
-  const fy = document.getElementById('inc-fy')?.value || '';
-  const studentClass = document.getElementById('inc-class')?.value || '';
-  const category = document.getElementById('inc-category')?.value || '';
-  const promoPlan = document.getElementById('inc-promo')?.value || '';
-  const accountName = document.getElementById('inc-account')?.value || '';
-  const autAmountInput = document.getElementById('inc-autamount');
+  if (!autAmtEl) return;
 
-  if (!autAmountInput) return;
-
-  if (!fy || !studentClass || !accountName) {
-    autAmountInput.value = 0;
+  if (accountName !== "Registration" && accountName !== "Services") {
+    autAmtEl.value = 0;
     return;
   }
 
-  if (!gPromotionDataCache || gPromotionDataCache.length === 0) {
+  // Load Promo Matrix Cache if missing
+  if (!promoMatrixCache) {
     try {
       const res = await callApi('getPromotionData', {});
       if (res && res.success) {
-        gPromotionDataCache = res.data || [];
+        promoMatrixCache = res.data || [];
       }
     } catch (e) {
-      console.warn("Could not load promotion matrix:", e);
+      console.error("Failed to fetch promo matrix", e);
     }
   }
 
-  let autAmount = 0;
-
-  if (accountName === 'Registration') {
-    const match = gPromotionDataCache.find(p => 
-      String(p.fy).trim() === String(fy).trim() && 
-      String(p.class).trim().toLowerCase() === String(studentClass).trim().toLowerCase()
-    );
-    if (match) {
-      autAmount = match.registration || 0;
-    }
-
-  } else if (accountName === 'Services') {
-    const match = gPromotionDataCache.find(p => 
-      String(p.fy).trim() === String(fy).trim() && 
-      String(p.class).trim().toLowerCase() === String(studentClass).trim().toLowerCase() &&
-      String(p.category).trim().toLowerCase() === String(category).trim().toLowerCase()
+  if (promoMatrixCache && Array.isArray(promoMatrixCache)) {
+    const match = promoMatrixCache.find(r => 
+      String(r.class).toLowerCase().trim() === String(classVal).toLowerCase().trim() &&
+      (accountName === "Registration" || String(r.category).toLowerCase().trim() === String(categoryVal).toLowerCase().trim())
     );
 
     if (match) {
-      const planStr = String(promoPlan).trim().toLowerCase();
-
-      if (planStr.includes('original')) autAmount = match.originalPrice || 0;
-      else if (planStr.includes('pro a')) autAmount = match.proA || 0;
-      else if (planStr.includes('pro b')) autAmount = match.proB || 0;
-      else if (planStr.includes('pro c')) autAmount = match.proC || 0;
-      else if (planStr.includes('pro d')) autAmount = match.proD || 0;
-      else if (planStr.includes('pro e')) autAmount = match.proE || 0;
-      else if (planStr.includes('half')) autAmount = match.halfScholar || 0;
-      else if (planStr.includes('full')) autAmount = match.fullScholar || 0;
-      else autAmount = match.originalPrice || 0;
+      if (accountName === "Registration") {
+        autAmtEl.value = match.registration || 0;
+        return;
+      } else if (accountName === "Services") {
+        const promoKeyMap = {
+          'Original price': match.originalPrice,
+          'Pro A': match.proA,
+          'Pro B': match.proB,
+          'Pro C': match.proC,
+          'Pro D': match.proD,
+          'Pro E': match.proE,
+          'Half scholar': match.halfScholar,
+          'Full scholar': match.fullScholar
+        };
+        autAmtEl.value = promoKeyMap[promoVal] || match.originalPrice || 0;
+        return;
+      }
     }
-  } else {
-    autAmount = 0;
   }
 
-  autAmountInput.value = autAmount;
-
-  const creditInput = document.getElementById('inc-credit');
-  if (creditInput && (parseFloat(creditInput.value || 0) === 0)) {
-    creditInput.value = autAmount;
-  }
+  autAmtEl.value = 0;
 }
 
+/**
+ * 💡 Toggle Split Payment UI
+ */
 function toggleSplitPaymentIncome() {
   const isSplit = document.getElementById('inc-is-split')?.checked;
   const normalDiv = document.getElementById('inc-normal-payment-div');
@@ -257,25 +249,26 @@ function toggleSplitPaymentIncome() {
   }
 }
 
-async function openAddModalIncome() {
-  populateIncomeFyDropdown();
-
+/**
+ * 💡 Modal Form Controls
+ */
+function openAddModalIncome() {
   const form = document.getElementById('income-form');
   if (form) form.reset();
+  
+  document.getElementById('inc-uniqueId').value = "";
+  
+  // Set Today Date
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('inc-date').value = today;
+  document.getElementById('inc-effdate').value = today;
+  document.getElementById('inc-autamount').value = 0;
 
-  const uid = document.getElementById('inc-uniqueId');
-  if (uid) uid.value = '';
-
-  const dateInput = document.getElementById('inc-date');
-  if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
-
-  const title = document.getElementById('inc-form-title');
-  if (title) title.textContent = 'Add Income Entry';
-
+  populateFYDropdownIncome();
   toggleSplitPaymentIncome();
 
-  const modal = document.getElementById('income-modal');
-  if (modal) modal.classList.remove('hidden');
+  document.getElementById('inc-form-title').innerText = "Add Income Entry";
+  document.getElementById('income-modal').classList.remove('hidden');
 }
 
 function closeIncomeModal() {
@@ -283,148 +276,261 @@ function closeIncomeModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-async function saveIncomeForm(event) {
-  event.preventDefault();
+function populateFYDropdownIncome() {
+  const fySelect = document.getElementById('inc-fy');
+  if (!fySelect) return;
 
-  const uid = document.getElementById('inc-uniqueId')?.value || '';
-  const isSplit = document.getElementById('inc-is-split')?.checked || false;
+  const currentYear = new Date().getFullYear();
+  const options = [
+    `${currentYear - 1}-${currentYear}`,
+    `${currentYear}-${currentYear + 1}`,
+    `${currentYear + 1}-${currentYear + 2}`
+  ];
 
-  let method = document.getElementById('inc-method')?.value || 'Cash';
-  let debit = parseFloat(document.getElementById('inc-debit')?.value || 0);
-  let credit = parseFloat(document.getElementById('inc-credit')?.value || 0);
-
-  if (isSplit) {
-    const cashAmt = parseFloat(document.getElementById('inc-cash-amount')?.value || 0);
-    const bankAmt = parseFloat(document.getElementById('inc-bank-amount')?.value || 0);
-    credit = cashAmt + bankAmt;
-    method = 'Split (Cash+Bank)';
-  }
-
-  const payload = {
-    uniqueId: uid,
-    fy: document.getElementById('inc-fy')?.value || '',
-    id: document.getElementById('inc-id-search')?.value || '',
-    date: document.getElementById('inc-date')?.value || '',
-    effDate: document.getElementById('inc-effdate')?.value || '',
-    fyid: document.getElementById('inc-fyid-show')?.value || '',
-    fyidName: document.getElementById('inc-fyidname-show')?.value || '',
-    class: document.getElementById('inc-class')?.value || '',
-    category: document.getElementById('inc-category')?.value || '',
-    promo: document.getElementById('inc-promo')?.value || '',
-    accountName: document.getElementById('inc-account')?.value || '',
-    autAmount: parseFloat(document.getElementById('inc-autamount')?.value || 0),
-    method: method,
-    debit: debit,
-    credit: credit,
-    remark: document.getElementById('inc-remark')?.value || ''
-  };
-
-  try {
-    if (typeof toggleLoading === 'function') toggleLoading(true);
-    const actionName = uid ? 'updateIncomeEntry' : 'saveIncomeEntry';
-    const res = await callApi(actionName, payload);
-
-    if (res && res.success) {
-      showToast("SUCCESS", "Income စာရင်း အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ");
-      closeIncomeModal();
-      loadIncomeData(false);
-    } else {
-      showToast("ERROR", res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ");
-    }
-  } catch (err) {
-    showToast("ERROR", "Save Error: " + err.message);
-  } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
-  }
-}
-
-async function deleteIncomeEntry(uniqueId) {
-  if (!confirm("ဤ Income စာရင်းကို ဖျက်ရန် သေချာပါသလား?")) return;
-
-  try {
-    if (typeof toggleLoading === 'function') toggleLoading(true);
-    const res = await callApi('deleteIncomeEntry', { uniqueId });
-
-    if (res && res.success) {
-      showToast("SUCCESS", "Income စာရင်း ဖျက်ပြီးပါပြီ");
-      loadIncomeData(false);
-    } else {
-      showToast("ERROR", res.message || "ဖျက်ဆီးမှု မအောင်မြင်ပါ");
-    }
-  } catch (err) {
-    showToast("ERROR", "Delete Error: " + err.message);
-  } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
-  }
-}
-
-function exportToCSVIncome() {
-  if (!gIncomeData || gIncomeData.length === 0) {
-    showToast("ERROR", "Export ပြုလုပ်ရန် စာရင်း မရှိပါ");
-    return;
-  }
-  let csv = "NO,EFFECT_DATE,DATE,FY,ID,FYID,FYID_NAME,CLASS,CATEGORY,ACCOUNT_NAME,METHOD,DEBIT,CREDIT,AUT_AMOUNT,PROMO,REMARK\n";
-  gIncomeData.forEach(r => {
-    csv += `"${r.no}","${r.effDate}","${r.date}","${r.fy}","${r.id}","${r.fyid}","${r.fyidName}","${r.class}","${r.category}","${r.accountName}","${r.method}",${r.debit},${r.credit},${r.autAmount},"${r.promo}","${r.remark}"\n`;
-  });
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `Income_Export_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
+  fySelect.innerHTML = options.map(fy => `<option value="${fy}">${fy}</option>`).join('');
+  fySelect.value = `${currentYear}-${currentYear + 1}`;
 }
 
 /**
- * 💡 [PRINT RECEIPT ENGINE]
+ * 💡 Save / Submit Income Entry
  */
-function printInvoiceIncome(uniqueId) {
-  const row = gIncomeData.find(item => item.uniqueId === uniqueId);
-  if (!row) {
-    showToast("ERROR", "ပြေစာထုတ်ယူရန် ဒေတာ ရှာမတွေ့ပါ!");
+async function saveIncomeForm(e) {
+  e.preventDefault();
+
+  const isSplit = document.getElementById('inc-is-split')?.checked;
+  const fyidShowVal = document.getElementById('inc-fyid-show')?.value;
+
+  if (fyidShowVal === "Not Found" || !fyidShowVal || fyidShowVal.includes("ကျောင်းသား ရှာမတွေ့ပါ")) {
+    showToast("ERROR", "ကျောင်းသား ရှာမတွေ့သဖြင့် စာရင်းသွင်း၍ မရပါ!");
     return;
   }
 
-  let displayAmount = row.credit || 0;
-  let displayDesc = row.accountName || 'Fee Payment';
+  const payload = {
+    uniqueId: document.getElementById('inc-uniqueId')?.value || "",
+    id: parseInt(document.getElementById('inc-id-search')?.value, 10) || 0,
+    date: document.getElementById('inc-date')?.value || "",
+    effDate: document.getElementById('inc-effdate')?.value || "",
+    fy: document.getElementById('inc-fy')?.value || "",
+    fyid: fyidShowVal,
+    fyidName: document.getElementById('inc-fyidname-show')?.value || "",
+    class: document.getElementById('inc-class')?.value || "",
+    category: document.getElementById('inc-category')?.value || "",
+    promo: document.getElementById('inc-promo')?.value || "",
+    accountName: document.getElementById('inc-account')?.value || "",
+    autAmount: parseFloat(document.getElementById('inc-autamount')?.value) || 0,
+    remark: document.getElementById('inc-remark')?.value || "",
+    isSplit: isSplit,
 
+    method: document.getElementById('inc-method')?.value || "Cash",
+    debit: parseFloat(document.getElementById('inc-debit')?.value) || 0,
+    credit: parseFloat(document.getElementById('inc-credit')?.value) || 0,
+
+    cashAmount: parseFloat(document.getElementById('inc-cash-amount')?.value) || 0,
+    bankAmount: parseFloat(document.getElementById('inc-bank-amount')?.value) || 0
+  };
+
+  try {
+    closeIncomeModal();
+    toggleLoading(true);
+
+    const actionName = payload.uniqueId ? 'updateIncomeEntry' : 'saveIncomeEntry';
+    const res = await callApi(actionName, payload);
+
+    if (res && res.success) {
+      showToast("SUCCESS", "ဝင်ငွေစာရင်း သိမ်းဆည်းမှု အောင်မြင်ပါသည်!");
+      await loadIncomeData(true);
+    } else {
+      throw new Error(res?.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ");
+    }
+  } catch (err) {
+    showToast("ERROR", "မအောင်မြင်ပါ: " + err.message);
+  } finally {
+    toggleLoading(false);
+  }
+}
+
+/**
+ * 💡 Edit Entry
+ */
+function editIncomeEntry(uniqueId) {
+  const row = incomeActiveData.find(item => item.uniqueId === uniqueId);
+  if (!row) {
+    showToast("ERROR", "မူရင်းဒေတာကို ရှာမတွေ့ပါ။");
+    return;
+  }
+
+  openAddModalIncome();
+
+  document.getElementById('inc-uniqueId').value = row.uniqueId || "";
+  document.getElementById('inc-date').value = row.date || "";
+  document.getElementById('inc-effdate').value = row.effDate || "";
+  document.getElementById('inc-fy').value = row.fy || "";
+  document.getElementById('inc-id-search').value = row.id || "";
+
+  onStudentIdOrFYChangeIncome();
+
+  document.getElementById('inc-category').value = row.category || "Boarder";
+  document.getElementById('inc-account').value = row.accountName || "Registration";
+  document.getElementById('inc-method').value = row.method || "Cash";
+  document.getElementById('inc-debit').value = row.debit || 0;
+  document.getElementById('inc-credit').value = row.credit || 0;
+  document.getElementById('inc-autamount').value = row.autAmount || 0;
+  document.getElementById('inc-remark').value = row.remark || "";
+
+  document.getElementById('inc-form-title').innerText = "Edit Income Entry";
+}
+
+/**
+ * 💡 Delete Entry
+ */
+async function deleteIncomeEntry(uniqueId) {
+  if (!confirm("ဤဝင်ငွေမှတ်တမ်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား?\n(ခွဲပေးချေမှုဖြစ်ပါက ပတ်သက်သော စာရင်း ၂ ကြောင်းစလုံး ပျက်သွားပါမည်)")) {
+    return;
+  }
+
+  try {
+    toggleLoading(true);
+    const res = await callApi('deleteIncomeEntry', { uniqueId: uniqueId });
+
+    if (res && res.success) {
+      showToast("SUCCESS", "ဝင်ငွေစာရင်း ဖျက်ပြီးပါပြီ!");
+      await loadIncomeData(true);
+    } else {
+      throw new Error(res?.message || "ဖျက်သိမ်းမှု မအောင်မြင်ပါ");
+    }
+  } catch (err) {
+    showToast("ERROR", "မအောင်မြင်ပါ: " + err.message);
+  } finally {
+    toggleLoading(false);
+  }
+}
+
+/**
+ * 💡 Pagination Controls
+ */
+function changePageIncome(dir) {
+  if (dir === -1 && incomePage > 1) {
+    incomePage--;
+    loadIncomeData(false);
+  } else if (dir === 1 && (incomePage * incomeLimit) < incomeTotalRows) {
+    incomePage++;
+    loadIncomeData(false);
+  }
+}
+
+function updatePaginationUIIncome() {
+  const info = document.getElementById('inc-pagination-info');
+  if (info) {
+    const start = incomeTotalRows === 0 ? 0 : (incomePage - 1) * incomeLimit + 1;
+    const end = Math.min(incomePage * incomeLimit, incomeTotalRows);
+    info.innerHTML = `Showing <span class="text-indigo-400 font-extrabold">${start}</span> to <span class="text-indigo-400 font-extrabold">${end}</span> of <span class="text-indigo-400 font-extrabold">${incomeTotalRows}</span> entries`;
+  }
+
+  const prevBtn = document.getElementById('inc-btn-prev');
+  if (prevBtn) prevBtn.disabled = (incomePage === 1);
+
+  const nextBtn = document.getElementById('inc-btn-next');
+  if (nextBtn) nextBtn.disabled = (incomePage * incomeLimit >= incomeTotalRows);
+}
+
+function onSearchInputIncome() {
+  if (window.searchTimeoutIncome) clearTimeout(window.searchTimeoutIncome);
+  window.searchTimeoutIncome = setTimeout(() => {
+    incomePage = 1;
+    loadIncomeData(false);
+  }, 300);
+}
+
+/**
+ * 💡 Export CSV
+ */
+function exportToCSVIncome() {
+  if (!incomeActiveData || incomeActiveData.length === 0) {
+    showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါ!");
+    return;
+  }
+
+  let csv = "NO,EFFECT DATE,DATE,FY,ID,FYID,FYID NAME,CLASS,CATEGORY,ACCOUNT NAME,METHOD,DEBIT,CREDIT,AUT AMOUNT,PROMO,MY,VR NO,REMARK,UNIQUEID\n";
+  incomeActiveData.forEach(r => {
+    let name = `"${r.fyidName || ''}"`;
+    let remark = `"${r.remark || ''}"`;
+    csv += `${r.no},${r.effDate || ''},${r.date},${r.fy},${r.id},${r.fyid},${name},${r.class},${r.category},${r.accountName},${r.method},${r.debit},${r.credit},${r.autAmount},${r.promo},${r.my || ''},${r.vrNo},${remark},${r.uniqueId}\n`;
+  });
+
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `income_book_${new Date().toISOString().slice(0, 10)}.csv`;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/**
+ * 💡 RECEIPT PRINTER ENGINE (Dual Copy: Customer + Received Copy)
+ */
+function printInvoice(uniqueId) {
+  const row = incomeActiveData.find(item => item.uniqueId === uniqueId);
+  if (!row) {
+    showToast("ERROR", "ပြေစာထုတ်ယူရန် ဒေတာရှာမတွေ့ပါ!");
+    return;
+  }
+
+  // Extract clean student name
+  const nameParts = (row.fyidName || '').split(" ");
+  const studentName = nameParts.length > 3 ? nameParts.slice(3).join(" ") : row.fyidName;
+
+  let displayAmount = row.credit || 0;
+  let displayDesc = row.accountName || "Tuition & Fees";
+
+  // Handle student refund formatting
   if (row.debit > 0) {
     displayAmount = -row.debit;
     displayDesc = (row.accountName || 'Fee') + " (Student Refund)";
   }
 
-  ['customer', 'received'].forEach(copy => {
+  const copies = ['customer', 'received'];
+  copies.forEach(copy => {
     const nameEl = document.getElementById(`print-${copy}-name`);
-    if (nameEl) nameEl.innerText = row.fyidName || row.name || '-';
+    if (nameEl) nameEl.textContent = studentName;
 
     const dateEl = document.getElementById(`print-${copy}-date`);
-    if (dateEl) dateEl.innerText = row.date || '-';
+    if (dateEl) {
+      let rawDate = row.date;
+      if (rawDate && rawDate.includes('-')) {
+        let p = rawDate.split('-');
+        if (p.length === 3) rawDate = `${p[2]}-${p[1]}-${p[0]}`;
+      }
+      dateEl.textContent = rawDate || '-';
+    }
 
     const classEl = document.getElementById(`print-${copy}-class`);
-    if (classEl) classEl.innerText = row.class || '-';
+    if (classEl) classEl.textContent = row.class || '-';
 
     const catEl = document.getElementById(`print-${copy}-category`);
-    if (catEl) catEl.innerText = row.category || '-';
+    if (catEl) catEl.textContent = row.category || '-';
 
     const idEl = document.getElementById(`print-${copy}-id`);
-    if (idEl) idEl.innerText = row.fyid || '-';
+    if (idEl) idEl.textContent = row.fyid || '-';
 
     const bodyEl = document.getElementById(`print-${copy}-table-body`);
     if (bodyEl) {
       bodyEl.innerHTML = `
         <tr class="border-b border-black">
-          <td class="border border-black p-1.5 text-center font-bold text-[10px]">1</td>
-          <td class="border border-black p-1.5 font-semibold text-[10px]">${displayDesc}</td>
-          <td class="border border-black p-1.5 text-center text-[10px]">${row.my || '-'}</td>
-          <td class="border border-black p-1.5 text-center font-bold text-[10px]">${row.method || '-'}</td>
-          <td class="border border-black p-1.5 text-right font-bold text-[10px]">${Number(displayAmount).toLocaleString('en-US')}</td>
+          <td class="border border-black p-1 text-center font-bold text-[10px]">1</td>
+          <td class="border border-black p-1 font-semibold text-[10px]">${displayDesc}</td>
+          <td class="border border-black p-1 text-center text-[10px]">${row.my || '-'}</td>
+          <td class="border border-black p-1 text-center font-bold text-[10px]">${row.method || '-'}</td>
+          <td class="border border-black p-1 text-right font-bold text-[10px]">${Number(displayAmount).toLocaleString('en-US')} MMK</td>
         </tr>
       `;
     }
 
     const totEl = document.getElementById(`print-${copy}-total`);
-    if (totEl) totEl.innerText = Number(displayAmount).toLocaleString('en-US') + " MMK";
+    if (totEl) totEl.textContent = Number(displayAmount).toLocaleString('en-US') + " MMK";
   });
 
+  // Trigger Print Dialog
   window.print();
 }
