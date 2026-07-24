@@ -1,169 +1,205 @@
 /**
- * GOLDEN ERP SYSTEM - HR PAYROLL MODULE
+ * GOLDEN ERP SYSTEM - HR & PAYROLL MODULE
  * File: js/hr.js
  */
 
-let gHrSubTab = 'payroll';
-let gPayrollPage = 1;
-let gPayrollLimit = 30;
-let gPayrollSearch = '';
-let gPayrollData = [];
+var hrPayPage = 1;
+var hrPayLimit = 30;
+var hrPayTotalRows = 0;
+var hrPayActiveData = [];
 
-function initHrPage() {
-  switchHrSubTab('payroll');
-}
+/**
+ * 💡 Switch HR Sub-Tabs
+ */
+function switchHrSubTab(tabName) {
+  const payrollSec = document.getElementById('hr-payroll-section');
+  const staffSec = document.getElementById('hr-staff-section');
 
-function switchHrSubTab(subTab) {
-  gHrSubTab = subTab;
+  const btnPay = document.getElementById('hr-tab-payroll');
+  const btnFt = document.getElementById('hr-tab-fulltime');
+  const btnPt = document.getElementById('hr-tab-parttime');
 
-  const btnPayroll = document.getElementById('hr-tab-payroll');
-  const btnFulltime = document.getElementById('hr-tab-fulltime');
-  const btnParttime = document.getElementById('hr-tab-parttime');
-
-  const secPayroll = document.getElementById('hr-payroll-section');
-  const secStaff = document.getElementById('hr-staff-section');
-
-  [btnPayroll, btnFulltime, btnParttime].forEach(btn => {
+  // Reset Button Styles
+  [btnPay, btnFt, btnPt].forEach(btn => {
     if (btn) {
       btn.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2";
     }
   });
 
-  if (subTab === 'payroll') {
-    if (btnPayroll) btnPayroll.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-teal-600 text-white flex items-center gap-2";
-    if (secPayroll) secPayroll.classList.remove('hidden');
-    if (secStaff) secStaff.classList.add('hidden');
+  if (tabName === 'payroll') {
+    if (payrollSec) payrollSec.classList.remove('hidden');
+    if (staffSec) staffSec.classList.add('hidden');
+    if (btnPay) btnPay.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-teal-600 text-white flex items-center gap-2 shadow-lg shadow-teal-600/10";
     loadHrPayrollData(false);
-  } else {
-    if (subTab === 'fulltime' && btnFulltime) {
-      btnFulltime.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white flex items-center gap-2";
-    } else if (subTab === 'parttime' && btnParttime) {
-      btnParttime.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white flex items-center gap-2";
-    }
-    
-    if (secPayroll) secPayroll.classList.add('hidden');
-    if (secStaff) secStaff.classList.remove('hidden');
 
-    if (typeof switchStaffCategory === 'function') {
-      switchStaffCategory(subTab === 'fulltime' ? 'Full Time' : 'Part Time');
-    }
+  } else if (tabName === 'fulltime') {
+    if (payrollSec) payrollSec.classList.add('hidden');
+    if (staffSec) staffSec.classList.remove('hidden');
+    if (btnFt) btnFt.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white flex items-center gap-2 shadow-lg shadow-indigo-600/10";
+    if (typeof switchStaffCategory === 'function') switchStaffCategory('Full Time');
+
+  } else if (tabName === 'parttime') {
+    if (payrollSec) payrollSec.classList.add('hidden');
+    if (staffSec) staffSec.classList.remove('hidden');
+    if (btnPt) btnPt.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white flex items-center gap-2 shadow-lg shadow-indigo-600/10";
+    if (typeof switchStaffCategory === 'function') switchStaffCategory('Part Time');
   }
 }
 
-async function loadHrPayrollData(useCache = false) {
+/**
+ * 💡 Load HR Payroll Data
+ */
+async function loadHrPayrollData(isSilent = false) {
+  const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
+  if (!token) return;
+
   try {
-    if (typeof toggleLoading === 'function') toggleLoading(true);
+    if (!isSilent) toggleLoading(true);
+
+    const searchInput = document.getElementById('hr-payroll-search');
+    const searchVal = searchInput ? searchInput.value.trim() : '';
+
     const res = await callApi('getExpenseData', {
       bookName: 'HR Payroll Exp Book',
-      page: gPayrollPage,
-      limit: gPayrollLimit,
-      searchVal: gPayrollSearch
+      page: hrPayPage,
+      limit: hrPayLimit,
+      searchVal: searchVal
     });
 
-    if (res && res.success) {
-      gPayrollData = res.data || [];
-      renderHrPayrollCards(res.stats || {});
-      renderHrPayrollTable(gPayrollData);
-      renderHrPayrollPagination(res.totalRows || 0);
-    } else {
-      showToast("ERROR", res.message || "Payroll ဒေတာ ရယူ၍ မရပါ");
+    if (!res || !res.success) {
+      throw new Error(res?.message || "Failed to load HR payroll data.");
     }
+
+    hrPayActiveData = res.data || [];
+    hrPayTotalRows = res.totalRows || 0;
+
+    renderStatsHrPayroll(res.stats || { totalIncome: 0, totalExpense: 0, balance: 0 });
+    renderTableHrPayroll();
+    updatePaginationUIHrPayroll();
+
   } catch (err) {
-    showToast("ERROR", "Error loading Payroll data: " + err.message);
+    console.error("HR Payroll Load Error:", err);
+    if (!isSilent) showToast("ERROR", "HR စာရင်းများ ဆွဲယူ၍ မရပါ: " + err.message);
   } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
+    if (!isSilent) toggleLoading(false);
   }
 }
 
-function renderHrPayrollCards(stats) {
-  const inc = document.getElementById('hr-pay-total-income');
-  const exp = document.getElementById('hr-pay-total-expense');
-  const bal = document.getElementById('hr-pay-balance');
-  const cnt = document.getElementById('hr-pay-entries-count');
+function renderStatsHrPayroll(stats) {
+  const incEl = document.getElementById('hr-pay-total-income');
+  const expEl = document.getElementById('hr-pay-total-expense');
+  const balEl = document.getElementById('hr-pay-balance');
+  const cntEl = document.getElementById('hr-pay-entries-count');
 
-  if (inc) inc.textContent = `${(stats.totalIncome || 0).toLocaleString()} MMK`;
-  if (exp) exp.textContent = `${(stats.totalExpense || 0).toLocaleString()} MMK`;
-  if (bal) bal.textContent = `${(stats.balance || 0).toLocaleString()} MMK`;
-  if (cnt) cnt.textContent = (gPayrollData ? gPayrollData.length : 0);
+  if (incEl) incEl.textContent = Number(stats.totalIncome || 0).toLocaleString('en-US') + ' MMK';
+  if (expEl) expEl.textContent = Number(stats.totalExpense || 0).toLocaleString('en-US') + ' MMK';
+  if (balEl) balEl.textContent = Number(stats.balance || 0).toLocaleString('en-US') + ' MMK';
+  if (cntEl) cntEl.textContent = Number(hrPayTotalRows || 0).toLocaleString('en-US');
 }
 
-function renderHrPayrollTable(data) {
+function renderTableHrPayroll() {
   const tbody = document.getElementById('hr-payroll-table-body');
   if (!tbody) return;
 
-  if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-slate-500 font-bold">Payroll စာရင်း မရှိသေးပါ</td></tr>`;
+  if (!hrPayActiveData || hrPayActiveData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-slate-500 font-bold">HR Payroll စာရင်းများ မရှိသေးပါ။</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = data.map((item, idx) => `
-    <tr class="hover:bg-slate-800/40 transition">
-      <td class="text-center text-slate-400 py-3">${item.no || (idx + 1)}</td>
-      <td class="font-mono text-slate-300 py-3">${item.date || ''}</td>
-      <td class="font-bold text-teal-400 py-3">${item.category || ''}</td>
-      <td class="text-slate-200 py-3 font-semibold">${item.description || ''}</td>
-      <td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.method === 'Bank' ? 'bg-sky-500/10 text-sky-400' : 'bg-amber-500/10 text-amber-400'}">${item.method || 'Cash'}</span></td>
-      <td class="text-right font-bold text-emerald-400 font-mono py-3">${(item.debit || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-rose-400 font-mono py-3">${(item.credit || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-slate-200 font-mono py-3">${(item.balances || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-emerald-400 font-mono py-3">${(item.unpaidBonus || 0).toLocaleString()}</td>
-      <td class="text-right font-bold text-teal-400 font-mono py-3">${(item.unpaidFund || 0).toLocaleString()}</td>
-      <td class="font-mono text-xs text-indigo-300 py-3">${item.vrNo || ''}</td>
-      <td class="text-slate-400 py-3">${item.my || ''}</td>
-      <td class="text-slate-400 py-3">${item.fy || ''}</td>
-      <td class="text-center py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">
-        <div class="flex items-center justify-center gap-2">
-          <!-- 💡 PRINT PAYSLIP BUTTON -->
-          <button onclick="printPayslipHr('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded transition" title="Print Payslip"><i class="fa-solid fa-print text-xs"></i></button>
-          ${item.isLocked ? '<span class="text-[10px] text-slate-500 font-bold">Locked</span>' : `
-            <button onclick="editHrPayrollEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded transition"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-            <button onclick="deleteHrPayrollEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
-          `}
-        </div>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = hrPayActiveData.map((row) => {
+    const isViewer = (localStorage.getItem('golden_user_role') === "Viewer");
+    const lockClass = (row.isLocked || isViewer) ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
+
+    return `
+      <tr class="hover:bg-slate-800/30 text-slate-300">
+        <td class="text-center font-semibold text-slate-500">${row.no || '-'}</td>
+        <td class="font-mono text-xs">${escapeHtml(row.date) || '-'}</td>
+        <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">${escapeHtml(row.category) || '-'}</span></td>
+        <td class="font-bold text-slate-100 max-w-sm truncate" title="${escapeHtml(row.description)}">${escapeHtml(row.description) || '-'}</td>
+        <td class="font-bold text-slate-400">${escapeHtml(row.method) || '-'}</td>
+        <td class="text-right text-emerald-400 font-mono font-bold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US') : '-'}</td>
+        <td class="text-right text-rose-400 font-mono font-bold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US') : '-'}</td>
+        <td class="text-right text-slate-200 font-mono font-bold">${Number(row.balances || 0).toLocaleString('en-US')}</td>
+        <td class="text-right text-emerald-400 font-mono">${row.unpaidBonus > 0 ? Number(row.unpaidBonus).toLocaleString('en-US') : '-'}</td>
+        <td class="text-right text-teal-400 font-mono">${row.unpaidFund > 0 ? Number(row.unpaidFund).toLocaleString('en-US') : '-'}</td>
+        <td class="font-mono text-xs text-slate-400">${escapeHtml(row.vrNo) || '-'}</td>
+        <td class="font-mono text-xs">${escapeHtml(row.my) || '-'}</td>
+        <td class="font-mono text-xs">${escapeHtml(row.fy) || '-'}</td>
+        <td class="right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg text-center">
+          <div class="flex items-center justify-center gap-3">
+            <button onclick="printPayslip('${row.uniqueId}')" class="text-teal-400 hover:text-teal-300 transition" title="Print Payslip">
+              <i class="fa-solid fa-print"></i>
+            </button>
+            <button onclick="editHrPayrollEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition ${lockClass}" ${row.isLocked || isViewer ? 'disabled' : ''}>
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button onclick="deleteHrPayrollEntry('${row.uniqueId}')" class="text-rose-400 hover:text-rose-300 transition ${lockClass}" ${row.isLocked || isViewer ? 'disabled' : ''}>
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
-function renderHrPayrollPagination(totalRows) {
-  const info = document.getElementById('hr-pay-pagination-info');
-  const btnPrev = document.getElementById('hr-pay-btn-prev');
-  const btnNext = document.getElementById('hr-pay-btn-next');
+/**
+ * 💡 PAYSLIP PRINTER ENGINE (TARGETS PAYSLIP PRINT AREA ONLY)
+ */
+function printPayslip(uniqueId) {
+  const row = hrPayActiveData.find(item => item.uniqueId === uniqueId);
+  if (!row) {
+    showToast("ERROR", "Payslip ထုတ်ယူရန် ဒေတာရှာမတွေ့ပါ!");
+    return;
+  }
 
-  const totalPages = Math.ceil(totalRows / gPayrollLimit) || 1;
-  if (info) info.textContent = `Showing Page ${gPayrollPage} of ${totalPages} (${totalRows} total entries)`;
+  // 💡 [CRITICAL FIX] Activate ONLY Payslip Print Area and deactivate Invoice
+  const invArea = document.getElementById('invoice-print-area');
+  const payArea = document.getElementById('payslip-print-area');
 
-  if (btnPrev) btnPrev.disabled = (gPayrollPage <= 1);
-  if (btnNext) btnNext.disabled = (gPayrollPage >= totalPages);
+  if (invArea) invArea.classList.remove('active-print');
+  if (payArea) payArea.classList.add('active-print');
+
+  const netAmount = row.credit > 0 ? row.credit : row.debit;
+
+  ['top', 'bot'].forEach(pos => {
+    const descEl = document.getElementById(`print-pay-desc-${pos}`);
+    if (descEl) descEl.textContent = row.description || '-';
+
+    const catEl = document.getElementById(`print-pay-cat-${pos}`);
+    if (catEl) catEl.textContent = row.category || '-';
+
+    const dateEl = document.getElementById(`print-pay-date-${pos}`);
+    if (dateEl) dateEl.textContent = row.date || '-';
+
+    const monthEl = document.getElementById(`print-pay-month-${pos}`);
+    if (monthEl) monthEl.textContent = row.my || '-';
+
+    const netEl = document.getElementById(`print-pay-net-${pos}`);
+    if (netEl) netEl.textContent = Number(netAmount || 0).toLocaleString('en-US') + " MMK";
+
+    const bonusEl = document.getElementById(`print-pay-bonus-${pos}`);
+    if (bonusEl) bonusEl.textContent = Number(row.unpaidBonus || 0).toLocaleString('en-US') + " MMK";
+
+    const fundEl = document.getElementById(`print-pay-fund-${pos}`);
+    if (fundEl) fundEl.textContent = Number(row.unpaidFund || 0).toLocaleString('en-US') + " MMK";
+  });
+
+  // Trigger Print
+  window.print();
 }
 
-function changePageHrPayroll(delta) {
-  gPayrollPage += delta;
-  if (gPayrollPage < 1) gPayrollPage = 1;
-  loadHrPayrollData(false);
-}
-
-function onSearchInputHrPayroll() {
-  const input = document.getElementById('hr-payroll-search');
-  gPayrollSearch = input ? input.value : '';
-  gPayrollPage = 1;
-  loadHrPayrollData(false);
-}
-
+/**
+ * 💡 HR Payroll Modal Controls
+ */
 function openAddModalHrPayroll() {
   const form = document.getElementById('hr-payroll-form');
   if (form) form.reset();
-  const uid = document.getElementById('hr-pay-uniqueId');
-  if (uid) uid.value = '';
 
-  const dateInput = document.getElementById('hr-pay-date');
-  if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
-
-  const title = document.getElementById('hr-payroll-form-title');
-  if (title) title.textContent = 'Add HR Payroll Entry';
-
-  const modal = document.getElementById('hr-payroll-modal');
-  if (modal) modal.classList.remove('hidden');
+  document.getElementById('hr-pay-uniqueId').value = "";
+  document.getElementById('hr-pay-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('hr-payroll-form-title').innerText = "Add HR Payroll Entry";
+  document.getElementById('hr-payroll-modal').classList.remove('hidden');
 }
 
 function closeHrPayrollModal() {
@@ -171,155 +207,35 @@ function closeHrPayrollModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-async function onStaffIdChangePayroll() {
-  const staffIdInput = document.getElementById('hr-pay-staff-id');
-  const categoryInput = document.getElementById('hr-pay-category');
-  const dateInput = document.getElementById('hr-pay-date');
-
-  const staffId = staffIdInput ? parseInt(staffIdInput.value, 10) : 0;
-  const category = categoryInput ? categoryInput.value : '';
-  const dateVal = dateInput ? dateInput.value : '';
-
-  if (!staffId || isNaN(staffId)) return;
-
-  const isFT = category.startsWith('Full Time');
-  const staffCat = isFT ? 'Full Time' : 'Part Time';
-
-  try {
-    const res = await callApi('getStaffData', { category: staffCat, page: 1, limit: 1000 });
-    if (res && res.data) {
-      const staffObj = res.data.find(s => parseInt(s.staffId, 10) === staffId);
-      if (staffObj) {
-        const unpaidBonusInput = document.getElementById('hr-pay-unpaid-bonus');
-        const unpaidFundInput = document.getElementById('hr-pay-unpaid-fund');
-        const creditInput = document.getElementById('hr-pay-credit');
-        const descInput = document.getElementById('hr-pay-description');
-
-        if (unpaidBonusInput) unpaidBonusInput.value = staffObj.unpaidBonus || 0;
-        if (unpaidFundInput) unpaidFundInput.value = staffObj.unpaidFund || 0;
-
-        let autoCredit = 0;
-        if (category === 'Full Time Salary' || category === 'Part Time Salary') {
-          autoCredit = staffObj.totalSalary || 0;
-        } else if (category === 'Full Time Bonus') {
-          autoCredit = staffObj.unpaidBonus || 0;
-        } else if (category === 'Full Time Fund') {
-          autoCredit = staffObj.unpaidFund || 0;
-        }
-
-        if (creditInput) creditInput.value = autoCredit;
-
-        const d = new Date(dateVal || Date.now());
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const myStr = `${months[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
-        
-        if (descInput) {
-          descInput.value = `[${staffObj.staffIdName || staffObj.name}, ${category} ${myStr}]`;
-        }
-      }
-    }
-  } catch (err) {
-    console.warn("Error matching staff ID:", err);
+function changePageHrPayroll(dir) {
+  if (dir === -1 && hrPayPage > 1) {
+    hrPayPage--;
+    loadHrPayrollData(false);
+  } else if (dir === 1 && (hrPayPage * hrPayLimit) < hrPayTotalRows) {
+    hrPayPage++;
+    loadHrPayrollData(false);
   }
 }
 
-async function saveHrPayrollForm(event) {
-  event.preventDefault();
-  
-  const uid = document.getElementById('hr-pay-uniqueId')?.value || '';
-  const actionName = uid ? 'updateExpenseEntry' : 'saveExpenseEntry';
-
-  const payload = {
-    bookName: 'HR Payroll Exp Book',
-    uniqueId: uid,
-    date: document.getElementById('hr-pay-date')?.value || '',
-    category: document.getElementById('hr-pay-category')?.value || '',
-    id: document.getElementById('hr-pay-staff-id')?.value || '',
-    method: document.getElementById('hr-pay-method')?.value || 'Cash',
-    debit: parseFloat(document.getElementById('hr-pay-debit')?.value || 0),
-    credit: parseFloat(document.getElementById('hr-pay-credit')?.value || 0),
-    unpaidBonus: parseFloat(document.getElementById('hr-pay-unpaid-bonus')?.value || 0),
-    unpaidFund: parseFloat(document.getElementById('hr-pay-unpaid-fund')?.value || 0),
-    description: document.getElementById('hr-pay-description')?.value || ''
-  };
-
-  try {
-    if (typeof toggleLoading === 'function') toggleLoading(true);
-    const res = await callApi(actionName, payload);
-    if (res && res.success) {
-      showToast("SUCCESS", "Payroll စာရင်း အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ");
-      closeHrPayrollModal();
-      loadHrPayrollData(false);
-    } else {
-      showToast("ERROR", res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ");
-    }
-  } catch (err) {
-    showToast("ERROR", "Save Error: " + err.message);
-  } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
+function updatePaginationUIHrPayroll() {
+  const info = document.getElementById('hr-pay-pagination-info');
+  if (info) {
+    const start = hrPayTotalRows === 0 ? 0 : (hrPayPage - 1) * hrPayLimit + 1;
+    const end = Math.min(hrPayPage * hrPayLimit, hrPayTotalRows);
+    info.innerHTML = `Showing <span class="text-teal-400 font-extrabold">${start}</span> to <span class="text-teal-400 font-extrabold">${end}</span> of <span class="text-teal-400 font-extrabold">${hrPayTotalRows}</span> entries`;
   }
+
+  const prevBtn = document.getElementById('hr-pay-btn-prev');
+  if (prevBtn) prevBtn.disabled = (hrPayPage === 1);
+
+  const nextBtn = document.getElementById('hr-pay-btn-next');
+  if (nextBtn) nextBtn.disabled = (hrPayPage * hrPayLimit >= hrPayTotalRows);
 }
 
-function exportToCSVHrPayroll() {
-  if (!gPayrollData || gPayrollData.length === 0) {
-    showToast("ERROR", "Export ပြုလုပ်ရန် စာရင်း မရှိပါ");
-    return;
-  }
-  let csv = "NO,DATE,CATEGORY,DESCRIPTION,METHOD,DEBIT,CREDIT,BALANCES,VR_NO\n";
-  gPayrollData.forEach(r => {
-    csv += `"${r.no}","${r.date}","${r.category}","${r.description}","${r.method}",${r.debit},${r.credit},${r.balances},"${r.vrNo}"\n`;
-  });
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `Payroll_Export_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-}
-
-/**
- * 💡 [A4 DUAL-COPY PAYSLIP PRINT ENGINE]
- */
-function printPayslipHr(uniqueId) {
-  const item = gPayrollData.find(p => p.uniqueId === uniqueId);
-  if (!item) {
-    showToast("ERROR", "Payslip ထုတ်ယူရန် စာရင်း ရှာမတွေ့ပါ!");
-    return;
-  }
-
-  const isPartTime = String(item.category || '').toLowerCase().includes('part time');
-
-  // Category Display String
-  let displayCategory = "Salary";
-  if (String(item.category).toLowerCase().includes("bonus")) displayCategory = "Bonus";
-  else if (String(item.category).toLowerCase().includes("fund")) displayCategory = "Fund";
-
-  const setEl = (id, txt) => {
-    const el = document.getElementById(id);
-    if (el) el.innerText = txt;
-  };
-
-  const setDisplay = (id, show) => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = show ? 'block' : 'none';
-  };
-
-  ['top', 'bot'].forEach(part => {
-    setEl(`print-pay-desc-${part}`, item.description || '-');
-    setEl(`print-pay-date-${part}`, item.date || '-');
-    setEl(`print-pay-month-${part}`, item.my || '-');
-    setEl(`print-pay-cat-${part}`, displayCategory);
-    setEl(`print-pay-net-${part}`, (item.credit || 0).toLocaleString('en-US') + " MMK");
-
-    // 💡 Part Time ဖြစ်ပါက Bonus & Fund အကွက် လုံးဝ မပါပါ
-    if (isPartTime) {
-      setDisplay(`print-pay-notes-${part}`, false);
-    } else {
-      setDisplay(`print-pay-notes-${part}`, true);
-      setEl(`print-pay-bonus-${part}`, (item.unpaidBonus || 0).toLocaleString('en-US') + " MMK");
-      setEl(`print-pay-fund-${part}`, (item.unpaidFund || 0).toLocaleString('en-US') + " MMK");
-    }
-  });
-
-  window.print();
+function onSearchInputHrPayroll() {
+  if (window.searchTimeoutHrPay) clearTimeout(window.searchTimeoutHrPay);
+  window.searchTimeoutHrPay = setTimeout(() => {
+    hrPayPage = 1;
+    loadHrPayrollData(false);
+  }, 300);
 }
