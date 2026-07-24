@@ -9,9 +9,9 @@ var hrPayTotalRows = 0;
 var hrPayActiveData = [];
 
 /**
- * 💡 Switch HR Sub-Tabs
+ * 💡 Switch HR Sub-Tabs (Default is 'payroll')
  */
-function switchHrSubTab(tabName) {
+function switchHrSubTab(tabName = 'payroll') {
   const payrollSec = document.getElementById('hr-payroll-section');
   const staffSec = document.getElementById('hr-staff-section');
 
@@ -144,7 +144,7 @@ function renderTableHrPayroll() {
 }
 
 /**
- * 💡 PAYSLIP PRINTER ENGINE (TARGETS PAYSLIP PRINT AREA ONLY)
+ * 💡 PAYSLIP PRINTER ENGINE (Strict Rules applied)
  */
 function printPayslip(uniqueId) {
   const row = hrPayActiveData.find(item => item.uniqueId === uniqueId);
@@ -153,39 +153,88 @@ function printPayslip(uniqueId) {
     return;
   }
 
-  // 💡 [CRITICAL FIX] Activate ONLY Payslip Print Area and deactivate Invoice
+  // 💡 Activate ONLY Payslip Print Area
   const invArea = document.getElementById('invoice-print-area');
   const payArea = document.getElementById('payslip-print-area');
 
   if (invArea) invArea.classList.remove('active-print');
   if (payArea) payArea.classList.add('active-print');
 
-  const netAmount = row.credit > 0 ? row.credit : row.debit;
+  // 1. Clean ID & Name from Description
+  let rawDesc = row.description || '';
+  let cleanName = rawDesc.replace(/^\[/, '').replace(/\]$/, '').split(',')[0].trim();
+
+  // 2. Format Date (DD-MM-YYYY)
+  let rawDate = row.date || '';
+  let formattedDate = rawDate;
+  if (rawDate && rawDate.includes('-')) {
+    let p = rawDate.split('-');
+    if (p.length === 3 && p[0].length === 4) {
+      formattedDate = `${p[2]}-${p[1]}-${p[0]}`;
+    }
+  }
+
+  // 3. Payment Category Mapping Rule
+  let rawCat = (row.category || '').trim();
+  let displayCat = "Salary Payroll";
+  if (rawCat === "Full Time Bonus" || rawCat === "Bonus") {
+    displayCat = "Bonus";
+  } else if (rawCat === "Full Time Fund" || rawCat === "Fund") {
+    displayCat = "Fund";
+  } else if (rawCat === "Full Time Salary" || rawCat === "Part Time Salary") {
+    displayCat = "Salary Payroll";
+  }
+
+  // 4. Payment Month Format (e.g., "Jul 26")
+  let displayMonth = row.my || '';
+  if (!displayMonth && rawDate) {
+    const d = new Date(rawDate);
+    if (!isNaN(d.getTime())) {
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      displayMonth = `${months[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`;
+    }
+  }
+  displayMonth = displayMonth.replace('-', ' ');
+
+  // 5. Net Salary Paid (CREDIT)
+  let netAmount = row.credit > 0 ? row.credit : row.debit;
+
+  // 6. Check Part Time Status
+  const isPartTime = (rawCat === 'Part Time Salary' || rawCat.toLowerCase().includes('part time'));
 
   ['top', 'bot'].forEach(pos => {
     const descEl = document.getElementById(`print-pay-desc-${pos}`);
-    if (descEl) descEl.textContent = row.description || '-';
+    if (descEl) descEl.textContent = cleanName || '-';
 
     const catEl = document.getElementById(`print-pay-cat-${pos}`);
-    if (catEl) catEl.textContent = row.category || '-';
+    if (catEl) catEl.textContent = displayCat;
 
     const dateEl = document.getElementById(`print-pay-date-${pos}`);
-    if (dateEl) dateEl.textContent = row.date || '-';
+    if (dateEl) dateEl.textContent = formattedDate || '-';
 
     const monthEl = document.getElementById(`print-pay-month-${pos}`);
-    if (monthEl) monthEl.textContent = row.my || '-';
+    if (monthEl) monthEl.textContent = displayMonth || '-';
 
     const netEl = document.getElementById(`print-pay-net-${pos}`);
     if (netEl) netEl.textContent = Number(netAmount || 0).toLocaleString('en-US') + " MMK";
 
-    const bonusEl = document.getElementById(`print-pay-bonus-${pos}`);
-    if (bonusEl) bonusEl.textContent = Number(row.unpaidBonus || 0).toLocaleString('en-US') + " MMK";
+    // 💡 Hide/Show Unpaid Fund and Bonus for Part Time
+    const notesBox = document.getElementById(`print-pay-notes-${pos}`);
+    if (notesBox) {
+      if (isPartTime) {
+        notesBox.style.display = 'none';
+      } else {
+        notesBox.style.display = 'block';
+        const bonusEl = document.getElementById(`print-pay-bonus-${pos}`);
+        if (bonusEl) bonusEl.textContent = Number(row.unpaidBonus || 0).toLocaleString('en-US') + " MMK";
 
-    const fundEl = document.getElementById(`print-pay-fund-${pos}`);
-    if (fundEl) fundEl.textContent = Number(row.unpaidFund || 0).toLocaleString('en-US') + " MMK";
+        const fundEl = document.getElementById(`print-pay-fund-${pos}`);
+        if (fundEl) fundEl.textContent = Number(row.unpaidFund || 0).toLocaleString('en-US') + " MMK";
+      }
+    }
   });
 
-  // Trigger Print
+  // Trigger Browser Print Dialog
   window.print();
 }
 
