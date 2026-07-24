@@ -78,19 +78,20 @@ input[type="number"], input.font-mono, td.font-mono, span.font-mono, .font-mono 
   }
 }
 
-/* 💡 GLOBAL A4 PRINT STYLING FOR INVOICES & PAYSLIPS */
+/* 💡 GLOBAL PRINT STYLING - Default Hidden */
 #invoice-print-area, #payslip-print-area {
-  display: none;
+  display: none !important;
 }
 
 @media print {
   /* Hide all Web Workspace Elements during Print */
-  body > *:not(#invoice-print-area):not(#payslip-print-area) {
+  body > *:not(.active-print) {
     display: none !important;
   }
 
-  /* Force Print Areas to Fill Page in Clean White Background */
-  #invoice-print-area, #payslip-print-area {
+  /* 💡 Display ONLY the active print container */
+  #invoice-print-area.active-print,
+  #payslip-print-area.active-print {
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
