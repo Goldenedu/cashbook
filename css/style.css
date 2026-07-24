@@ -9,10 +9,10 @@
 ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #334155; }
 
-/* 💡 Navigation Buttons (Font Size ပိုမိုကြီးမားထင်ရှားအောင် တိုးမြှင့်ထားပါသည်) */
+/* Navigation Buttons */
 .nav-btn { 
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
-  font-size: 0.8125rem !important; /* 13px - Clearer and larger font size */
+  font-size: 0.8125rem !important;
   font-weight: 600 !important;
 }
 .nav-btn:hover { 
@@ -60,7 +60,7 @@ textarea::placeholder, input::placeholder {
   opacity: 1 !important;
 }
 
-/* 💡 Force English Digits (Latin Numerals 1234567890) on all Number Fields */
+/* Force English Digits on all Number Fields */
 input[type="number"], input.font-mono, td.font-mono, span.font-mono, .font-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
   font-variant-numeric: lining-nums tabular-nums !important;
@@ -70,10 +70,72 @@ input[type="number"], input.font-mono, td.font-mono, span.font-mono, .font-mono 
 .view-panel { animation: fadeIn 0.2s ease-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-/* 💡 Search Box ကို ထိပ်ဆုံးမှ ဒုတိယကတ် အဆုံးအထိ (50% Width) ကွက်တိ ဆွဲဆန့်ပေးခြင်း */
+/* Search Box Width Override */
 @media (min-width: 768px) {
   .relative.w-full {
     width: 50% !important;
     max-width: 680px !important;
+  }
+}
+
+/* 💡 GLOBAL A4 PRINT STYLING FOR INVOICES & PAYSLIPS */
+#invoice-print-area, #payslip-print-area {
+  display: none;
+}
+
+@media print {
+  /* Hide all Web Workspace Elements during Print */
+  body > *:not(#invoice-print-area):not(#payslip-print-area) {
+    display: none !important;
+  }
+
+  /* Force Print Areas to Fill Page in Clean White Background */
+  #invoice-print-area, #payslip-print-area {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100vh !important;
+    background-color: white !important;
+    color: black !important;
+    padding: 10px !important;
+    z-index: 999999 !important;
+    visibility: visible !important;
+    font-family: sans-serif !important;
+  }
+
+  .invoice-section, .payslip-section {
+    height: 46vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    border: 1px solid black !important;
+    padding: 12px !important;
+    border-radius: 6px !important;
+  }
+
+  .invoice-divider, .payslip-divider {
+    height: 4vh !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 10px !important;
+    color: #475569 !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  table th, table td {
+    padding: 4px 6px !important;
+    font-size: 10px !important;
+    border: 1px solid black !important;
+    color: black !important;
+    background-color: transparent !important;
   }
 }
