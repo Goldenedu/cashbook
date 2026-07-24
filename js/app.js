@@ -3,20 +3,15 @@
  * File: js/app.js
  */
 
-// 💡 Global View HTML Cache
 window.viewCache = window.viewCache || {};
 
-/**
- * 💡 Main Application Initializer
- */
 document.addEventListener('DOMContentLoaded', function () {
   initApp();
 });
 
 function initApp() {
   const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
-  const user = localStorage.getItem('golden_user_name');
-  const role = localStorage.getItem('golden_user_role');
+  const user = localStorage.getItem('golden_user_name') || localStorage.getItem('golden_user_role');
 
   if (!token) {
     console.log("[InitApp] User is not authenticated. Displaying login screen.");
@@ -25,7 +20,7 @@ function initApp() {
   }
 
   document.documentElement.className = 'dark is-authed';
-  updateHeaderMetadata(user, role);
+  updateHeaderMetadata(user);
 
   const currentTab = window.AppState ? window.AppState.currentModule : 'dashboard';
   switchTab(currentTab || 'dashboard');
@@ -33,13 +28,27 @@ function initApp() {
 
 /**
  * 💡 Update Header Metadata Badge
+ * Format: "FY 2026-2027 | Fri | 7:50 PM | User: Admin"
  */
-function updateHeaderMetadata(username, role) {
+function updateHeaderMetadata(username) {
   const metaEl = document.getElementById('live-metadata');
-  if (metaEl) {
-    const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    metaEl.textContent = `FY 2026-2027 | Date: ${todayStr} | User: ${username || 'Anonymous'} (${role || 'Admin'})`;
-  }
+  if (!metaEl) return;
+
+  const activeUser = username || localStorage.getItem('golden_user_name') || localStorage.getItem('golden_user_role') || 'Admin';
+
+  const d = new Date();
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayName = days[d.getDay()];
+
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const formattedTime = `${hours}:${minutes} ${ampm}`;
+
+  // 💡 Exact Format Requested: "FY 2026-2027 | Fri | 7:50 PM | User: Admin"
+  metaEl.textContent = `FY 2026-2027 | ${dayName} | ${formattedTime} | User: ${activeUser}`;
 }
 
 /**
@@ -76,7 +85,7 @@ async function switchTab(tabId) {
     'income': 'Main Income Book',
     'office': 'Office Expense Book',
     'kitchen': 'Kitchen Expense Book',
-    'hr': 'HR Payroll Group', // 💡 UPDATED TITLE TO "HR Payroll Group"
+    'hr': 'HR Payroll Group',
     'student': 'Student Directory List',
     'uniform': 'Uniform Inventory Ledger',
     'promotion': 'Promotion Fee Rate Matrix',
