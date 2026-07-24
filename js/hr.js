@@ -9,7 +9,7 @@ var hrPayTotalRows = 0;
 var hrPayActiveData = [];
 
 /**
- * 💡 Switch HR Sub-Tabs (Default is 'payroll')
+ * 💡 Switch HR Sub-Tabs (Default 'payroll')
  */
 function switchHrSubTab(tabName = 'payroll') {
   const payrollSec = document.getElementById('hr-payroll-section');
@@ -19,7 +19,6 @@ function switchHrSubTab(tabName = 'payroll') {
   const btnFt = document.getElementById('hr-tab-fulltime');
   const btnPt = document.getElementById('hr-tab-parttime');
 
-  // Reset Button Styles
   [btnPay, btnFt, btnPt].forEach(btn => {
     if (btn) {
       btn.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2";
@@ -144,7 +143,7 @@ function renderTableHrPayroll() {
 }
 
 /**
- * 💡 PAYSLIP PRINTER ENGINE (Strict Rules applied)
+ * 💡 PAYSLIP PRINTER ENGINE (Strict Data Injection Rules Applied)
  */
 function printPayslip(uniqueId) {
   const row = hrPayActiveData.find(item => item.uniqueId === uniqueId);
@@ -160,7 +159,7 @@ function printPayslip(uniqueId) {
   if (invArea) invArea.classList.remove('active-print');
   if (payArea) payArea.classList.add('active-print');
 
-  // 1. Clean ID & Name from Description
+  // 1. Clean ID & Name from Description (e.g., "FID 001 Daw Thin Za Li")
   let rawDesc = row.description || '';
   let cleanName = rawDesc.replace(/^\[/, '').replace(/\]$/, '').split(',')[0].trim();
 
@@ -199,7 +198,7 @@ function printPayslip(uniqueId) {
   // 5. Net Salary Paid (CREDIT)
   let netAmount = row.credit > 0 ? row.credit : row.debit;
 
-  // 6. Check Part Time Status
+  // 6. Part Time Rule Check
   const isPartTime = (rawCat === 'Part Time Salary' || rawCat.toLowerCase().includes('part time'));
 
   ['top', 'bot'].forEach(pos => {
@@ -218,11 +217,10 @@ function printPayslip(uniqueId) {
     const netEl = document.getElementById(`print-pay-net-${pos}`);
     if (netEl) netEl.textContent = Number(netAmount || 0).toLocaleString('en-US') + " MMK";
 
-    // 💡 Hide/Show Unpaid Fund and Bonus for Part Time
     const notesBox = document.getElementById(`print-pay-notes-${pos}`);
     if (notesBox) {
       if (isPartTime) {
-        notesBox.style.display = 'none';
+        notesBox.style.display = 'none'; // Hide for Part Time
       } else {
         notesBox.style.display = 'block';
         const bonusEl = document.getElementById(`print-pay-bonus-${pos}`);
@@ -234,7 +232,6 @@ function printPayslip(uniqueId) {
     }
   });
 
-  // Trigger Browser Print Dialog
   window.print();
 }
 
