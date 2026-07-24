@@ -120,6 +120,11 @@ window.callApi = async function(action, payload = {}, method = 'POST') {
  * 💡 Global Toast Stack Notification Engine (Explicitly Attached to Window)
  */
 window.showToast = function(type, message) {
+  // 💡 Login မဝင်ရသေးမီ (Login Screen တွင် ရောက်ရှိနေချိန်) Error Toast မပြအောင် တားဆီးခြင်း
+  if (document.documentElement.classList.contains('not-authed') && type === 'ERROR') {
+    return;
+  }
+
   let toastContainer = document.getElementById('toast-container');
   if (!toastContainer) return;
 
