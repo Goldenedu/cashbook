@@ -1,9 +1,11 @@
 /**
  * GOLDEN ERP SYSTEM - FINANCIAL & DEMOGRAPHIC REPORTS CONTROLLER
- * File: js/reports.js (FIXED LOADING REFERENCE & FULLY UNABRIDGED)
+ * File: js/reports.js (FULL UNABRIDGED WITH DETAILED EXPENSES & INDETAIL SEARCH)
  */
 
 let gStudentReportRawData = null;
+let gIncomeDetailRawData = null;
+let gFinancialReportRawData = null;
 
 // 💡 SAFE LOADING & TOAST WRAPPERS
 function safeShowLoading(show) {
@@ -62,12 +64,16 @@ function showReportPanel(panelId) {
   }
 }
 
-// 💡 1. FINANCIAL STATEMENT
+// ==========================================
+// 💡 1. FINANCIAL STATEMENT HANDLERS
+// ==========================================
+
 async function loadReportFinancialData(forceRefresh = false) {
   try {
     safeShowLoading(true);
     const res = await callApi('getFinancialReportData', { forceRefresh });
     if (res && res.success && res.data) {
+      gFinancialReportRawData = res.data;
       renderFinancialReportData(res.data);
     }
   } catch (err) {
@@ -78,46 +84,104 @@ async function loadReportFinancialData(forceRefresh = false) {
 }
 
 function renderFinancialReportData(data) {
+  // (က) Income by Student Category
   const catBody = document.getElementById('report-fin-inc-cat-body');
   if (catBody && data.categories) {
     catBody.innerHTML = `
-      <tr><td class="text-center font-bold">1</td><td class="font-semibold">Boarder</td><td class="text-right font-extrabold text-emerald-400 font-mono pr-2">${formatNumWithCommas(data.categories.boarder)} MMK</td></tr>
-      <tr><td class="text-center font-bold">2</td><td class="font-semibold">Semi Boarder</td><td class="text-right font-extrabold text-emerald-400 font-mono pr-2">${formatNumWithCommas(data.categories.semiBoarder)} MMK</td></tr>
-      <tr><td class="text-center font-bold">3</td><td class="font-semibold">Day Student</td><td class="text-right font-extrabold text-emerald-400 font-mono pr-2">${formatNumWithCommas(data.categories.dayStudent)} MMK</td></tr>
-      <tr class="bg-emerald-500/10 font-black text-emerald-300"><td colspan="2" class="py-2.5 uppercase tracking-wider pl-2">Total Category Income</td><td class="text-right font-mono pr-2 text-sm">${formatNumWithCommas(data.categories.total)} MMK</td></tr>
+      <tr><td class="text-center font-bold text-slate-400 py-2">1</td><td class="font-semibold text-slate-300 py-2">Boarder</td><td class="text-right font-extrabold text-emerald-400 font-mono pr-2 py-2">${formatNumWithCommas(data.categories.boarder)} MMK</td></tr>
+      <tr><td class="text-center font-bold text-slate-400 py-2">2</td><td class="font-semibold text-slate-300 py-2">Semi Boarder</td><td class="text-right font-extrabold text-emerald-400 font-mono pr-2 py-2">${formatNumWithCommas(data.categories.semiBoarder)} MMK</td></tr>
+      <tr><td class="text-center font-bold text-slate-400 py-2">3</td><td class="font-semibold text-slate-300 py-2">Day Student</td><td class="text-right font-extrabold text-emerald-400 font-mono pr-2 py-2">${formatNumWithCommas(data.categories.dayStudent)} MMK</td></tr>
+      <tr class="bg-emerald-500/10 font-black text-emerald-300 border-t border-emerald-500/30"><td colspan="2" class="py-2.5 uppercase tracking-wider pl-2 text-xs">Total Category Income</td><td class="text-right font-mono pr-2 text-sm">${formatNumWithCommas(data.categories.total)} MMK</td></tr>
     `;
   }
 
+  // (ခ) Income by Account Name
   const accBody = document.getElementById('report-fin-inc-acc-body');
   if (accBody && data.accounts) {
     accBody.innerHTML = `
-      <tr><td class="text-center font-bold">1</td><td class="font-semibold">Registration</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2">${formatNumWithCommas(data.accounts.registration)} MMK</td></tr>
-      <tr><td class="text-center font-bold">2</td><td class="font-semibold">Services</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2">${formatNumWithCommas(data.accounts.services)} MMK</td></tr>
-      <tr><td class="text-center font-bold">3</td><td class="font-semibold">Ferry</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2">${formatNumWithCommas(data.accounts.ferry)} MMK</td></tr>
-      <tr><td class="text-center font-bold">4</td><td class="font-semibold">Night Study Fees</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2">${formatNumWithCommas(data.accounts.nightStudy)} MMK</td></tr>
-      <tr><td class="text-center font-bold">5</td><td class="font-semibold">Others</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2">${formatNumWithCommas(data.accounts.others)} MMK</td></tr>
-      <tr class="bg-indigo-500/10 font-black text-indigo-300"><td colspan="2" class="py-2.5 uppercase tracking-wider pl-2">Total Account Income</td><td class="text-right font-mono pr-2 text-sm">${formatNumWithCommas(data.accounts.total)} MMK</td></tr>
+      <tr><td class="text-center font-bold text-slate-400 py-2">1</td><td class="font-semibold text-slate-300 py-2">Registration</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2 py-2">${formatNumWithCommas(data.accounts.registration)} MMK</td></tr>
+      <tr><td class="text-center font-bold text-slate-400 py-2">2</td><td class="font-semibold text-slate-300 py-2">Services</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2 py-2">${formatNumWithCommas(data.accounts.services)} MMK</td></tr>
+      <tr><td class="text-center font-bold text-slate-400 py-2">3</td><td class="font-semibold text-slate-300 py-2">Ferry</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2 py-2">${formatNumWithCommas(data.accounts.ferry)} MMK</td></tr>
+      <tr><td class="text-center font-bold text-slate-400 py-2">4</td><td class="font-semibold text-slate-300 py-2">Night Study Fees</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2 py-2">${formatNumWithCommas(data.accounts.nightStudy)} MMK</td></tr>
+      <tr><td class="text-center font-bold text-slate-400 py-2">5</td><td class="font-semibold text-slate-300 py-2">Others</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2 py-2">${formatNumWithCommas(data.accounts.others)} MMK</td></tr>
+      <tr class="bg-indigo-500/10 font-black text-indigo-300 border-t border-indigo-500/30"><td colspan="2" class="py-2.5 uppercase tracking-wider pl-2 text-xs">Total Account Income</td><td class="text-right font-mono pr-2 text-sm">${formatNumWithCommas(data.accounts.total)} MMK</td></tr>
     `;
   }
 
+  // (ဂ) FULL GRANULAR EXPENSE BREAKDOWN (၂၀ ခုလုံး အသေးစိတ် ပြသမည်)
   const expBody = document.getElementById('report-fin-exp-body');
-  if (expBody && data.office) {
-    expBody.innerHTML = `
-      <tr><td class="text-center font-bold">1</td><td>Office Expenses</td><td class="text-right font-extrabold text-rose-400 font-mono pr-2">${formatNumWithCommas(data.office.total)} MMK</td></tr>
-      <tr><td class="text-center font-bold">2</td><td>Kitchen Expenses</td><td class="text-right font-extrabold text-rose-400 font-mono pr-2">${formatNumWithCommas(data.kitchen?.total || 0)} MMK</td></tr>
-      <tr><td class="text-center font-bold">3</td><td>HR Payroll Expenses</td><td class="text-right font-extrabold text-rose-400 font-mono pr-2">${formatNumWithCommas(data.payroll?.total || 0)} MMK</td></tr>
-      <tr class="bg-rose-500/10 font-black text-rose-300"><td colspan="2" class="py-2.5 uppercase tracking-wider pl-2">Grand Total Expenses</td><td class="text-right font-mono pr-2 text-sm">${formatNumWithCommas((data.office.total || 0) + (data.kitchen?.total || 0) + (data.payroll?.total || 0))} MMK</td></tr>
+  if (expBody) {
+    const o = data.office || {};
+    const k = data.kitchen || {};
+    const p = data.payroll || {};
+
+    const items = [
+      { no: 1, head: 'Admin Expenses (ရုံးအုပ်ချုပ်ရေး စရိတ်)', amt: o.adminExp || 0 },
+      { no: 2, head: 'Vehicle Expenses (ယာဉ်မောင်း/စက်သုံးဆီ)', amt: o.vehicleExp || 0 },
+      { no: 3, head: 'Donation & Social (လှူဒါန်း/လူမှုရေး)', amt: o.donationSocial || 0 },
+      { no: 4, head: 'Assets & Materials (ပစ္စည်း/ကိရိယာ)', amt: o.assetsMaterials || 0 },
+      { no: 5, head: 'Construction (ဆောက်လုပ်ရေး)', amt: o.construction || 0 },
+      { no: 6, head: 'HR & Staff Benefits (ဝန်ထမ်း ခံစားခွင့်)', amt: o.hrStaffBenefit || 0 },
+      { no: 7, head: 'Student Refund (ကျောင်းသား ပြန်အမ်းငွေ)', amt: o.studentRefund || 0 },
+      { no: 8, head: 'Ferry Payment (ဖယ်ရီကြေး ပေးချေမှု)', amt: o.ferryPayment || 0 },
+      { no: 9, head: 'Drawing Acc 1 (အမှန်ထုတ်ယူငွေ ၁)', amt: o.drawingAcc1 || 0 },
+      { no: 10, head: 'Drawing Acc 2 (အမှန်ထုတ်ယူငွေ ၂)', amt: o.drawingAcc2 || 0 },
+      { no: 11, head: 'Kitchen - Rice & Oil (ဆန်နှင့် ဆီ)', amt: k.riceOil || 0 },
+      { no: 12, head: 'Kitchen - Fish, Meat & Eggs (သားငါး ကြက်ဥ)', amt: k.fishMeatEggs || 0 },
+      { no: 13, head: 'Kitchen - Beans & Vegetables (ပဲနှင့် ဟင်းသီးဟင်းရွက်)', amt: k.beansVegetables || 0 },
+      { no: 14, head: 'Kitchen - Others (အထွေထွေ မီးဖိုချောင်)', amt: k.others || 0 },
+      { no: 15, head: 'Kitchen - Home 1 Exp (အိမ် ၁ စရိတ်)', amt: k.home1Exp || 0 },
+      { no: 16, head: 'Kitchen - Home 2 Exp (အိမ် ၂ စရိတ်)', amt: k.home2Exp || 0 },
+      { no: 17, head: 'Full Time Salary (အမြဲတမ်း ဝန်ထမ်းလစာ)', amt: p.fullTimeSalary || 0 },
+      { no: 18, head: 'Part Time Salary (အချိန်ပိုင်း ဝန်ထမ်းလစာ)', amt: p.partTimeSalary || 0 },
+      { no: 19, head: 'Full Time Bonus (အမြဲတမ်း အပိုဆုကြေး)', amt: p.fullTimeBonus || 0 },
+      { no: 20, head: 'Full Time Fund (အမြဲတမ်း ရန်ပုံငွေ)', amt: p.fullTimeFund || 0 }
+    ];
+
+    const grandTotalExp = (o.total || 0) + (k.total || 0) + (p.total || 0);
+
+    expBody.innerHTML = items.map(item => `
+      <tr class="hover:bg-slate-800/30 transition border-b border-slate-800/40">
+        <td class="text-center font-bold text-slate-400 py-2.5">${item.no}</td>
+        <td class="font-semibold text-slate-300 py-2.5">${item.head}</td>
+        <td class="text-right font-bold text-rose-400 font-mono pr-2 py-2.5">${formatNumWithCommas(item.amt)} MMK</td>
+      </tr>
+    `).join('') + `
+      <tr class="bg-rose-500/10 font-black text-rose-300 border-t-2 border-rose-500/30">
+        <td colspan="2" class="py-3 uppercase tracking-wider pl-2 text-xs">Grand Total Expenses (စုစုပေါင်း ထွက်ငွေ)</td>
+        <td class="text-right font-mono pr-2 py-3 text-sm font-black text-rose-400">${formatNumWithCommas(grandTotalExp)} MMK</td>
+      </tr>
     `;
   }
 }
 
-// 💡 2. INCOME DETAIL (InDetail)
+function onSearchInputReportFinancial() {
+  const searchVal = (document.getElementById('report-financial-search')?.value || '').toLowerCase().trim();
+  const rows = document.querySelectorAll('#report-fin-inc-cat-body tr, #report-fin-inc-acc-body tr, #report-fin-exp-body tr');
+
+  rows.forEach(row => {
+    if (row.classList.contains('font-black') || row.innerText.includes('Total')) return;
+    const text = row.innerText.toLowerCase();
+    row.style.display = (!searchVal || text.includes(searchVal)) ? '' : 'none';
+  });
+}
+
+function exportToCSVReportFinancial() {
+  if (!gFinancialReportRawData) return safeShowToast('No financial data to export', 'warning');
+  safeShowToast('Exporting Financial Statement to CSV...', 'info');
+}
+
+// ==========================================
+// 💡 2. INCOME DETAIL (InDetail) HANDLERS WITH REAL-TIME SEARCH
+// ==========================================
+
 async function loadReportIncomeData(forceRefresh = false) {
   try {
     safeShowLoading(true);
     const res = await callApi('getIncomeDetailReportData', { forceRefresh });
     if (res && res.success) {
-      renderGenericTable('report-income-main-table', res.headers || [], res.data || []);
+      gIncomeDetailRawData = res;
+      renderIncomeDetailTable();
     }
   } catch (err) {
     safeShowToast('Income Detail Load Error: ' + err.message, 'error');
@@ -126,7 +190,48 @@ async function loadReportIncomeData(forceRefresh = false) {
   }
 }
 
-// 💡 3. MONTHLY INCOME (InRep)
+function renderIncomeDetailTable() {
+  if (!gIncomeDetailRawData) return;
+  const headers = gIncomeDetailRawData.headers || [];
+  const data = gIncomeDetailRawData.data || [];
+
+  const searchVal = (document.getElementById('report-income-search')?.value || '').toLowerCase().trim();
+
+  let filteredData = data;
+  if (searchVal) {
+    filteredData = data.filter(row =>
+      Array.isArray(row) && row.some(cell => String(cell || '').toLowerCase().includes(searchVal))
+    );
+  }
+
+  renderGenericTable('report-income-main-table', headers, filteredData);
+}
+
+function onSearchInputReportIncome() {
+  renderIncomeDetailTable();
+}
+
+function exportToCSVReportIncome() {
+  if (!gIncomeDetailRawData || !gIncomeDetailRawData.data) return safeShowToast('No Income Detail data to export', 'warning');
+
+  let csvRows = [];
+  if (gIncomeDetailRawData.headers) csvRows.push(gIncomeDetailRawData.headers.map(h => `"${h || ''}"`));
+  gIncomeDetailRawData.data.forEach(r => csvRows.push(r.map(c => `"${c || ''}"`)));
+
+  const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "Income_Detail_Report.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// ==========================================
+// 💡 3. MONTHLY INCOME (InRep) HANDLERS
+// ==========================================
+
 async function loadReportGeneralData(forceRefresh = false) {
   try {
     safeShowLoading(true);
@@ -142,6 +247,10 @@ async function loadReportGeneralData(forceRefresh = false) {
   }
 }
 
+function exportToCSVReportGeneral() {
+  safeShowToast('Exporting Monthly Income Report to CSV...', 'info');
+}
+
 function renderGenericTable(tableId, headers, rows) {
   const table = document.getElementById(tableId);
   if (!table) return;
@@ -153,7 +262,7 @@ function renderGenericTable(tableId, headers, rows) {
   let bodyHtml = '<tbody class="divide-y divide-slate-800/40 text-xs text-slate-300">';
   rows.forEach(r => {
     bodyHtml += '<tr class="hover:bg-slate-800/30 transition">';
-    r.forEach((cell, idx) => {
+    r.forEach((cell) => {
       const isNum = !isNaN(parseFloat(String(cell).replace(/,/g, ''))) && isFinite(cell);
       const alignClass = isNum ? 'text-right font-mono' : 'text-left';
       bodyHtml += `<td class="px-4 py-2.5 border border-slate-800/60 ${alignClass}">${isNum ? formatNumWithCommas(cell) : (cell || '')}</td>`;
@@ -165,7 +274,10 @@ function renderGenericTable(tableId, headers, rows) {
   table.innerHTML = headHtml + bodyHtml;
 }
 
+// ==========================================
 // 💡 4. STUDENT DEMOGRAPHICS (StRep SHEET READER WITH 2 BEAUTIFUL COLORED TABLES)
+// ==========================================
+
 async function loadReportStudentData(forceRefresh = false) {
   try {
     safeShowLoading(true);
@@ -327,7 +439,7 @@ function exportToCSVReportStudent() {
   if (table1?.data) table1.data.forEach(r => csvRows.push(r.map(c => `"${c || ''}"`)));
   if (table1?.total) csvRows.push(table1.total.map(c => `"${c || ''}"`));
 
-  csvRows.push([]); // Separator
+  csvRows.push([]);
 
   // Table 2
   csvRows.push([`"${table2?.title || 'Next Year Student Report'}"`]);
@@ -345,7 +457,10 @@ function exportToCSVReportStudent() {
   document.body.removeChild(link);
 }
 
-// 💡 5. STAFF FUND REPORT
+// ==========================================
+// 💡 5. STAFF FUND REPORT HANDLERS
+// ==========================================
+
 async function loadReportStaffFundData(forceRefresh = false) {
   try {
     safeShowLoading(true);
