@@ -78,6 +78,19 @@ input[type="number"], input.font-mono, td.font-mono, span.font-mono, .font-mono 
   }
 }
 
+/* 💡 PERMISSION CONTROL - HIDE DELETE BUTTONS WHEN CAN_DELETE IS FALSE */
+body.hide-delete-btn .btn-delete,
+body.hide-delete-btn .action-delete,
+body.hide-delete-btn button[onclick*="delete"],
+body.hide-delete-btn button[onclick*="Delete"],
+body.hide-delete-btn button[title*="Delete"],
+body.hide-delete-btn button[title*="delete"],
+body.hide-delete-btn a[onclick*="delete"] {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
 /* 💡 GLOBAL PRINT STYLING - Default Hidden */
 #invoice-print-area, #payslip-print-area {
   display: none !important;
@@ -89,7 +102,7 @@ input[type="number"], input.font-mono, td.font-mono, span.font-mono, .font-mono 
     display: none !important;
   }
 
-  /* 💡 Display ONLY the active print container */
+  /* Display ONLY the active print container */
   #invoice-print-area.active-print,
   #payslip-print-area.active-print {
     display: flex !important;
