@@ -1,742 +1,387 @@
 /**
- * GOLDEN ERP SYSTEM - REPORTING ENGINE & COLOR STYLING
+ * GOLDEN ERP SYSTEM - FINANCIAL & DEMOGRAPHIC REPORTS CONTROLLER
  * File: js/reports.js
  */
 
-window.erpCache = window.erpCache || {};
+let gStudentReportRawData = null;
 
-function cleanNum(val) {
-  if (val === undefined || val === null || val === "") return 0;
-  var cleaned = String(val).replace(/,/g, "").replace(/[^\d.-]/g, "");
-  var num = parseFloat(cleaned);
-  return isNaN(num) ? 0 : num;
-}
-
-/**
- * 💡 [PROMO BADGE FORMATTER]
- * Promo Plan မျာအလိုက် အရောင်ခွဲ ပင်းတံဆိပ်များ တပ်ဆင်ပေးခြင်း
- */
-function getPromoBadge(promo) {
-  if (!promo || promo === "-" || promo === "Non") return `<span class="text-slate-500">-</span>`;
-  var p = String(promo).trim();
-  var pLower = p.toLowerCase();
-  
-  if (pLower.includes("full scholar")) {
-    return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 inline-flex items-center gap-1"><i class="fa-solid fa-circle-check text-[9px]"></i> ${p}</span>`;
-  } else if (pLower.includes("half scholar")) {
-    return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">${p}</span>`;
-  } else if (pLower.includes("original")) {
-    return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">${p}</span>`;
-  }
-  return `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">${p}</span>`;
-}
-
-function initReportsPage() {
-  const isFundPage = document.getElementById('report-staff-fund-table-body');
-  if (isFundPage) {
-    loadReportStaffFundData(false);
-  } else {
-    showReportPanel('panel-report-financial');
-  }
+function formatNumWithCommas(val) {
+  if (val === null || val === undefined || val === '') return '0';
+  const num = parseFloat(String(val).replace(/,/g, ''));
+  if (isNaN(num)) return String(val);
+  return num.toLocaleString('en-US');
 }
 
 function showReportPanel(panelId) {
-  const panels = ['panel-report-financial', 'panel-report-income-detail', 'panel-report-monthly-income', 'panel-report-student'];
-  
-  panels.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add('hidden');
+  document.querySelectorAll('.report-panel').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('.rep-sub-tab-btn').forEach(btn => {
+    btn.classList.remove('bg-emerald-600', 'bg-sky-600', 'bg-indigo-600', 'bg-amber-600', 'text-white');
+    btn.classList.add('bg-slate-800', 'text-slate-400');
   });
 
-  const target = document.getElementById(panelId);
-  if (target) target.classList.remove('hidden');
-
-  const btnFin = document.getElementById('btn-rep-fin');
-  const btnIndetail = document.getElementById('btn-rep-indetail');
-  const btnInrep = document.getElementById('btn-rep-inrep');
-  const btnStudent = document.getElementById('btn-rep-student');
-
-  [btnFin, btnIndetail, btnInrep, btnStudent].forEach(btn => {
-    if (btn) btn.className = "rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2";
-  });
+  const targetPanel = document.getElementById(panelId);
+  if (targetPanel) targetPanel.classList.remove('hidden');
 
   if (panelId === 'panel-report-financial') {
-    if (btnFin) btnFin.className = "rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-emerald-600 text-white flex items-center gap-2";
-    loadReportFinancialData(false);
+    const btn = document.getElementById('btn-rep-fin');
+    if (btn) btn.classList.add('bg-emerald-600', 'text-white');
+    loadReportFinancialData();
   } else if (panelId === 'panel-report-income-detail') {
-    if (btnIndetail) btnIndetail.className = "rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-sky-600 text-white flex items-center gap-2";
-    loadReportIncomeData(false);
+    const btn = document.getElementById('btn-rep-indetail');
+    if (btn) btn.classList.add('bg-sky-600', 'text-white');
+    loadReportIncomeData();
   } else if (panelId === 'panel-report-monthly-income') {
-    if (btnInrep) btnInrep.className = "rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white flex items-center gap-2";
-    loadReportGeneralData(false);
+    const btn = document.getElementById('btn-rep-inrep');
+    if (btn) btn.classList.add('bg-indigo-600', 'text-white');
+    loadReportGeneralData();
   } else if (panelId === 'panel-report-student') {
-    if (btnStudent) btnStudent.className = "rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-amber-600 text-white flex items-center gap-2";
-    loadReportStudentData(false);
+    const btn = document.getElementById('btn-rep-student');
+    if (btn) btn.classList.add('bg-amber-600', 'text-white');
+    loadReportStudentData();
   }
 }
 
-// ============================================================================
-// 1️⃣ FINANCIAL STATEMENT REPORT
-// ============================================================================
-
-async function loadReportFinancialData(isSilent = false) {
+// 💡 1. FINANCIAL STATEMENT
+async function loadReportFinancialData(forceRefresh = false) {
   try {
-    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
-    const res = await callApi('getFinancialReportData', {});
-
+    showLoading(true);
+    const res = await callApi('getFinancialReportData', { forceRefresh });
     if (res && res.success && res.data) {
-      window.erpCache['financial-report'] = res.data;
-      compileReportFinancialData();
-    } else {
-      showToast("ERROR", res.message || "ဘဏ္ဍာရေးရှင်းတမ်း ရယူ၍ မရပါ");
+      renderFinancialReportData(res.data);
     }
   } catch (err) {
-    showToast("ERROR", "Error loading financial report: " + err.message);
+    showToast('Financial Statement Load Error: ' + err.message, 'error');
   } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
+    showLoading(false);
   }
 }
 
-function compileReportFinancialData() {
-  const searchVal = document.getElementById('report-financial-search')?.value.toLowerCase().trim() || "";
-  const rData = window.erpCache['financial-report'];
-  if (!rData) return;
-
-  let cats = [
-    { name: "Boarder (ဘော်ဒါဝင်ငွေ)", total: cleanNum(rData.categories?.boarder) },
-    { name: "Semi Boarder (ဆီမီးဘော်ဒါ)", total: cleanNum(rData.categories?.semiBoarder) },
-    { name: "Day Student (နေ့ကျောင်းသား)", total: cleanNum(rData.categories?.dayStudent) }
-  ];
-  let catGrandTotal = cleanNum(rData.categories?.total);
-
-  let accs = [
-    { name: "Registration (ကျောင်းအပ်နှံခ)", total: cleanNum(rData.accounts?.registration) },
-    { name: "Services (သင်ကြားရေးဝန်ဆောင်မှု)", total: cleanNum(rData.accounts?.services) },
-    { name: "Ferry (ဖယ်ရီခ)", total: cleanNum(rData.accounts?.ferry) },
-    { name: "Night Study Fees (ညစာကျက်ဝိုင်းခ)", total: cleanNum(rData.accounts?.nightStudy) },
-    { name: "Others (အထွေထွေဝင်ငွေ)", total: cleanNum(rData.accounts?.others) }
-  ];
-  let accGrandTotal = cleanNum(rData.accounts?.total);
-
-  let exps = [
-    { name: "Office - Admin Exp", total: cleanNum(rData.office?.adminExp) },
-    { name: "Office - Vehicle Related Exp", total: cleanNum(rData.office?.vehicleExp) },
-    { name: "Office - Donation & Social", total: cleanNum(rData.office?.donationSocial) },
-    { name: "Office - Assets Materials", total: cleanNum(rData.office?.assetsMaterials) },
-    { name: "Office - Construction", total: cleanNum(rData.office?.construction) },
-    { name: "Office - HR Staff Benefit", total: cleanNum(rData.office?.hrStaffBenefit) },
-    { name: "Office - Student Refund", total: cleanNum(rData.office?.studentRefund) },
-    { name: "Office - Ferry Payment", total: cleanNum(rData.office?.ferryPayment) },
-    { name: "Office - Drawing Account 1", total: cleanNum(rData.office?.drawingAcc1) },
-    { name: "Office - Drawing Account 2", total: cleanNum(rData.office?.drawingAcc2) },
-    { name: "Kitchen - Rice & Oil", total: cleanNum(rData.kitchen?.riceOil) },
-    { name: "Kitchen - Fish & meat/Eggs", total: cleanNum(rData.kitchen?.fishMeatEggs) },
-    { name: "Kitchen - Beans/Vegetables", total: cleanNum(rData.kitchen?.beansVegetables) },
-    { name: "Kitchen - Others", total: cleanNum(rData.kitchen?.others) },
-    { name: "Kitchen - HOME: 1 Exp", total: cleanNum(rData.kitchen?.home1Exp) },
-    { name: "Kitchen - HOME: 2 Exp", total: cleanNum(rData.kitchen?.home2Exp) },
-    { name: "Payroll - Full Time Salary", total: cleanNum(rData.payroll?.fullTimeSalary) },
-    { name: "Payroll - Part Time Salary", total: cleanNum(rData.payroll?.partTimeSalary) },
-    { name: "Payroll - Full Time Bonus", total: cleanNum(rData.payroll?.fullTimeBonus) },
-    { name: "Payroll - Full Time Fund", total: cleanNum(rData.payroll?.fullTimeFund) }
-  ];
-  let expGrandTotal = cleanNum(rData.office?.total) + cleanNum(rData.kitchen?.total) + cleanNum(rData.payroll?.total);
-
-  if (searchVal) {
-    cats = cats.filter(item => item.name.toLowerCase().includes(searchVal));
-    accs = accs.filter(item => item.name.toLowerCase().includes(searchVal));
-    exps = exps.filter(item => item.name.toLowerCase().includes(searchVal));
-  }
-
+function renderFinancialReportData(data) {
   const catBody = document.getElementById('report-fin-inc-cat-body');
-  if (catBody) {
-    let idx = 1;
-    let rows = cats.map(item => `<tr class="hover:bg-slate-800/20 text-slate-300"><td class="text-center font-semibold text-slate-500 py-2.5">${idx++}</td><td class="font-bold text-slate-200 py-2.5 pl-2">${item.name}</td><td class="text-right text-emerald-400 font-bold py-2.5 pr-2 font-mono">${item.total.toLocaleString('en-US')} MMK</td></tr>`).join('');
-    if (!searchVal) rows += `<tr class="bg-emerald-500/5 font-black text-emerald-400"><td colspan="2" class="text-center py-2.5">Total Category Income</td><td class="text-right py-2.5 pr-2 font-mono">${catGrandTotal.toLocaleString('en-US')} MMK</td></tr>`;
-    catBody.innerHTML = rows;
+  if (catBody && data.categories) {
+    catBody.innerHTML = `
+      <tr><td class="text-center font-bold">1</td><td class="font-semibold">Boarder</td><td class="text-right font-extrabold text-emerald-400 font-mono pr-2">${formatNumWithCommas(data.categories.boarder)} MMK</td></tr>
+      <tr><td class="text-center font-bold">2</td><td class="font-semibold">Semi Boarder</td><td class="text-right font-extrabold text-emerald-400 font-mono pr-2">${formatNumWithCommas(data.categories.semiBoarder)} MMK</td></tr>
+      <tr><td class="text-center font-bold">3</td><td class="font-semibold">Day Student</td><td class="text-right font-extrabold text-emerald-400 font-mono pr-2">${formatNumWithCommas(data.categories.dayStudent)} MMK</td></tr>
+      <tr class="bg-emerald-500/10 font-black text-emerald-300"><td colspan="2" class="py-2.5 uppercase tracking-wider pl-2">Total Category Income</td><td class="text-right font-mono pr-2 text-sm">${formatNumWithCommas(data.categories.total)} MMK</td></tr>
+    `;
   }
 
   const accBody = document.getElementById('report-fin-inc-acc-body');
-  if (accBody) {
-    let idx = 1;
-    let rows = accs.map(item => `<tr class="hover:bg-slate-800/20 text-slate-300"><td class="text-center font-semibold text-slate-500 py-2.5">${idx++}</td><td class="font-bold text-slate-200 py-2.5 pl-2">${item.name}</td><td class="text-right text-emerald-400 font-bold py-2.5 pr-2 font-mono">${item.total.toLocaleString('en-US')} MMK</td></tr>`).join('');
-    if (!searchVal) rows += `<tr class="bg-emerald-500/5 font-black text-emerald-400"><td colspan="2" class="text-center py-2.5">Total Account Income</td><td class="text-right py-2.5 pr-2 font-mono">${accGrandTotal.toLocaleString('en-US')} MMK</td></tr>`;
-    accBody.innerHTML = rows;
+  if (accBody && data.accounts) {
+    accBody.innerHTML = `
+      <tr><td class="text-center font-bold">1</td><td class="font-semibold">Registration</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2">${formatNumWithCommas(data.accounts.registration)} MMK</td></tr>
+      <tr><td class="text-center font-bold">2</td><td class="font-semibold">Services</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2">${formatNumWithCommas(data.accounts.services)} MMK</td></tr>
+      <tr><td class="text-center font-bold">3</td><td class="font-semibold">Ferry</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2">${formatNumWithCommas(data.accounts.ferry)} MMK</td></tr>
+      <tr><td class="text-center font-bold">4</td><td class="font-semibold">Night Study Fees</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2">${formatNumWithCommas(data.accounts.nightStudy)} MMK</td></tr>
+      <tr><td class="text-center font-bold">5</td><td class="font-semibold">Others</td><td class="text-right font-extrabold text-indigo-400 font-mono pr-2">${formatNumWithCommas(data.accounts.others)} MMK</td></tr>
+      <tr class="bg-indigo-500/10 font-black text-indigo-300"><td colspan="2" class="py-2.5 uppercase tracking-wider pl-2">Total Account Income</td><td class="text-right font-mono pr-2 text-sm">${formatNumWithCommas(data.accounts.total)} MMK</td></tr>
+    `;
   }
 
   const expBody = document.getElementById('report-fin-exp-body');
-  if (expBody) {
-    let idx = 1;
-    let rows = exps.map(item => `<tr class="hover:bg-slate-800/20 text-slate-300"><td class="text-center font-semibold text-slate-500 py-2.5">${idx++}</td><td class="font-bold text-slate-200 py-2.5 pl-2">${item.name}</td><td class="text-right text-rose-400 font-bold py-2.5 pr-2 font-mono">${item.total.toLocaleString('en-US')} MMK</td></tr>`).join('');
-    if (!searchVal) rows += `<tr class="bg-rose-500/5 font-black text-rose-400"><td colspan="2" class="text-center py-2.5">Total Combined Expenses</td><td class="text-right py-2.5 pr-2 font-mono">${expGrandTotal.toLocaleString('en-US')} MMK</td></tr>`;
-    expBody.innerHTML = rows;
+  if (expBody && data.office) {
+    expBody.innerHTML = `
+      <tr><td class="text-center font-bold">1</td><td>Office Expenses</td><td class="text-right font-extrabold text-rose-400 font-mono pr-2">${formatNumWithCommas(data.office.total)} MMK</td></tr>
+      <tr><td class="text-center font-bold">2</td><td>Kitchen Expenses</td><td class="text-right font-extrabold text-rose-400 font-mono pr-2">${formatNumWithCommas(data.kitchen?.total || 0)} MMK</td></tr>
+      <tr><td class="text-center font-bold">3</td><td>HR Payroll Expenses</td><td class="text-right font-extrabold text-rose-400 font-mono pr-2">${formatNumWithCommas(data.payroll?.total || 0)} MMK</td></tr>
+      <tr class="bg-rose-500/10 font-black text-rose-300"><td colspan="2" class="py-2.5 uppercase tracking-wider pl-2">Grand Total Expenses</td><td class="text-right font-mono pr-2 text-sm">${formatNumWithCommas((data.office.total || 0) + (data.kitchen?.total || 0) + (data.payroll?.total || 0))} MMK</td></tr>
+    `;
   }
 }
 
-function onSearchInputReportFinancial() { compileReportFinancialData(); }
-
-function exportToCSVReportFinancial() {
-  const rData = window.erpCache['financial-report'];
-  if (!rData) { showToast("ERROR", "ထုတ်ယူရန် မည်သည့်ဒေတာမျှ မရှိသေးပါ!"); return; }
-
-  let csv = "--- SECTION 1: INCOME BY CATEGORY ---\nNO,CATEGORY,TOTAL AMOUNT\n";
-  csv += `1,"Boarder Income",${cleanNum(rData.categories?.boarder)}\n`;
-  csv += `2,"Semi Boarder Income",${cleanNum(rData.categories?.semiBoarder)}\n`;
-  csv += `3,"Day Student Income",${cleanNum(rData.categories?.dayStudent)}\n`;
-  csv += `,"TOTAL CATEGORY INCOME",${cleanNum(rData.categories?.total)}\n\n`;
-
-  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `Financial_Statement_${new Date().toISOString().slice(0,10)}.csv`;
-  link.click();
-}
-
-// ============================================================================
-// 2️⃣ INCOME DETAIL REPORT (InDetail Sheet - WITH COLUMN COLORS)
-// ============================================================================
-
-async function loadReportIncomeData(isSilent = false) {
+// 💡 2. INCOME DETAIL (InDetail)
+async function loadReportIncomeData(forceRefresh = false) {
   try {
-    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
-
-    const res = await callApi('getIncomeDetailReportData', {});
+    showLoading(true);
+    const res = await callApi('getIncomeDetailReportData', { forceRefresh });
     if (res && res.success) {
-      window.erpCache['income-detail-report'] = res;
-      compileReportIncomeData();
-    } else {
-      showToast("ERROR", res.message || "InDetail စာရင်း မရရှိပါ");
+      renderGenericTable('report-income-main-table', res.headers || [], res.data || []);
     }
   } catch (err) {
-    showToast("ERROR", "Error loading Income Detail: " + err.message);
+    showToast('Income Detail Load Error: ' + err.message, 'error');
   } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
+    showLoading(false);
   }
 }
 
-/**
- * 💡 [INDETAIL MATRIX COLOR STYLING ENGINE]
- */
-function compileReportIncomeData() {
-  const table = document.getElementById('report-income-main-table');
+// 💡 3. MONTHLY INCOME (InRep)
+async function loadReportGeneralData(forceRefresh = false) {
+  try {
+    showLoading(true);
+    const res = await callApi('getMonthlyIncomeReportData', { forceRefresh });
+    if (res && res.success) {
+      if (res.table1) renderGenericTable('report-general-table-1', res.table1.headers || [], res.table1.data || []);
+      if (res.table2) renderGenericTable('report-general-table-2', res.table2.headers || [], res.table2.data || []);
+    }
+  } catch (err) {
+    showToast('Monthly Income Report Load Error: ' + err.message, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+function renderGenericTable(tableId, headers, rows) {
+  const table = document.getElementById(tableId);
   if (!table) return;
 
-  const rData = window.erpCache['income-detail-report'] || {};
-  const headers = rData.headers || [];
-  const rowsData = rData.data || [];
-  const search = document.getElementById('report-income-search')?.value.toLowerCase().trim() || '';
+  let headHtml = '<thead><tr class="bg-[#0e172a] text-slate-300 text-xs uppercase font-bold">';
+  headers.forEach(h => { headHtml += `<th class="px-4 py-3 border border-slate-800">${h || ''}</th>`; });
+  headHtml += '</tr></thead>';
 
-  const filtered = rowsData.filter(row => {
-    if (!search) return true;
-    return row.some(cell => String(cell || '').toLowerCase().includes(search));
+  let bodyHtml = '<tbody class="divide-y divide-slate-800/40 text-xs text-slate-300">';
+  rows.forEach(r => {
+    bodyHtml += '<tr class="hover:bg-slate-800/30 transition">';
+    r.forEach((cell, idx) => {
+      const isNum = !isNaN(parseFloat(String(cell).replace(/,/g, ''))) && isFinite(cell);
+      const alignClass = isNum ? 'text-right font-mono' : 'text-left';
+      bodyHtml += `<td class="px-4 py-2.5 border border-slate-800/60 ${alignClass}">${isNum ? formatNumWithCommas(cell) : (cell || '')}</td>`;
+    });
+    bodyHtml += '</tr>';
   });
+  bodyHtml += 'tbody>';
 
-  // 💡 Header Color Styling based on Column Title
-  let headerHtml = `
-    <thead>
-      <tr class="bg-[#0e172a] text-slate-400">
-        ${headers.map((h, i) => {
-          const hName = String(h || "").trim().toUpperCase();
-          let colorClass = "text-slate-200";
+  table.innerHTML = headHtml + bodyHtml;
+}
 
-          if (hName.includes("PROMO")) colorClass = "text-amber-400";
-          else if (hName.includes("JOIN MONTH")) colorClass = "text-teal-400";
-          else if (hName.includes("REFUND MONTH")) colorClass = "text-amber-400";
-          else if (hName.includes("REFUND AMT") || hName.includes("REFUNT AMT")) colorClass = "text-rose-400";
-          else if (hName.includes("REGISTRATION")) colorClass = "text-indigo-400";
-          else if (hName.includes("FERRY")) colorClass = "text-sky-400";
-          else if (hName.includes("NIGHT STUDY")) colorClass = "text-yellow-400";
+// 💡 4. STUDENT DEMOGRAPHICS (StRep SHEET READER WITH 2 BEAUTIFUL COLORED TABLES)
+async function loadReportStudentData(forceRefresh = false) {
+  try {
+    showLoading(true);
+    const res = await callApi('getStudentReportDetails', { forceRefresh });
+    if (res && res.success) {
+      gStudentReportRawData = res;
+      renderStudentReportTables();
+    }
+  } catch (err) {
+    showToast('Student Demographics Load Error: ' + err.message, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
 
-          const alignClass = (hName.includes("AMT") || hName.includes("REGISTRATION") || hName.includes("FERRY") || hName.includes("FEES") || (i > 7 && !hName.includes("MONTH"))) ? "text-right" : "text-left";
+function renderStudentReportTables() {
+  const container = document.getElementById('report-student-tables-container');
+  if (!container || !gStudentReportRawData) return;
 
-          return `<th class="py-3 px-4 text-xs uppercase font-bold border-b border-slate-800 ${colorClass} ${alignClass}">${h}</th>`;
-        }).join('')}
-      </tr>
-    </thead>
+  const searchVal = (document.getElementById('report-student-search')?.value || '').toLowerCase().trim();
+  const { table1, table2 } = gStudentReportRawData;
+
+  const filterRows = (dataRows) => {
+    if (!searchVal || !Array.isArray(dataRows)) return dataRows || [];
+    return dataRows.filter(row =>
+      Array.isArray(row) && row.some(cell => String(cell || '').toLowerCase().includes(searchVal))
+    );
+  };
+
+  const rows1 = filterRows(table1?.data);
+  const rows2 = filterRows(table2?.data);
+
+  let html = '';
+
+  // 🟢 TABLE 1: CURRENT FY STUDENT REPORT (Emerald / Cyan Theme)
+  html += `
+    <div class="bg-[#0c1322] border border-emerald-500/30 rounded-2xl p-5 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-emerald-500/20 pb-3">
+        <h3 class="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-graduation-cap text-base"></i> ${table1?.title || 'Current FY Student Report'}
+        </h3>
+        <span class="text-[10px] font-bold text-emerald-300 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+          Showing ${rows1.length} Classes
+        </span>
+      </div>
+
+      <div class="overflow-x-auto table-container">
+        <table class="w-full text-left border-collapse text-xs min-w-[1100px]">
+          <thead>
+            <tr class="bg-emerald-950/40 text-emerald-300 font-extrabold uppercase border-b border-emerald-500/30">
+              ${(table1?.headers || []).map((h, i) => `<th class="py-3 px-3 ${i >= 3 ? 'text-right' : 'text-left'}">${h || ''}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/40 text-slate-200">
+            ${rows1.map(r => `
+              <tr class="hover:bg-emerald-500/5 transition">
+                <td class="py-2.5 px-3 text-center font-bold text-slate-400">${r[0] || ''}</td>
+                <td class="py-2.5 px-3 font-semibold text-slate-300">${r[1] || ''}</td>
+                <td class="py-2.5 px-3 font-extrabold text-white">${r[2] || ''}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-400">${formatNumWithCommas(r[3])}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-bold text-teal-300">${formatNumWithCommas(r[4])}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-bold text-teal-300">${formatNumWithCommas(r[5])}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-black text-emerald-300">${formatNumWithCommas(r[6])}</td>
+                <td class="py-2.5 px-3 text-right font-mono text-slate-400">${formatNumWithCommas(r[7])}</td>
+                <td class="py-2.5 px-3 text-right font-mono text-slate-400">${formatNumWithCommas(r[8])}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-400">${formatNumWithCommas(r[9])}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+          ${table1?.total && table1.total.length > 0 ? `
+            <tfoot>
+              <tr class="bg-emerald-500/10 font-black text-emerald-300 border-t-2 border-emerald-500/40">
+                <td colspan="3" class="py-3 px-3 uppercase text-xs tracking-wider">${table1.total[0] || 'Total'}</td>
+                <td class="py-3 px-3 text-right font-mono text-emerald-300">${formatNumWithCommas(table1.total[3])}</td>
+                <td class="py-3 px-3 text-right font-mono">${formatNumWithCommas(table1.total[4])}</td>
+                <td class="py-3 px-3 text-right font-mono">${formatNumWithCommas(table1.total[5])}</td>
+                <td class="py-3 px-3 text-right font-mono text-sm">${formatNumWithCommas(table1.total[6])}</td>
+                <td class="py-3 px-3 text-right font-mono text-slate-300">${formatNumWithCommas(table1.total[7])}</td>
+                <td class="py-3 px-3 text-right font-mono text-slate-300">${formatNumWithCommas(table1.total[8])}</td>
+                <td class="py-3 px-3 text-right font-mono text-slate-300">${formatNumWithCommas(table1.total[9])}</td>
+              </tr>
+            </tfoot>
+          ` : ''}
+        </table>
+      </div>
+    </div>
   `;
 
-  let bodyHtml = `<tbody class="divide-y divide-slate-800/40 text-slate-300">`;
-
-  if (filtered.length === 0) {
-    bodyHtml += `<tr><td colspan="${headers.length || 1}" class="text-center py-8 text-slate-500 font-bold">No records found.</td></tr>`;
-  } else {
-    filtered.forEach(row => {
-      bodyHtml += `<tr class="hover:bg-slate-800/20">`;
-      row.forEach((cell, idx) => {
-        const hName = String(headers[idx] || "").trim().toUpperCase();
-        const cellStr = String(cell || "").trim();
-        const num = parseFloat(cellStr.replace(/,/g, ""));
-        const isNum = !isNaN(num) && isFinite(num) && cellStr !== "";
-
-        // 💡 1. PROMO Column Badges
-        if (hName.includes("PROMO")) {
-          bodyHtml += `<td class="py-3 px-4">${getPromoBadge(cellStr)}</td>`;
-
-        // 💡 2. STU STATUS Badges
-        } else if (hName.includes("STU STATUS") || hName === "STATUS") {
-          if (cellStr.toLowerCase() === "active") {
-            bodyHtml += `<td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Active</span></td>`;
-          } else if (cellStr.toLowerCase() === "inactive") {
-            bodyHtml += `<td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">Inactive</span></td>`;
-          } else {
-            bodyHtml += `<td class="py-3 px-4 text-slate-300 font-bold">${cellStr}</td>`;
-          }
-
-        // 💡 3. JOIN MONTH (Teal Color)
-        } else if (hName.includes("JOIN MONTH")) {
-          bodyHtml += `<td class="py-3 px-4 text-teal-400 font-bold font-mono">${cellStr || '-'}</td>`;
-
-        // 💡 4. REFUND MONTH (Amber Color)
-        } else if (hName.includes("REFUND MONTH")) {
-          bodyHtml += `<td class="py-3 px-4 text-amber-400 font-bold font-mono">${cellStr || '-'}</td>`;
-
-        // 💡 5. REFUND AMT (Rose Bold Color)
-        } else if (hName.includes("REFUND AMT") || hName.includes("REFUNT AMT")) {
-          bodyHtml += `<td class="py-3 px-4 text-right font-mono font-extrabold text-rose-400">${isNum ? num.toLocaleString('en-US') : (cellStr || '0')}</td>`;
-
-        // 💡 6. REGISTRATION (Indigo Bold Color)
-        } else if (hName.includes("REGISTRATION")) {
-          bodyHtml += `<td class="py-3 px-4 text-right font-mono font-extrabold text-indigo-400">${isNum ? num.toLocaleString('en-US') : (cellStr || '0')}</td>`;
-
-        // 💡 7. FERRY (Sky Blue Color)
-        } else if (hName.includes("FERRY")) {
-          bodyHtml += `<td class="py-3 px-4 text-right font-mono font-bold text-sky-400">${isNum ? num.toLocaleString('en-US') : (cellStr || '0')}</td>`;
-
-        // 💡 8. NIGHT STUDY FEES (Yellow Color)
-        } else if (hName.includes("NIGHT STUDY")) {
-          bodyHtml += `<td class="py-3 px-4 text-right font-mono font-bold text-yellow-400">${isNum ? num.toLocaleString('en-US') : (cellStr || '0')}</td>`;
-
-        // 💡 9. Monthly Amount Columns (MAR 26, APR 26, etc.)
-        } else if (isNum && idx > 3) {
-          bodyHtml += `<td class="py-3 px-4 text-right font-mono font-bold text-slate-200">${num.toLocaleString('en-US')}</td>`;
-
-        } else {
-          bodyHtml += `<td class="py-3 px-4 text-slate-300 font-bold">${cellStr}</td>`;
-        }
-      });
-      bodyHtml += `</tr>`;
-    });
-  }
-
-  bodyHtml += `</tbody>`;
-  table.innerHTML = headerHtml + bodyHtml;
-}
-
-function onSearchInputReportIncome() { compileReportIncomeData(); }
-
-function exportToCSVReportIncome() {
-  const rData = window.erpCache['income-detail-report'];
-  if (!rData || !rData.headers || !rData.data) {
-    showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိသေးပါ!");
-    return;
-  }
-  let csv = rData.headers.join(",") + "\n";
-  rData.data.forEach(row => {
-    const escaped = row.map(c => `"${String(c || '').replace(/"/g, '""')}"`);
-    csv += escaped.join(",") + "\n";
-  });
-  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `Income_Detail_InDetail_${new Date().toISOString().slice(0,10)}.csv`;
-  link.click();
-}
-
-// ============================================================================
-// 3️⃣ MONTHLY INCOME REPORT (InRep)
-// ============================================================================
-
-async function loadReportGeneralData(isSilent = false) {
-  try {
-    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
-
-    const res = await callApi('getMonthlyIncomeReportData', {});
-    if (res && res.success) {
-      window.erpCache['monthly-income-report'] = res;
-      compileReportGeneralData();
-    } else {
-      showToast("ERROR", res.message || "InRep စာရင်း မရရှိပါ");
-    }
-  } catch (err) {
-    showToast("ERROR", "Error loading Monthly Income: " + err.message);
-  } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
-  }
-}
-
-function compileReportGeneralData() {
-  const rData = window.erpCache['monthly-income-report'] || {};
-  
-  const t1 = document.getElementById('report-general-table-1');
-  if (t1 && rData.table1) {
-    let hHtml = `<thead><tr class="bg-emerald-950/40 text-emerald-300">${(rData.table1.headers || []).map(h => `<th class="py-3 px-4 text-xs font-bold uppercase border-b border-emerald-500/20">${h}</th>`).join('')}</tr></thead>`;
-    let bHtml = `<tbody class="divide-y divide-slate-800/40 text-slate-300">`;
-    (rData.table1.data || []).forEach(row => {
-      bHtml += `<tr class="hover:bg-emerald-500/5">`;
-      row.forEach((c, idx) => {
-        const num = parseFloat(String(c || "").replace(/,/g, ""));
-        if (!isNaN(num) && isFinite(num) && String(c).trim() !== "" && idx > 0) {
-          bHtml += `<td class="py-3 px-4 text-right font-mono font-bold text-emerald-300">${num.toLocaleString('en-US')}</td>`;
-        } else {
-          bHtml += `<td class="py-3 px-4 font-bold text-white">${c || ''}</td>`;
-        }
-      });
-      bHtml += `</tr>`;
-    });
-    bHtml += `</tbody>`;
-    t1.innerHTML = hHtml + bHtml;
-  }
-
-  const t2 = document.getElementById('report-general-table-2');
-  if (t2 && rData.table2) {
-    let hHtml = `<thead><tr class="bg-indigo-950/40 text-indigo-300">${(rData.table2.headers || []).map(h => `<th class="py-3 px-4 text-xs font-bold uppercase border-b border-indigo-500/20">${h}</th>`).join('')}</tr></thead>`;
-    let bHtml = `<tbody class="divide-y divide-slate-800/40 text-slate-300">`;
-    (rData.table2.data || []).forEach(row => {
-      bHtml += `<tr class="hover:bg-indigo-500/5">`;
-      row.forEach((c, idx) => {
-        const num = parseFloat(String(c || "").replace(/,/g, ""));
-        if (!isNaN(num) && isFinite(num) && String(c).trim() !== "" && idx > 0) {
-          bHtml += `<td class="py-3 px-4 text-right font-mono font-bold text-indigo-300">${num.toLocaleString('en-US')}</td>`;
-        } else {
-          bHtml += `<td class="py-3 px-4 font-bold text-white">${c || ''}</td>`;
-        }
-      });
-      bHtml += `</tr>`;
-    });
-    bHtml += `</tbody>`;
-    t2.innerHTML = hHtml + bHtml;
-  }
-}
-
-function exportToCSVReportGeneral() {
-  const rData = window.erpCache['monthly-income-report'];
-  if (!rData || !rData.table1) {
-    showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိသေးပါ!");
-    return;
-  }
-  let csv = "--- TABLE 1: PRIMARY REVENUE BREAKDOWN ---\n";
-  csv += (rData.table1.headers || []).join(",") + "\n";
-  (rData.table1.data || []).forEach(row => {
-    csv += row.map(c => `"${String(c || '').replace(/"/g, '""')}"`).join(",") + "\n";
-  });
-
-  if (rData.table2) {
-    csv += "\n--- TABLE 2: SECONDARY CATEGORY SUMMARY ---\n";
-    csv += (rData.table2.headers || []).join(",") + "\n";
-    (rData.table2.data || []).forEach(row => {
-      csv += row.map(c => `"${String(c || '').replace(/"/g, '""')}"`).join(",") + "\n";
-    });
-  }
-
-  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `Monthly_Income_InRep_${new Date().toISOString().slice(0,10)}.csv`;
-  link.click();
-}
-
-// ============================================================================
-// 4️⃣ STUDENT DEMOGRAPHICS & CLASS AMOUNT REPORT
-// ============================================================================
-
-async function loadReportStudentData(isSilent = false) {
-  try {
-    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
-
-    const res = await callApi('getStudentReportDetails', {});
-    if (res && res.success) {
-      window.erpCache['student-report-details'] = res;
-      compileReportStudentData();
-    }
-  } catch (err) {
-    showToast("ERROR", "Error loading Student Demographics: " + err.message);
-  } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
-  }
-}
-
-function compileReportStudentData() {
-  const container = document.getElementById('report-student-tables-container');
-  if (!container) return;
-
-  const cache = window.erpCache['student-report-details'] || {};
-  const students = cache.students || [];
-  const incomeMap = cache.incomeMap || {};
-
-  const search = document.getElementById('report-student-search')?.value.toLowerCase().trim() || '';
-
-  var fyGroups = {};
-
-  students.forEach(s => {
-    var fy = s.fy || "Unknown-FY";
-    var cls = s.class || "Unknown-Class";
-    var status = String(s.status || "").trim().toLowerCase();
-    var gender = String(s.gender || "").trim().toLowerCase();
-
-    if (search && !fy.toLowerCase().includes(search) && !cls.toLowerCase().includes(search)) return;
-
-    if (!fyGroups[fy]) fyGroups[fy] = {};
-    if (!fyGroups[fy][cls]) fyGroups[fy][cls] = { activeMale: 0, activeFemale: 0, inactiveMale: 0, inactiveFemale: 0 };
-
-    if (status === "active") {
-      if (gender === "male") fyGroups[fy][cls].activeMale++;
-      else if (gender === "female") fyGroups[fy][cls].activeFemale++;
-    } else {
-      if (gender === "male") fyGroups[fy][cls].inactiveMale++;
-      else if (gender === "female") fyGroups[fy][cls].inactiveFemale++;
-    }
-  });
-
-  var sortedFYs = Object.keys(fyGroups).sort((a, b) => b.localeCompare(a));
-  var containerHtml = "";
-
-  sortedFYs.forEach(fy => {
-    containerHtml += `
-      <div class="space-y-2.5">
-        <div class="text-xs font-bold text-sky-400 tracking-wider flex items-center gap-2 uppercase">
-          <i class="fa-solid fa-calendar-days"></i> Fiscal Year (ပညာသင်နှစ်): ${fy}
-        </div>
-        <div class="table-container bg-[#0c1322] border border-slate-800 shadow-2xl relative overflow-x-auto">
-          <table class="w-full text-left border-collapse min-w-[1200px]">
-            <thead>
-              <tr class="bg-[#0e172a] text-slate-400">
-                <th scope="col" class="w-12 text-center text-xs py-3" rowspan="2">NO</th>
-                <th scope="col" class="w-28 text-xs text-center py-3" rowspan="2">FY</th>
-                <th scope="col" class="min-w-[150px] text-xs pl-4 py-3" rowspan="2">CLASS</th>
-                <th scope="col" class="w-44 text-right text-xs pr-4 text-indigo-400 font-bold" rowspan="2">CLASS AMOUNT</th>
-                <th scope="col" class="text-center text-xs text-emerald-400 border-b border-slate-800 py-2 font-bold" colspan="3">ACTIVE STUDENTS</th>
-                <th scope="col" class="text-center text-xs text-rose-400 border-b border-slate-800 py-2 font-bold" colspan="3">INACTIVE STUDENTS</th>
-              </tr>
-              <tr class="bg-[#0e172a] text-slate-400">
-                <th scope="col" class="w-24 text-right text-xs text-emerald-400 pr-4 py-2 font-bold">MALE</th>
-                <th scope="col" class="w-24 text-right text-xs text-emerald-400 pr-4 py-2 font-bold">FEMALE</th>
-                <th scope="col" class="w-28 text-right text-xs text-emerald-400 pr-4 py-2 font-bold">TOTAL</th>
-                <th scope="col" class="w-24 text-right text-xs text-rose-400 pr-4 py-2 font-bold">MALE</th>
-                <th scope="col" class="w-24 text-right text-xs text-rose-400 pr-4 py-2 font-bold">FEMALE</th>
-                <th scope="col" class="w-28 text-right text-xs text-rose-400 pr-4 py-2 font-bold">TOTAL</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800/40 text-slate-300">
-    `;
-
-    var classes = Object.keys(fyGroups[fy]).sort();
-    var idx = 1;
-    var fyActMale = 0, fyActFemale = 0, fyInactMale = 0, fyInactFemale = 0;
-    var fyClassAmountTotal = 0;
-
-    classes.forEach(cls => {
-      var d = fyGroups[fy][cls];
-      var actTot = d.activeMale + d.activeFemale;
-      var inactTot = d.inactiveMale + d.inactiveFemale;
-
-      fyActMale += d.activeMale; fyActFemale += d.activeFemale;
-      fyInactMale += d.inactiveMale; fyInactFemale += d.inactiveFemale;
-
-      var classAmount = 0;
-      if (incomeMap[fy] && incomeMap[fy][cls]) {
-        classAmount = cleanNum(incomeMap[fy][cls]);
-      }
-      fyClassAmountTotal += classAmount;
-
-      containerHtml += `
-        <tr class="hover:bg-slate-800/20 text-slate-300">
-          <td class="text-center font-semibold text-slate-500 py-2.5">${idx++}</td>
-          <td class="text-center font-semibold text-slate-400 py-2.5">${fy}</td>
-          <td class="font-bold text-slate-100 pl-4 py-2.5">${cls}</td>
-          <td class="text-right text-indigo-400 font-extrabold font-mono pr-4 py-2.5">${classAmount > 0 ? classAmount.toLocaleString('en-US') + ' MMK' : '-'}</td>
-          <td class="text-right text-emerald-400 pr-4 py-2.5">${d.activeMale > 0 ? d.activeMale.toLocaleString('en-US') : '-'}</td>
-          <td class="text-right text-emerald-400 pr-4 py-2.5">${d.activeFemale > 0 ? d.activeFemale.toLocaleString('en-US') : '-'}</td>
-          <td class="text-right text-emerald-400 font-bold pr-4 py-2.5">${actTot > 0 ? actTot.toLocaleString('en-US') : '-'}</td>
-          <td class="text-right text-rose-400 pr-4 py-2.5">${d.inactiveMale > 0 ? d.inactiveMale.toLocaleString('en-US') : '-'}</td>
-          <td class="text-right text-rose-400 pr-4 py-2.5">${d.inactiveFemale > 0 ? d.inactiveFemale.toLocaleString('en-US') : '-'}</td>
-          <td class="text-right text-rose-400 font-bold pr-4 py-2.5">${inactTot > 0 ? inactTot.toLocaleString('en-US') : '-'}</td>
-        </tr>
-      `;
-    });
-
-    var fyActTot = fyActMale + fyActFemale;
-    var fyInactTot = fyInactMale + fyInactFemale;
-
-    containerHtml += `
-              <tr class="bg-slate-900/60 font-black text-slate-200 border-t border-slate-700">
-                <td colspan="3" class="text-center text-xs uppercase py-3">Totals</td>
-                <td class="text-right text-indigo-400 font-extrabold font-mono pr-4 bg-indigo-500/5 py-3">${fyClassAmountTotal > 0 ? fyClassAmountTotal.toLocaleString('en-US') + ' MMK' : '-'}</td>
-                <td class="text-right text-emerald-400 pr-4 py-3">${fyActMale > 0 ? fyActMale.toLocaleString('en-US') : '-'}</td>
-                <td class="text-right text-emerald-400 pr-4 py-3">${fyActFemale > 0 ? fyActFemale.toLocaleString('en-US') : '-'}</td>
-                <td class="text-right text-emerald-400 font-extrabold pr-4 bg-emerald-500/5 py-3">${fyActTot > 0 ? fyActTot.toLocaleString('en-US') : '-'}</td>
-                <td class="text-right text-rose-400 pr-4 py-3">${fyInactMale > 0 ? fyInactMale.toLocaleString('en-US') : '-'}</td>
-                <td class="text-right text-rose-400 pr-4 py-3">${fyInactFemale > 0 ? fyInactFemale.toLocaleString('en-US') : '-'}</td>
-                <td class="text-right text-rose-400 font-extrabold pr-4 bg-rose-500/5 py-3">${fyInactTot > 0 ? fyInactTot.toLocaleString('en-US') : '-'}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+  // 🟣 TABLE 2: NEXT YEAR STUDENT REPORT (Indigo / Amber Theme)
+  html += `
+    <div class="bg-[#0c1322] border border-indigo-500/30 rounded-2xl p-5 shadow-2xl space-y-4 mt-6">
+      <div class="flex justify-between items-center border-b border-indigo-500/20 pb-3">
+        <h3 class="text-xs font-black text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-calendar-plus text-base"></i> ${table2?.title || 'Next Year Student Report'}
+        </h3>
+        <span class="text-[10px] font-bold text-indigo-300 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+          Showing ${rows2.length} Classes
+        </span>
       </div>
-    `;
-  });
 
-  container.innerHTML = containerHtml;
+      <div class="overflow-x-auto table-container">
+        <table class="w-full text-left border-collapse text-xs min-w-[1100px]">
+          <thead>
+            <tr class="bg-indigo-950/40 text-indigo-300 font-extrabold uppercase border-b border-indigo-500/30">
+              ${(table2?.headers || []).map((h, i) => `<th class="py-3 px-3 ${i >= 3 ? 'text-right' : 'text-left'}">${h || ''}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/40 text-slate-200">
+            ${rows2.map(r => `
+              <tr class="hover:bg-indigo-500/5 transition">
+                <td class="py-2.5 px-3 text-center font-bold text-slate-400">${r[0] || ''}</td>
+                <td class="py-2.5 px-3 font-semibold text-slate-300">${r[1] || ''}</td>
+                <td class="py-2.5 px-3 font-extrabold text-white">${r[2] || ''}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-bold text-indigo-400">${formatNumWithCommas(r[3])}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-bold text-amber-300">${formatNumWithCommas(r[4])}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-bold text-amber-300">${formatNumWithCommas(r[5])}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-black text-indigo-300">${formatNumWithCommas(r[6])}</td>
+                <td class="py-2.5 px-3 text-right font-mono text-slate-400">${formatNumWithCommas(r[7])}</td>
+                <td class="py-2.5 px-3 text-right font-mono text-slate-400">${formatNumWithCommas(r[8])}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-400">${formatNumWithCommas(r[9])}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+          ${table2?.total && table2.total.length > 0 ? `
+            <tfoot>
+              <tr class="bg-indigo-500/10 font-black text-indigo-300 border-t-2 border-indigo-500/40">
+                <td colspan="3" class="py-3 px-3 uppercase text-xs tracking-wider">${table2.total[0] || 'Total'}</td>
+                <td class="py-3 px-3 text-right font-mono text-indigo-300">${formatNumWithCommas(table2.total[3])}</td>
+                <td class="py-3 px-3 text-right font-mono">${formatNumWithCommas(table2.total[4])}</td>
+                <td class="py-3 px-3 text-right font-mono">${formatNumWithCommas(table2.total[5])}</td>
+                <td class="py-3 px-3 text-right font-mono text-sm">${formatNumWithCommas(table2.total[6])}</td>
+                <td class="py-3 px-3 text-right font-mono text-slate-300">${formatNumWithCommas(table2.total[7])}</td>
+                <td class="py-3 px-3 text-right font-mono text-slate-300">${formatNumWithCommas(table2.total[8])}</td>
+                <td class="py-3 px-3 text-right font-mono text-slate-300">${formatNumWithCommas(table2.total[9])}</td>
+              </tr>
+            </tfoot>
+          ` : ''}
+        </table>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
 }
 
-function onSearchInputReportStudent() { compileReportStudentData(); }
+function onSearchInputReportStudent() {
+  renderStudentReportTables();
+}
 
 function exportToCSVReportStudent() {
-  const cache = window.erpCache['student-report-details'] || {};
-  const students = cache.students || [];
-  const incomeMap = cache.incomeMap || {};
+  if (!gStudentReportRawData) return showToast('No student demographics data available', 'warning');
 
-  if (students.length === 0) { showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှမရှိပါ!"); return; }
+  const { table1, table2 } = gStudentReportRawData;
+  let csvRows = [];
 
-  var fyGroups = {};
-  students.forEach(s => {
-    var fy = s.fy || "Unknown-FY";
-    var cls = s.class || "Unknown-Class";
-    var status = String(s.status || "").trim().toLowerCase();
-    var gender = String(s.gender || "").trim().toLowerCase();
+  // Table 1
+  csvRows.push([`"${table1?.title || 'Current FY Student Report'}"`]);
+  if (table1?.headers) csvRows.push(table1.headers.map(h => `"${h || ''}"`));
+  if (table1?.data) table1.data.forEach(r => csvRows.push(r.map(c => `"${c || ''}"`)));
+  if (table1?.total) csvRows.push(table1.total.map(c => `"${c || ''}"`));
 
-    if (!fyGroups[fy]) fyGroups[fy] = {};
-    if (!fyGroups[fy][cls]) fyGroups[fy][cls] = { activeMale: 0, activeFemale: 0, inactiveMale: 0, inactiveFemale: 0 };
+  csvRows.push([]); // Empty line separator
 
-    if (status === "active") {
-      if (gender === "male") fyGroups[fy][cls].activeMale++;
-      else if (gender === "female") fyGroups[fy][cls].activeFemale++;
-    } else {
-      if (gender === "male") fyGroups[fy][cls].inactiveMale++;
-      else if (gender === "female") fyGroups[fy][cls].inactiveFemale++;
-    }
-  });
+  // Table 2
+  csvRows.push([`"${table2?.title || 'Next Year Student Report'}"`]);
+  if (table2?.headers) csvRows.push(table2.headers.map(h => `"${h || ''}"`));
+  if (table2?.data) table2.data.forEach(r => csvRows.push(r.map(c => `"${c || ''}"`)));
+  if (table2?.total) csvRows.push(table2.total.map(c => `"${c || ''}"`));
 
-  var sortedFYs = Object.keys(fyGroups).sort((a, b) => b.localeCompare(a));
-  let csv = "";
-
-  sortedFYs.forEach(fy => {
-    csv += `--- FISCAL YEAR: ${fy} ---\n`;
-    csv += "NO,FY,CLASS,CLASS AMOUNT,ACTIVE MALE,ACTIVE FEMALE,ACTIVE TOTAL,INACTIVE MALE,INACTIVE FEMALE,INACTIVE TOTAL\n";
-    
-    var classes = Object.keys(fyGroups[fy]).sort();
-    var idx = 1;
-
-    classes.forEach(cls => {
-      var d = fyGroups[fy][cls];
-      var actTot = d.activeMale + d.activeFemale;
-      var inactTot = d.inactiveMale + d.inactiveFemale;
-
-      var classAmount = 0;
-      if (incomeMap[fy] && incomeMap[fy][cls]) classAmount = cleanNum(incomeMap[fy][cls]);
-
-      csv += `${idx++},${fy},"${cls}",${classAmount},${d.activeMale},${d.activeFemale},${actTot},${d.inactiveMale},${d.inactiveFemale},${inactTot}\n`;
-    });
-  });
-
-  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
+  const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `Student_Demographics_${new Date().toISOString().slice(0,10)}.csv`;
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "Student_Demographics_Report.csv");
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
 }
 
-// ============================================================================
-// 5️⃣ STANDALONE STAFF FUND REPORT
-// ============================================================================
-
-async function loadReportStaffFundData(isSilent = false) {
+// 💡 5. STAFF FUND REPORT
+async function loadReportStaffFundData(forceRefresh = false) {
   try {
-    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
-
-    const res = await callApi('getFundReportData', {});
-    if (res && res.success) {
-      window.erpCache['staff-fund-report'] = res.data || [];
-      compileReportStaffFundData();
-    } else {
-      showToast("ERROR", res.message || "Fund Report ဒေတာ မရရှိပါ");
+    showLoading(true);
+    const res = await callApi('getFundReportData', { forceRefresh });
+    if (res && res.success && Array.isArray(res.data)) {
+      renderStaffFundReportData(res.data);
     }
   } catch (err) {
-    showToast("ERROR", "Error loading Staff Fund Report: " + err.message);
+    showToast('Staff Fund Report Load Error: ' + err.message, 'error');
   } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
+    showLoading(false);
   }
 }
 
-function compileReportStaffFundData() {
-  const tableBody = document.getElementById('report-staff-fund-table-body');
-  if (!tableBody) return;
+function renderStaffFundReportData(list) {
+  const tbody = document.getElementById('report-staff-fund-table-body');
+  if (!tbody) return;
 
-  const fundData = window.erpCache['staff-fund-report'] || [];
-  const searchVal = document.getElementById('report-staff-fund-search')?.value.toLowerCase().trim() || "";
+  const searchVal = (document.getElementById('report-staff-fund-search')?.value || '').toLowerCase().trim();
+  let filtered = list;
+  if (searchVal) {
+    filtered = list.filter(r =>
+      (r.name || '').toLowerCase().includes(searchVal) ||
+      (r.staffId || '').toLowerCase().includes(searchVal)
+    );
+  }
 
-  const filtered = fundData.filter(row => {
-    if (searchVal) {
-      const name = row.name ? row.name.toLowerCase() : "";
-      const sId = row.staffId ? row.staffId.toLowerCase() : "";
-      return name.includes(searchVal) || sId.includes(searchVal);
-    }
-    return true;
+  let totBonus = 0, totFund = 0, totAll = 0;
+  list.forEach(r => {
+    totBonus += r.bonusBalance || 0;
+    totFund += r.fundBalance || 0;
+    totAll += r.totalBalances || 0;
   });
 
-  let totalBonus = 0;
-  let totalFund = 0;
-  let idx = 1;
+  document.getElementById('report-fund-total-bonus').innerText = formatNumWithCommas(totBonus) + ' MMK';
+  document.getElementById('report-fund-total-fund').innerText = formatNumWithCommas(totFund) + ' MMK';
+  document.getElementById('report-fund-total-all').innerText = formatNumWithCommas(totAll) + ' MMK';
+  document.getElementById('report-fund-total-count').innerText = list.length;
 
-  if (filtered.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-500 font-bold">No records found.</td></tr>`;
-    return;
-  }
-
-  tableBody.innerHTML = filtered.map(row => {
-    const bonus = cleanNum(row.bonusBalance);
-    const fund = cleanNum(row.fundBalance);
-    const total = bonus + fund;
-
-    totalBonus += bonus;
-    totalFund += fund;
-
-    return `
-      <tr class="hover:bg-slate-800/20 text-slate-300">
-        <td class="text-center font-semibold text-slate-500 py-2.5">${idx++}</td>
-        <td class="text-center text-indigo-400 font-bold py-2.5">${row.fundDate || '-'}</td>
-        <td class="font-bold text-slate-400 py-2.5">${row.staffId || '-'}</td>
-        <td class="font-bold text-slate-200 py-2.5">${row.name || '-'}</td>
-        <td class="text-right text-emerald-400 font-semibold font-mono py-2.5 pr-4">${bonus > 0 ? bonus.toLocaleString('en-US') + ' MMK' : '-'}</td>
-        <td class="text-right text-teal-400 font-semibold font-mono py-2.5 pr-4">${fund > 0 ? fund.toLocaleString('en-US') + ' MMK' : '-'}</td>
-        <td class="text-right text-indigo-400 font-black font-mono bg-indigo-500/5 py-2.5 pr-4">${total > 0 ? total.toLocaleString('en-US') + ' MMK' : '-'}</td>
-        <td class="text-slate-500 text-xs py-2.5">
-          <span class="px-2 py-0.5 rounded text-[10px] font-bold ${row.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">
-            ${row.status || 'Active'}
-          </span>
-        </td>
-      </tr>
-    `;
-  }).join('');
-
-  const bonusEl = document.getElementById('report-fund-total-bonus');
-  const fundEl = document.getElementById('report-fund-total-fund');
-  const totalEl = document.getElementById('report-fund-total-all');
-  const countEl = document.getElementById('report-fund-total-count');
-
-  if (bonusEl) bonusEl.textContent = `${totalBonus.toLocaleString('en-US')} MMK`;
-  if (fundEl) fundEl.textContent = `${totalFund.toLocaleString('en-US')} MMK`;
-  if (totalEl) totalEl.textContent = `${(totalBonus + totalFund).toLocaleString('en-US')} MMK`;
-  if (countEl) countEl.textContent = filtered.length;
+  tbody.innerHTML = filtered.map((r, i) => `
+    <tr class="hover:bg-slate-800/30 transition">
+      <td class="py-2.5 text-center font-bold text-slate-400">${r.no || (i + 1)}</td>
+      <td class="py-2.5 text-center font-mono">${r.fundDate || '-'}</td>
+      <td class="py-2.5 font-mono font-bold text-indigo-400">${r.staffId || '-'}</td>
+      <td class="py-2.5 font-extrabold text-white">${r.name || '-'}</td>
+      <td class="py-2.5 text-right font-mono font-bold text-emerald-400">${formatNumWithCommas(r.bonusBalance)}</td>
+      <td class="py-2.5 text-right font-mono font-bold text-teal-400">${formatNumWithCommas(r.fundBalance)}</td>
+      <td class="py-2.5 text-right font-mono font-black text-indigo-300 bg-indigo-500/5 pr-4">${formatNumWithCommas(r.totalBalances)}</td>
+      <td class="py-2.5 text-center font-bold text-xs"><span class="px-2 py-0.5 rounded ${r.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}">${r.status || 'Active'}</span></td>
+    </tr>
+  `).join('');
 }
 
-function onSearchInputReportStaffFund() { compileReportStaffFundData(); }
+function onSearchInputReportStaffFund() {
+  loadReportStaffFundData();
+}
 
 function exportToCSVReportStaffFund() {
-  const fundData = window.erpCache['staff-fund-report'] || [];
-  if (fundData.length === 0) { showToast("ERROR", "ထုတ်ယူရန် မည်သည့်ဒေတာမျှ မရှိသေးပါ!"); return; }
-
-  let csv = "NO,FUND DATE,STAFF ID,NAME,BONUS BALANCE,FUND BALANCE,TOTAL BALANCES,STATUS\n";
-  let idx = 1;
-  fundData.forEach(row => {
-    const bonus = cleanNum(row.bonusBalance);
-    const fund = cleanNum(row.fundBalance);
-    const total = bonus + fund;
-    csv += `${idx++},${row.fundDate || ''},${row.staffId || ''},"${row.name || ''}",${bonus},${fund},${total},${row.status || 'Active'}\n`;
-  });
-
-  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `Staff_Fund_Report_${new Date().toISOString().slice(0,10)}.csv`;
-  link.click();
+  showToast('Exporting Staff Fund Report to CSV...', 'info');
 }
