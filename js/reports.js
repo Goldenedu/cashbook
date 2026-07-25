@@ -1,9 +1,30 @@
 /**
  * GOLDEN ERP SYSTEM - FINANCIAL & DEMOGRAPHIC REPORTS CONTROLLER
- * File: js/reports.js
+ * File: js/reports.js (FIXED LOADING REFERENCE & FULLY UNABRIDGED)
  */
 
 let gStudentReportRawData = null;
+
+// 💡 SAFE LOADING & TOAST WRAPPERS
+function safeShowLoading(show) {
+  if (typeof window.showLoading === 'function') {
+    window.showLoading(show);
+  } else {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+      if (show) overlay.classList.remove('hidden');
+      else overlay.classList.add('hidden');
+    }
+  }
+}
+
+function safeShowToast(msg, type = 'info') {
+  if (typeof window.showToast === 'function') {
+    window.showToast(msg, type);
+  } else {
+    console.log(`[Toast ${type}]: ${msg}`);
+  }
+}
 
 function formatNumWithCommas(val) {
   if (val === null || val === undefined || val === '') return '0';
@@ -44,15 +65,15 @@ function showReportPanel(panelId) {
 // 💡 1. FINANCIAL STATEMENT
 async function loadReportFinancialData(forceRefresh = false) {
   try {
-    showLoading(true);
+    safeShowLoading(true);
     const res = await callApi('getFinancialReportData', { forceRefresh });
     if (res && res.success && res.data) {
       renderFinancialReportData(res.data);
     }
   } catch (err) {
-    showToast('Financial Statement Load Error: ' + err.message, 'error');
+    safeShowToast('Financial Statement Load Error: ' + err.message, 'error');
   } finally {
-    showLoading(false);
+    safeShowLoading(false);
   }
 }
 
@@ -93,31 +114,31 @@ function renderFinancialReportData(data) {
 // 💡 2. INCOME DETAIL (InDetail)
 async function loadReportIncomeData(forceRefresh = false) {
   try {
-    showLoading(true);
+    safeShowLoading(true);
     const res = await callApi('getIncomeDetailReportData', { forceRefresh });
     if (res && res.success) {
       renderGenericTable('report-income-main-table', res.headers || [], res.data || []);
     }
   } catch (err) {
-    showToast('Income Detail Load Error: ' + err.message, 'error');
+    safeShowToast('Income Detail Load Error: ' + err.message, 'error');
   } finally {
-    showLoading(false);
+    safeShowLoading(false);
   }
 }
 
 // 💡 3. MONTHLY INCOME (InRep)
 async function loadReportGeneralData(forceRefresh = false) {
   try {
-    showLoading(true);
+    safeShowLoading(true);
     const res = await callApi('getMonthlyIncomeReportData', { forceRefresh });
     if (res && res.success) {
       if (res.table1) renderGenericTable('report-general-table-1', res.table1.headers || [], res.table1.data || []);
       if (res.table2) renderGenericTable('report-general-table-2', res.table2.headers || [], res.table2.data || []);
     }
   } catch (err) {
-    showToast('Monthly Income Report Load Error: ' + err.message, 'error');
+    safeShowToast('Monthly Income Report Load Error: ' + err.message, 'error');
   } finally {
-    showLoading(false);
+    safeShowLoading(false);
   }
 }
 
@@ -139,7 +160,7 @@ function renderGenericTable(tableId, headers, rows) {
     });
     bodyHtml += '</tr>';
   });
-  bodyHtml += 'tbody>';
+  bodyHtml += '</tbody>';
 
   table.innerHTML = headHtml + bodyHtml;
 }
@@ -147,16 +168,16 @@ function renderGenericTable(tableId, headers, rows) {
 // 💡 4. STUDENT DEMOGRAPHICS (StRep SHEET READER WITH 2 BEAUTIFUL COLORED TABLES)
 async function loadReportStudentData(forceRefresh = false) {
   try {
-    showLoading(true);
+    safeShowLoading(true);
     const res = await callApi('getStudentReportDetails', { forceRefresh });
     if (res && res.success) {
       gStudentReportRawData = res;
       renderStudentReportTables();
     }
   } catch (err) {
-    showToast('Student Demographics Load Error: ' + err.message, 'error');
+    safeShowToast('Student Demographics Load Error: ' + err.message, 'error');
   } finally {
-    showLoading(false);
+    safeShowLoading(false);
   }
 }
 
@@ -295,7 +316,7 @@ function onSearchInputReportStudent() {
 }
 
 function exportToCSVReportStudent() {
-  if (!gStudentReportRawData) return showToast('No student demographics data available', 'warning');
+  if (!gStudentReportRawData) return safeShowToast('No student demographics data available', 'warning');
 
   const { table1, table2 } = gStudentReportRawData;
   let csvRows = [];
@@ -306,7 +327,7 @@ function exportToCSVReportStudent() {
   if (table1?.data) table1.data.forEach(r => csvRows.push(r.map(c => `"${c || ''}"`)));
   if (table1?.total) csvRows.push(table1.total.map(c => `"${c || ''}"`));
 
-  csvRows.push([]); // Empty line separator
+  csvRows.push([]); // Separator
 
   // Table 2
   csvRows.push([`"${table2?.title || 'Next Year Student Report'}"`]);
@@ -327,15 +348,15 @@ function exportToCSVReportStudent() {
 // 💡 5. STAFF FUND REPORT
 async function loadReportStaffFundData(forceRefresh = false) {
   try {
-    showLoading(true);
+    safeShowLoading(true);
     const res = await callApi('getFundReportData', { forceRefresh });
     if (res && res.success && Array.isArray(res.data)) {
       renderStaffFundReportData(res.data);
     }
   } catch (err) {
-    showToast('Staff Fund Report Load Error: ' + err.message, 'error');
+    safeShowToast('Staff Fund Report Load Error: ' + err.message, 'error');
   } finally {
-    showLoading(false);
+    safeShowLoading(false);
   }
 }
 
@@ -359,10 +380,15 @@ function renderStaffFundReportData(list) {
     totAll += r.totalBalances || 0;
   });
 
-  document.getElementById('report-fund-total-bonus').innerText = formatNumWithCommas(totBonus) + ' MMK';
-  document.getElementById('report-fund-total-fund').innerText = formatNumWithCommas(totFund) + ' MMK';
-  document.getElementById('report-fund-total-all').innerText = formatNumWithCommas(totAll) + ' MMK';
-  document.getElementById('report-fund-total-count').innerText = list.length;
+  const elBonus = document.getElementById('report-fund-total-bonus');
+  const elFund = document.getElementById('report-fund-total-fund');
+  const elAll = document.getElementById('report-fund-total-all');
+  const elCount = document.getElementById('report-fund-total-count');
+
+  if (elBonus) elBonus.innerText = formatNumWithCommas(totBonus) + ' MMK';
+  if (elFund) elFund.innerText = formatNumWithCommas(totFund) + ' MMK';
+  if (elAll) elAll.innerText = formatNumWithCommas(totAll) + ' MMK';
+  if (elCount) elCount.innerText = list.length;
 
   tbody.innerHTML = filtered.map((r, i) => `
     <tr class="hover:bg-slate-800/30 transition">
@@ -383,5 +409,5 @@ function onSearchInputReportStaffFund() {
 }
 
 function exportToCSVReportStaffFund() {
-  showToast('Exporting Staff Fund Report to CSV...', 'info');
+  safeShowToast('Exporting Staff Fund Report to CSV...', 'info');
 }
