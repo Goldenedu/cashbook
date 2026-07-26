@@ -1,12 +1,32 @@
 /**
  * GOLDEN ERP SYSTEM - HR & PAYROLL MODULE
  * File: js/hr.js
+ * 💡 HR Payroll Expense Book with Strict Search Criteria & Dual-Copy Payslip Engine
  */
 
 var hrPayPage = 1;
 var hrPayLimit = 30;
 var hrPayTotalRows = 0;
 var hrPayActiveData = [];
+var hrPaySearchVal = '';
+
+/**
+ * 💡 Strict Search Filter Function for HR Payroll
+ * Searches strictly by: Staff Name (contained in Description), Staff ID (FID/PID), Position.
+ * Excluded: Phone, NRC, Email, Method, VR No.
+ */
+function filterHrPayrollData(list = [], searchVal = '') {
+  if (!searchVal || !searchVal.trim()) return list;
+  const q = searchVal.trim().toLowerCase();
+
+  return list.filter(row => {
+    const desc = String(row.description || row.staffName || '').toLowerCase();
+    const staffId = String(row.staffId || row.id || '').toLowerCase();
+    const position = String(row.position || '').toLowerCase();
+
+    return desc.includes(q) || staffId.includes(q) || position.includes(q);
+  });
+}
 
 /**
  * 💡 Switch HR Sub-Tabs (Default 'payroll')
@@ -56,21 +76,21 @@ async function loadHrPayrollData(isSilent = false) {
     if (!isSilent) toggleLoading(true);
 
     const searchInput = document.getElementById('hr-payroll-search');
-    const searchVal = searchInput ? searchInput.value.trim() : '';
+    hrPaySearchVal = searchInput ? searchInput.value.trim() : '';
 
     const res = await callApi('getExpenseData', {
       bookName: 'HR Payroll Exp Book',
       page: hrPayPage,
       limit: hrPayLimit,
-      searchVal: searchVal
+      searchVal: hrPaySearchVal
     });
 
     if (!res || !res.success) {
-      throw new Error(res?.message || "Failed to load HR payroll data.");
+      throw new Error(res?.message || "HR Payroll စာရင်းများ ရယူ၍ မရပါ။");
     }
 
     hrPayActiveData = res.data || [];
-    hrPayTotalRows = res.totalRows || 0;
+    hrPayTotalRows = res.totalRows || hrPayActiveData.length || 0;
 
     renderStatsHrPayroll(res.stats || { totalIncome: 0, totalExpense: 0, balance: 0 });
     renderTableHrPayroll();
@@ -78,7 +98,7 @@ async function loadHrPayrollData(isSilent = false) {
 
   } catch (err) {
     console.error("HR Payroll Load Error:", err);
-    if (!isSilent) showToast("ERROR", "HR စာရင်းများ ဆွဲယူ၍ မရပါ: " + err.message);
+    if (!isSilent) showToast("ERROR", "HR စာရင်းများ ရယူ၍ မရပါ: " + err.message);
   } finally {
     if (!isSilent) toggleLoading(false);
   }
@@ -96,17 +116,25 @@ function renderStatsHrPayroll(stats) {
   if (cntEl) cntEl.textContent = Number(hrPayTotalRows || 0).toLocaleString('en-US');
 }
 
+/**
+ * 💡 Render HR Payroll Table Grid (Strict Search Applied)
+ */
 function renderTableHrPayroll() {
   const tbody = document.getElementById('hr-payroll-table-body');
   if (!tbody) return;
 
-  if (!hrPayActiveData || hrPayActiveData.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-slate-500 font-bold">HR Payroll စာရင်းများ မရှိသေးပါ။</td></tr>`;
+  // Apply Strict Filtering Criteria (Staff Name, Staff ID, Position)
+  const displayData = filterHrPayrollData(hrPayActiveData, hrPaySearchVal);
+
+  if (!displayData || displayData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော HR Payroll စာရင်း မရှိပါ။</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = hrPayActiveData.map((row) => {
-    const isViewer = (localStorage.getItem('golden_user_role') === "Viewer");
+  const userRole = localStorage.getItem('golden_user_role');
+  const isViewer = (userRole === "Viewer");
+
+  tbody.innerHTML = displayData.map((row) => {
     const lockClass = (row.isLocked || isViewer) ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
 
     return `
@@ -148,7 +176,7 @@ function renderTableHrPayroll() {
 function printPayslip(uniqueId) {
   const row = hrPayActiveData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    showToast("ERROR", "Payslip ထုတ်ယူရန် ဒေတာရှာမတွေ့ပါ!");
+    showToast("ERROR", "Payslip ထုတ်ယူရန် အချက်အလက် ရှာမတွေ့ပါ။");
     return;
   }
 
@@ -281,7 +309,9 @@ function updatePaginationUIHrPayroll() {
 function onSearchInputHrPayroll() {
   if (window.searchTimeoutHrPay) clearTimeout(window.searchTimeoutHrPay);
   window.searchTimeoutHrPay = setTimeout(() => {
+    const searchInput = document.getElementById('hr-payroll-search');
+    hrPaySearchVal = searchInput ? searchInput.value.trim() : '';
     hrPayPage = 1;
-    loadHrPayrollData(false);
-  }, 300);
+    renderTableHrPayroll();
+  }, 200);
 }
