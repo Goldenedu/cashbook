@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - CASHIER CASH BOOK MODULE
  * File: js/cashier.js
- * 💡 SECURED: Uses callApi(), 19-Column Income Match, RESPONSIBILITY PERSON, Strict Search & Invoice Print Engine
+ * 💡 SECURED: Uses callApi(), 19-Column Income Match, RESPONSIBILITY PERSON, Strict Search, 2-Decimal Formatting & Invoice Print Engine
  */
 
 let currentCashierSubBook = 'CACash'; // 'CACash' | 'CABank' | 'CAOffice' | 'CAKitchen' | 'CAPayroll' | 'todayIncome'
@@ -118,7 +118,7 @@ async function loadTodayIncomeForCashier(useCache = true) {
 }
 
 /**
- * 💡 Render KPI Header Stats Cards
+ * 💡 Render KPI Header Stats Cards with 2 Decimal Places Format
  */
 function renderStatsCashier(stats) {
   const elInc = document.getElementById('ca-total-income');
@@ -126,10 +126,10 @@ function renderStatsCashier(stats) {
   const elBal = document.getElementById('ca-balance');
   const elCount = document.getElementById('ca-entries-count');
 
-  if (elInc) elInc.textContent = `${Number(stats.totalIncome || 0).toLocaleString()} MMK`;
-  if (elExp) elExp.textContent = `${Number(stats.totalExpense || 0).toLocaleString()} MMK`;
-  if (elBal) elBal.textContent = `${Number(stats.balance || 0).toLocaleString()} MMK`;
-  if (elCount) elCount.textContent = allCashierData.length;
+  if (elInc) elInc.textContent = `${Number(stats.totalIncome || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MMK`;
+  if (elExp) elExp.textContent = `${Number(stats.totalExpense || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MMK`;
+  if (elBal) elBal.textContent = `${Number(stats.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MMK`;
+  if (elCount) elCount.textContent = allCashierData.length.toLocaleString('en-US');
 }
 
 /**
@@ -236,7 +236,7 @@ function renderCashierTableHead() {
 }
 
 /**
- * 💡 Render Table Grid Rows
+ * 💡 Render Table Grid Rows with 2 Decimal Places Format
  */
 function renderCashierTable() {
   renderCashierTableHead();
@@ -282,22 +282,21 @@ function renderCashierTable() {
         <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-semibold">${escapeHtml(item.category) || '-'}</span></td>
         <td class="font-semibold text-slate-200 py-3 px-3">${escapeHtml(item.accountName) || '-'}</td>
         <td class="font-bold text-slate-400 py-3 px-3">${escapeHtml(item.method) || '-'}</td>
-        <td class="text-right font-mono font-bold text-rose-400 py-3 px-3">${item.debit > 0 ? Number(item.debit).toLocaleString() : '-'}</td>
-        <td class="text-right font-mono font-bold text-emerald-400 py-3 px-3">${item.credit > 0 ? Number(item.credit).toLocaleString() : '-'}</td>
-        <td class="text-right font-mono font-bold text-indigo-400 py-3 px-3">${item.autAmount > 0 ? Number(item.autAmount).toLocaleString() : '-'}</td>
+        <td class="text-right font-mono font-bold text-rose-400 py-3 px-3">${item.debit > 0 ? Number(item.debit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+        <td class="text-right font-mono font-bold text-emerald-400 py-3 px-3">${item.credit > 0 ? Number(item.credit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+        <td class="text-right font-mono font-bold text-indigo-400 py-3 px-3">${item.autAmount > 0 ? Number(item.autAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
         <td class="text-xs py-3 px-3">${escapeHtml(item.promo) || '-'}</td>
         <td class="font-mono text-xs py-3 px-3">${escapeHtml(item.my) || '-'}</td>
         <td class="font-mono text-xs text-slate-400 py-3 px-3">${escapeHtml(item.vrNo) || '-'}</td>
         <td class="max-w-xs truncate text-xs text-slate-400 py-3 px-3" title="${escapeHtml(item.remark || '')}">${escapeHtml(item.remark) || '-'}</td>
         <td class="text-center right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg py-3 px-3">
-          <!-- 💡 PRINT INVOICE BUTTON ENABLED -->
           <button onclick="printInvoice('${item.uniqueId}')" class="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition font-bold" title="Print Invoice">
             <i class="fa-solid fa-print mr-1"></i> Print
           </button>
         </td>
       `;
     } else {
-      // 💡 STANDARD CASHIER SUB-LEDGER 17-COLUMN ROW
+      // 💡 STANDARD CASHIER SUB-LEDGER 17-COLUMN ROW WITH 2 DECIMAL FORMATTING
       tr.innerHTML = `
         <td class="text-center font-mono text-slate-400 py-3 px-3">${srNo}</td>
         <td class="font-mono py-3 px-3">${item.date || '-'}</td>
@@ -305,9 +304,9 @@ function renderCashierTable() {
         <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-semibold">${item.category || '-'}</span></td>
         <td class="font-bold text-slate-100 max-w-xs truncate py-3 px-3" title="${item.description}">${item.description || '-'}</td>
         <td class="font-semibold py-3 px-3">${item.method || '-'}</td>
-        <td class="text-right font-mono font-bold text-emerald-400 py-3 px-3">${item.debit > 0 ? Number(item.debit).toLocaleString() : '-'}</td>
-        <td class="text-right font-mono font-bold text-rose-400 py-3 px-3">${item.credit > 0 ? Number(item.credit).toLocaleString() : '-'}</td>
-        <td class="text-right font-mono font-bold text-indigo-400 py-3 px-3">${Number(item.balances || 0).toLocaleString()}</td>
+        <td class="text-right font-mono font-bold text-emerald-400 py-3 px-3">${item.debit > 0 ? Number(item.debit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+        <td class="text-right font-mono font-bold text-rose-400 py-3 px-3">${item.credit > 0 ? Number(item.credit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+        <td class="text-right font-mono font-bold text-indigo-400 py-3 px-3">${Number(item.balances || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
         <td class="py-3 px-3 text-slate-300">${item.transfer || '-'}</td>
         <td class="font-mono text-slate-400 py-3 px-3">${item.vrNo || '-'}</td>
         <td class="font-mono py-3 px-3">${item.my || '-'}</td>
