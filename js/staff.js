@@ -1,6 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - STAFF MODULE
  * File: js/staff.js
+ * 💡 Staff Master Directory with Strict Search Criteria & Dynamic Grade Matrix Engine
  */
 
 let gStaffCategory = 'Full Time'; // 'Full Time' or 'Part Time'
@@ -11,6 +12,24 @@ let gStaffData = [];
 
 // Dynamic Payroll Settings cache read from FullTime!I1:U2
 let gPayrollSettings = { grades: {}, bonus: 0, fundRate: 0 };
+
+/**
+ * 💡 Strict Search Filter Function for Staff Directory
+ * Searches strictly by: Staff Name (name / staffIdName), Staff ID (fid / pid / id), Position.
+ * Excluded: Phone, NRC, Email, Gender, Bank Account.
+ */
+function filterStaffData(list = [], searchVal = '') {
+  if (!searchVal || !searchVal.trim()) return list;
+  const q = searchVal.trim().toLowerCase();
+
+  return list.filter(row => {
+    const name = String(row.staffIdName || row.name || '').toLowerCase();
+    const staffId = String(row.id || row.fid || row.pid || '').toLowerCase();
+    const position = String(row.position || '').toLowerCase();
+
+    return name.includes(q) || staffId.includes(q) || position.includes(q);
+  });
+}
 
 async function switchStaffCategory(category) {
   gStaffCategory = category;
@@ -110,10 +129,10 @@ async function loadStaffData(useCache = false) {
       renderStaffTable(gStaffData);
       renderStaffPagination(res.totalRows || 0);
     } else {
-      showToast("ERROR", res.message || "Staff ဒေတာ ရယူ၍ မရပါ");
+      showToast("ERROR", res.message || "Staff အချက်အလက်များ ရယူ၍ မရပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "Error loading staff data: " + err.message);
+    showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
@@ -155,13 +174,19 @@ function renderStaffKpis(stats) {
   `;
 }
 
-function renderStaffTable(data) {
+/**
+ * 💡 Render Staff Table (Strict Search Filter Applied)
+ */
+function renderStaffTable(rawData) {
   const tbody = document.getElementById('staff-table-body');
   if (!tbody) return;
 
+  // Apply Strict Filtering Criteria (Staff Name, Staff ID, Position)
+  const data = filterStaffData(rawData, gStaffSearch);
+
   if (!data || data.length === 0) {
     const colSpan = (gStaffCategory === 'Full Time') ? 23 : 14;
-    tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-8 text-slate-500 font-bold">Staff စာရင်း မရှိသေးပါ</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော Staff စာရင်း မရှိပါ။</td></tr>`;
     return;
   }
 
@@ -192,8 +217,8 @@ function renderStaffTable(data) {
         <td class="text-right font-bold text-teal-400 py-3">${(item.unpaidFund || 0).toLocaleString()}</td>
         <td class="text-center py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">
           <div class="flex items-center justify-center gap-2">
-            <button onclick="editStaffEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded transition"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-            <button onclick="deleteStaffEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            <button onclick="editStaffEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded transition" title="Edit Profile"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+            <button onclick="deleteStaffEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition" title="Delete Profile"><i class="fa-solid fa-trash-can text-xs"></i></button>
           </div>
         </td>
       </tr>
@@ -216,8 +241,8 @@ function renderStaffTable(data) {
         <td class="font-mono text-xs text-slate-300 py-3">${item.email || ''}</td>
         <td class="text-center py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">
           <div class="flex items-center justify-center gap-2">
-            <button onclick="editStaffEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded transition"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-            <button onclick="deleteStaffEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            <button onclick="editStaffEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded transition" title="Edit Profile"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+            <button onclick="deleteStaffEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition" title="Delete Profile"><i class="fa-solid fa-trash-can text-xs"></i></button>
           </div>
         </td>
       </tr>
@@ -243,11 +268,15 @@ function changePageStaff(delta) {
   loadStaffData(false);
 }
 
+let searchTimeoutStaff;
 function onSearchInputStaff() {
-  const input = document.getElementById('staff-search-input');
-  gStaffSearch = input ? input.value : '';
-  gStaffPage = 1;
-  loadStaffData(false);
+  clearTimeout(searchTimeoutStaff);
+  searchTimeoutStaff = setTimeout(() => {
+    const input = document.getElementById('staff-search-input');
+    gStaffSearch = input ? input.value.trim() : '';
+    gStaffPage = 1;
+    renderStaffTable(gStaffData);
+  }, 200);
 }
 
 /**
@@ -263,14 +292,14 @@ async function populateDropdownsStaff() {
     console.warn("Could not load payroll settings from API:", err);
   }
 
-  // 1. Education Dropdown (config.js မှ ယူသုံးခြင်း)
+  // 1. Education Dropdown
   const eduSelect = document.getElementById('staff-education');
   if (eduSelect) {
     const edus = window.DROPDOWNS?.staffCommon?.education || ["Non", "Phd", "Master", "Degree", "High Graduate", "Middle", "Primary", "High School"];
     eduSelect.innerHTML = edus.map(e => `<option value="${e}">${e}</option>`).join('');
   }
 
-  // 2. Position Dropdown (Full Time / Part Time အလိုက် config.js မှ Dynamic ခွဲထုတ်ခြင်း)
+  // 2. Position Dropdown
   const posSelect = document.getElementById('staff-position');
   if (posSelect) {
     let positions = [];
@@ -282,7 +311,7 @@ async function populateDropdownsStaff() {
     posSelect.innerHTML = positions.map(p => `<option value="${p}">${p}</option>`).join('');
   }
 
-  // 3. Salary Grade Dropdown (Sheet မှ ရရှိသော Dynamic Grades)
+  // 3. Salary Grade Dropdown
   const gradeSelect = document.getElementById('staff-grade');
   if (gradeSelect) {
     let html = '<option value="Non">Non-Grade</option>';
@@ -430,21 +459,21 @@ async function saveStaffForm(event) {
     if (typeof toggleLoading === 'function') toggleLoading(true);
     const res = await callApi(actionName, payload);
     if (res && res.success) {
-      showToast("SUCCESS", "ဝန်ထမ်းအချက်အလက် သိမ်းဆည်းပြီးပါပြီ");
+      showToast("SUCCESS", "ဝန်ထမ်း အချက်အလက်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       closeStaffModal();
       loadStaffData(false);
     } else {
-      showToast("ERROR", res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ");
+      showToast("ERROR", res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "Save Error: " + err.message);
+    showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
 async function deleteStaffEntry(uniqueId) {
-  if (!confirm("ဤဝန်ထမ်းမှတ်တမ်းကို ဖျက်ရန် သေချာပါသလား?")) return;
+  if (!confirm("ဤဝန်ထမ်း မှတ်တမ်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) return;
 
   try {
     if (typeof toggleLoading === 'function') toggleLoading(true);
@@ -454,13 +483,13 @@ async function deleteStaffEntry(uniqueId) {
     });
 
     if (res && res.success) {
-      showToast("SUCCESS", "ဝန်ထမ်းမှတ်တမ်း ဖျက်ပြီးပါပြီ");
+      showToast("SUCCESS", "ဝန်ထမ်း မှတ်တမ်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။");
       loadStaffData(false);
     } else {
-      showToast("ERROR", res.message || "ဖျက်ဆီးမှု မအောင်မြင်ပါ");
+      showToast("ERROR", res.message || "ဖျက်သိမ်းမှု မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "Delete Error: " + err.message);
+    showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
@@ -468,14 +497,14 @@ async function deleteStaffEntry(uniqueId) {
 
 function exportToCSVStaff() {
   if (!gStaffData || gStaffData.length === 0) {
-    showToast("ERROR", "Export ပြုလုပ်ရန် ဒေတာ မရှိပါ");
+    showToast("ERROR", "ထုတ်ယူရန် မည်သည့် အချက်အလက်မျှ မရှိပါ။");
     return;
   }
   let csv = "NO,JOIN_DATE,STAFF_IDNAME,POSITION,PHONE,STATUS\n";
   gStaffData.forEach(r => {
     csv += `"${r.no}","${r.joinDate}","${r.staffIdName || r.name}","${r.position}","${r.phoneNo}","${r.status}"\n`;
   });
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -509,10 +538,10 @@ async function openGradeModal() {
       const modal = document.getElementById('grade-modal');
       if (modal) modal.classList.remove('hidden');
     } else {
-      showToast("ERROR", "Grade Settings ဖတ်ယူ၍ မရပါ");
+      showToast("ERROR", "Grade Settings ဖတ်ယူ၍ မရပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "Grade Modal Error: " + err.message);
+    showToast("ERROR", "Grade ဖတ်ယူမှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
@@ -547,14 +576,14 @@ async function saveGradeForm(event) {
     const res = await callApi('updatePayrollSettings', { values });
 
     if (res && res.success) {
-      showToast("SUCCESS", "Grade Matrix နှုန်းထားများကို Sheet တွင် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ");
+      showToast("SUCCESS", "Grade Matrix နှုန်းထားများကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       closeGradeModal();
       await populateDropdownsStaff();
     } else {
-      showToast("ERROR", res.message || "Grade သိမ်းဆည်းမှု မအောင်မြင်ပါ");
+      showToast("ERROR", res.message || "Grade သိမ်းဆည်းမှု မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "Save Grade Error: " + err.message);
+    showToast("ERROR", "Grade သိမ်းဆည်းမှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
