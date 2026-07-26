@@ -82,7 +82,6 @@
   <!-- MAIN ERP WORKSPACE -->
   <div id="erp-workspace" class="hidden h-full w-full">
     <aside class="w-64 bg-[#0c1322] border-r border-slate-800 flex flex-col h-full shadow-2xl shrink-0">
-      <!-- 💡 FIXED HEADER HEIGHT 64px TO ALIGN WITH MAIN HEADER -->
       <div class="h-[64px] px-4 border-b border-slate-800 flex items-center justify-between text-slate-200 bg-[#0e172a] shrink-0">
         <div class="flex items-center gap-2.5 font-extrabold text-sm tracking-wide">
           <i class="fa-solid fa-graduation-cap text-indigo-400 text-lg"></i>
@@ -101,7 +100,6 @@
         </button>
 
         <!-- Main Books -->
-        <!-- 💡 SOFTENED SIDEBAR CATEGORY HEADERS (text-[9.5px] font-bold) -->
         <p class="text-[9.5px] font-bold text-slate-500 px-4 uppercase tracking-wider mt-4 mb-1.5">Main Books</p>
         <button onclick="switchTab('bank')" id="btn-bank" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-building-columns text-amber-400 w-4 text-center"></i> Main Bank Book
@@ -149,17 +147,15 @@
           <i class="fa-solid fa-hand-holding-dollar text-teal-400 w-4 text-center"></i> Staff Fund Report
         </button>
 
-        <div id="nav-settings-section">
-          <p class="text-[9.5px] font-bold text-slate-500 px-4 uppercase tracking-wider mt-4 mb-1.5">System Controls</p>
-          <button onclick="switchTab('settings')" id="btn-settings" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
-            <i class="fa-solid fa-gears text-indigo-400 w-4 text-center"></i> System Settings
-          </button>
-        </div>
+        <!-- 💡 SYSTEM CONTROLS (WRAPPER REMOVED - ALWAYS PERMANENTLY VISIBLE) -->
+        <p class="text-[9.5px] font-bold text-slate-500 px-4 uppercase tracking-wider mt-4 mb-1.5">System Controls</p>
+        <button onclick="switchTab('settings')" id="btn-settings" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+          <i class="fa-solid fa-gears text-indigo-400 w-4 text-center"></i> System Settings
+        </button>
       </nav>
     </aside>
 
     <div class="flex-1 flex flex-col overflow-hidden">
-      <!-- 💡 FIXED MAIN HEADER HEIGHT 64px TO ALIGN WITH SIDEBAR DIVIDER -->
       <header class="bg-[#0c1322] border-b border-slate-800 h-[64px] px-6 flex justify-between items-center z-10 shrink-0">
         <h1 id="page-title" class="text-base md:text-lg font-extrabold text-slate-100 tracking-wide">Home Dashboard</h1>
         <!-- 💡 LIVE METADATA BADGE -->
