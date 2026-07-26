@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - OFFICE EXPENSE & INVENTORY MODULE
  * File: js/office.js
- * 💡 19-Column Schema (ID PID Removed) + Strict Search Criteria + Transfer Auto-Description + Universal Lock Engine
+ * 💡 19-Column Schema + Strict Search Criteria + Transfer Auto-Description + Universal Lock Engine & 2-Decimal Formatting
  */
 
 window.OfficeState = {
@@ -16,8 +16,6 @@ window.OfficeState = {
 
 /**
  * 💡 Strict Filter Function for Office Expenses
- * Searches strictly by: Description, Category, Debit Amount, Credit Amount.
- * Excluded: Method, VR NO, UniqueID.
  */
 function filterOfficeData(list = [], searchVal = '') {
   if (!searchVal || !searchVal.trim()) return list;
@@ -82,7 +80,6 @@ function onCategoryChangeOffice() {
   const isUniform = (category === "Advance Uniform" || category === "Advance Unifrom");
   const isLiabilities = (category === "Liabilities");
 
-  // 1. Advance Uniform စည်းမျဉ်း
   if (isUniform) {
     if (prodContainer) prodContainer.classList.remove('hidden');
     if (profitPreviewContainer) profitPreviewContainer.classList.remove('hidden');
@@ -97,7 +94,6 @@ function onCategoryChangeOffice() {
     fetchUniformProductsListOffice();
     onProductChangeOffice();
   } 
-  // 2. Liabilities (ပေးရန်ကျန်) စည်းမျဉ်း
   else if (isLiabilities) {
     if (prodContainer) prodContainer.classList.add('hidden');
     if (profitPreviewContainer) profitPreviewContainer.classList.add('hidden');
@@ -109,7 +105,6 @@ function onCategoryChangeOffice() {
     if (methodSelect) methodSelect.disabled = true;
     if (transSelect) { transSelect.value = ""; transSelect.disabled = true; }
   } 
-  // 3. အခြား Standard Categories
   else {
     if (prodContainer) prodContainer.classList.add('hidden');
     if (profitPreviewContainer) profitPreviewContainer.classList.add('hidden');
@@ -186,13 +181,13 @@ function calculateDebitOffice() {
       if (prod) {
         document.getElementById('office-description').value = `${prod.productId} ${prod.productName} ${prod.type} ${prod.size} - ${unit}Nos`;
         
-        const sellingPrice = prod.sellingPrice || 0;
+        const sellingPrice = parseFloat(prod.sellingPrice) || 0;
         const profitPerUnit = sellingPrice - unitPrice;
         const totalProfit = unit * profitPerUnit;
 
         const profitDisplayEl = document.getElementById('office-calculated-profit');
         if (profitDisplayEl) {
-          profitDisplayEl.innerText = Number(totalProfit || 0).toLocaleString('en-US') + " MMK";
+          profitDisplayEl.innerText = Number(totalProfit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " MMK";
         }
       }
     }
@@ -257,14 +252,14 @@ function updateStatsOffice() {
   const stats = window.OfficeState.stats;
   const setT = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
-  setT('off-total-income', Number(stats.totalIncome || 0).toLocaleString('en-US') + " MMK");
-  setT('off-total-expense', Number(stats.totalExpense || 0).toLocaleString('en-US') + " MMK");
-  setT('off-balance', Number(stats.balance || 0).toLocaleString('en-US') + " MMK");
+  setT('off-total-income', Number(stats.totalIncome || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " MMK");
+  setT('off-total-expense', Number(stats.totalExpense || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " MMK");
+  setT('off-balance', Number(stats.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " MMK");
   setT('off-entries-count', window.OfficeState.totalRows.toLocaleString('en-US'));
 }
 
 /**
- * 💡 Render Office Table (Strict Search & Universal Transfer Lock Applied)
+ * 💡 Render Office Table (Strict Search & Universal Lock & 2 Decimal Formatting Applied)
  */
 function renderOfficeTable() {
   const tableBody = document.getElementById('office-table-body');
@@ -290,7 +285,6 @@ function renderOfficeTable() {
       if (parts.length === 3) displayDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
 
-    // 🔒 UNIVERSAL LOCK: Income Sync & Transfer Received rows are locked for ALL users in destination book
     const lockClass = (row.isLocked || isViewer) ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
     const lockTitle = row.isLocked ? "Locked (Must be edited from Source Book)" : "";
 
@@ -301,12 +295,12 @@ function renderOfficeTable() {
         <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">${escapeHtml(row.category)}</span></td>
         <td class="min-w-[280px] max-w-md truncate" title="${escapeHtml(row.description)}">${escapeHtml(row.description)}</td>
         <td class="text-right">${row.unit || '0'}</td>
-        <td class="text-right">${Number(row.unitPrice || 0).toLocaleString('en-US')}</td>
+        <td class="text-right">${Number(row.unitPrice || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
         <td class="font-bold">${escapeHtml(row.method) || '-'}</td>
-        <td class="text-right text-emerald-400 font-semibold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US', {minimumFractionDigits: 2}) : '-'}</td>
-        <td class="text-right text-rose-400 font-semibold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US', {minimumFractionDigits: 2}) : '-'}</td>
-        <td class="text-right text-slate-400 font-bold">${Number(row.balances).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-        <td class="text-right text-rose-400 font-bold">${Number(row.liabilities || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+        <td class="text-right text-emerald-400 font-semibold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+        <td class="text-right text-rose-400 font-semibold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+        <td class="text-right text-slate-400 font-bold">${Number(row.balances || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+        <td class="text-right text-rose-400 font-bold">${Number(row.liabilities || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
         <td>${escapeHtml(row.transfer) || '-'}</td>
         <td>${escapeHtml(row.vrNo || '-')}</td>
         <td>${escapeHtml(row.my || '-')}</td>
@@ -396,22 +390,37 @@ function parseLiabilityAmount(val) {
 }
 
 /**
- * 💡 Save / Update Office Entry (Invalidates Cache Across Books)
+ * 💡 Save / Update Office Entry (Injects Calculated Profit for Uniform Auto-Posting)
  */
 async function saveOfficeForm(e) {
   e.preventDefault();
-  closeOfficeModal();
 
   const uniqueId = document.getElementById('office-uniqueId').value;
   const isAdd = (!uniqueId);
+  const category = document.getElementById('office-category').value;
+  const productId = document.getElementById('office-product-id') ? document.getElementById('office-product-id').value : '';
+  const unit = parseFloat(document.getElementById('office-unit').value) || 0;
+  const unitPrice = parseFloat(document.getElementById('office-unit-price').value) || 0;
+
+  // 💡 UNIFORM PROFIT CALCULATION FOR PAYLOAD
+  let calculatedProfit = 0;
+  if ((category === "Advance Uniform" || category === "Advance Unifrom") && productId && window.OfficeState.uniformProducts) {
+    const prod = window.OfficeState.uniformProducts.find(p => p.productId === productId);
+    if (prod) {
+      const sellingPrice = parseFloat(prod.sellingPrice) || 0;
+      const profitPerUnit = sellingPrice - unitPrice;
+      calculatedProfit = unit * profitPerUnit;
+    }
+  }
 
   const entry = {
     uniqueId: uniqueId,
     date: document.getElementById('office-date').value,
-    category: document.getElementById('office-category').value,
-    id: document.getElementById('office-product-id') ? document.getElementById('office-product-id').value : '',
-    unit: parseFloat(document.getElementById('office-unit').value) || 0,
-    unitPrice: parseFloat(document.getElementById('office-unit-price').value) || 0,
+    category: category,
+    id: productId,
+    unit: unit,
+    unitPrice: unitPrice,
+    profit: calculatedProfit, // 💡 Profit amount injected into payload
     method: document.getElementById('office-method').value,
     debit: parseFloat(document.getElementById('office-debit').value) || 0,
     credit: parseFloat(document.getElementById('office-credit').value) || 0,
@@ -422,6 +431,7 @@ async function saveOfficeForm(e) {
     createdBy: (window.AppState && window.AppState.currentUser) ? window.AppState.currentUser : "System"
   };
 
+  closeOfficeModal();
   const action = isAdd ? 'saveExpenseEntry' : 'updateExpenseEntry';
   showToast("SUCCESS", "စာရင်းအား သိမ်းဆည်းနေပါသည်...");
   toggleLoading(true);
@@ -432,7 +442,6 @@ async function saveOfficeForm(e) {
 
     if (response && response.success) {
       showToast("SUCCESS", isAdd ? "Office Expense စာရင်းသစ် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။" : "Office Expense စာရင်း အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။");
-      
       if (window.BankCache) window.BankCache = { bank: null, cash: null, kitchen: null };
       loadOfficeData(true);
     } else {
