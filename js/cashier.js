@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - CASHIER CASH BOOK MODULE
  * File: js/cashier.js
- * 💡 SECURED: Uses callApi(), 17 Columns Schema, RESPONSIBILITY PERSON, Strict Search & Invoice Print Engine
+ * 💡 SECURED: Uses callApi(), 19-Column Income Match, RESPONSIBILITY PERSON, Strict Search & Invoice Print Engine
  */
 
 let currentCashierSubBook = 'CACash'; // 'CACash' | 'CABank' | 'CAOffice' | 'CAKitchen' | 'CAPayroll' | 'todayIncome'
@@ -67,7 +67,6 @@ async function loadCashierData(useCache = true) {
 
     if (typeof toggleLoading === 'function') toggleLoading(true);
 
-    // 💡 FIXED: Uses callApi (NOT fetchAPI)
     const response = await callApi('getCashierData', {
       bookName: currentCashierSubBook,
       forceRefresh: !useCache
@@ -94,7 +93,6 @@ async function loadTodayIncomeForCashier(useCache = true) {
   try {
     if (typeof toggleLoading === 'function') toggleLoading(true);
 
-    // 💡 FIXED: Uses callApi (NOT fetchAPI)
     const response = await callApi('getTodayIncomeForCashier', {
       forceRefresh: !useCache
     });
@@ -178,9 +176,71 @@ function onSearchInputCashier() {
 }
 
 /**
+ * 💡 Dynamic Table Header Renderer
+ */
+function renderCashierTableHead() {
+  const thead = document.getElementById('cashier-table-head');
+  if (!thead) return;
+
+  const isTodayIncomeTab = (currentCashierSubBook === 'todayIncome');
+
+  if (isTodayIncomeTab) {
+    // 💡 MAIN INCOME BOOK 19-COLUMN HEADER SCHEMA
+    thead.innerHTML = `
+      <tr class="bg-[#0e172a]">
+        <th scope="col" class="w-12 text-center text-slate-400 text-xs py-3">NO</th>
+        <th scope="col" class="w-28 text-slate-400 text-xs py-3">EFFECT DATE</th>
+        <th scope="col" class="w-28 text-slate-400 text-xs py-3">DATE</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">FY</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">ID</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">FYID</th>
+        <th scope="col" class="min-w-[200px] text-slate-400 text-xs py-3">FYID NAME</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">CLASS</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">CATEGORY</th>
+        <th scope="col" class="w-36 text-slate-400 text-xs py-3">ACCOUNT NAME</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">METHOD</th>
+        <th scope="col" class="w-32 text-right text-rose-400 text-xs py-3">DEBIT (ပြန်အမ်း)</th>
+        <th scope="col" class="w-32 text-right text-emerald-400 text-xs py-3">CREDIT (ဝင်ငွေ)</th>
+        <th scope="col" class="w-32 text-right text-indigo-400 text-xs py-3">AUT AMOUNT</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">PROMO</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">MY</th>
+        <th scope="col" class="w-36 text-slate-400 text-xs py-3">VR NO</th>
+        <th scope="col" class="min-w-[150px] text-slate-400 text-xs py-3">REMARK</th>
+        <th scope="col" class="w-28 text-center text-slate-400 text-xs py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">ACTION</th>
+      </tr>
+    `;
+  } else {
+    // 💡 STANDARD CASHIER SUB-LEDGER 17-COLUMN HEADER SCHEMA
+    thead.innerHTML = `
+      <tr class="bg-[#0e172a]">
+        <th scope="col" class="w-12 text-center text-slate-400 text-xs py-3">NO</th>
+        <th scope="col" class="w-28 text-slate-400 text-xs py-3">DATE</th>
+        <th scope="col" class="w-36 text-amber-300 text-xs py-3">RESPONSIBILITY PERSON</th>
+        <th scope="col" class="w-36 text-slate-400 text-xs py-3">CATEGORY</th>
+        <th scope="col" class="min-w-[280px] text-slate-400 text-xs py-3">DESCRIPTION</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">METHOD</th>
+        <th scope="col" class="w-32 text-right text-emerald-400 text-xs py-3">DEBIT</th>
+        <th scope="col" class="w-32 text-right text-rose-400 text-xs py-3">CREDIT</th>
+        <th scope="col" class="w-36 text-right text-slate-400 text-xs py-3">BALANCES</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">TRANSFER</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">VR NO</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">MY</th>
+        <th scope="col" class="w-28 text-slate-400 text-xs py-3">FY</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">BOOK NAME</th>
+        <th scope="col" class="w-28 text-slate-400 text-xs py-3">CREATED BY</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">CREATED AT</th>
+        <th scope="col" class="w-28 text-center text-slate-400 text-xs py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">ACTION</th>
+      </tr>
+    `;
+  }
+}
+
+/**
  * 💡 Render Table Grid Rows
  */
 function renderCashierTable() {
+  renderCashierTableHead();
+
   const tbody = document.getElementById('cashier-table-body');
   if (!tbody) return;
 
@@ -194,14 +254,13 @@ function renderCashierTable() {
   const endIndex = Math.min(startIndex + CASHIER_PAGE_SIZE, totalEntries);
   const pageItems = filteredCashierData.slice(startIndex, endIndex);
 
+  const isTodayIncomeTab = (currentCashierSubBook === 'todayIncome');
+
   if (pageItems.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="17" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော စာရင်း မရှိပါ။</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${isTodayIncomeTab ? '19' : '17'}" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော စာရင်း မရှိပါ။</td></tr>`;
     updateCashierPaginationInfo(0, 0, 0);
     return;
   }
-
-  const isTodayIncomeTab = (currentCashierSubBook === 'todayIncome');
-  const canDelete = typeof hasPermission === 'function' ? hasPermission('can_delete') : false;
 
   pageItems.forEach((item, index) => {
     const tr = document.createElement('tr');
@@ -210,26 +269,28 @@ function renderCashierTable() {
     const srNo = startIndex + index + 1;
 
     if (isTodayIncomeTab) {
-      // 💡 READ-ONLY TODAY INCOME ROW WITH PRINT INVOICE BUTTON
+      // 💡 READ-ONLY TODAY INCOME 19-COLUMN ROW WITH PRINT INVOICE BUTTON
       tr.innerHTML = `
         <td class="text-center font-mono text-slate-400 py-3 px-3">${srNo}</td>
-        <td class="font-mono py-3 px-3">${item.date || '-'}</td>
-        <td class="font-bold text-amber-300 py-3 px-3">-</td>
-        <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-semibold">${item.category || '-'}</span></td>
-        <td class="font-bold text-slate-100 max-w-xs truncate py-3 px-3" title="${item.fyidName}">${item.fyidName || '-'} [${item.accountName || ''}]</td>
-        <td class="font-semibold py-3 px-3">${item.method || '-'}</td>
+        <td class="font-mono py-3 px-3">${escapeHtml(item.effDate) || '-'}</td>
+        <td class="font-mono py-3 px-3">${escapeHtml(item.date) || '-'}</td>
+        <td class="font-mono font-bold text-indigo-400 py-3 px-3">${escapeHtml(item.fy) || '-'}</td>
+        <td class="font-mono font-bold py-3 px-3">${escapeHtml(item.id) || '-'}</td>
+        <td class="font-mono font-bold text-indigo-300 py-3 px-3">${escapeHtml(item.fyid) || '-'}</td>
+        <td class="font-bold text-slate-100 py-3 px-3">${escapeHtml(item.fyidName) || '-'}</td>
+        <td class="py-3 px-3">${escapeHtml(item.class) || '-'}</td>
+        <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-semibold">${escapeHtml(item.category) || '-'}</span></td>
+        <td class="font-semibold text-slate-200 py-3 px-3">${escapeHtml(item.accountName) || '-'}</td>
+        <td class="font-bold text-slate-400 py-3 px-3">${escapeHtml(item.method) || '-'}</td>
         <td class="text-right font-mono font-bold text-rose-400 py-3 px-3">${item.debit > 0 ? Number(item.debit).toLocaleString() : '-'}</td>
         <td class="text-right font-mono font-bold text-emerald-400 py-3 px-3">${item.credit > 0 ? Number(item.credit).toLocaleString() : '-'}</td>
-        <td class="text-right font-mono font-bold text-indigo-400 py-3 px-3">-</td>
-        <td class="py-3 px-3">-</td>
-        <td class="font-mono text-slate-400 py-3 px-3">${item.vrNo || '-'}</td>
-        <td class="font-mono py-3 px-3">${item.my || '-'}</td>
-        <td class="font-mono font-bold text-indigo-400 py-3 px-3">${item.fy || '-'}</td>
-        <td class="py-3 px-3">Income Book</td>
-        <td class="py-3 px-3">System</td>
-        <td class="py-3 px-3">-</td>
+        <td class="text-right font-mono font-bold text-indigo-400 py-3 px-3">${item.autAmount > 0 ? Number(item.autAmount).toLocaleString() : '-'}</td>
+        <td class="text-xs py-3 px-3">${escapeHtml(item.promo) || '-'}</td>
+        <td class="font-mono text-xs py-3 px-3">${escapeHtml(item.my) || '-'}</td>
+        <td class="font-mono text-xs text-slate-400 py-3 px-3">${escapeHtml(item.vrNo) || '-'}</td>
+        <td class="max-w-xs truncate text-xs text-slate-400 py-3 px-3" title="${escapeHtml(item.remark || '')}">${escapeHtml(item.remark) || '-'}</td>
         <td class="text-center right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg py-3 px-3">
-          <!-- 💡 ONLY PRINT INVOICE BUTTON ENABLED FOR TODAY INCOME -->
+          <!-- 💡 PRINT INVOICE BUTTON ENABLED -->
           <button onclick="printInvoice('${item.uniqueId}')" class="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition font-bold" title="Print Invoice">
             <i class="fa-solid fa-print mr-1"></i> Print
           </button>
@@ -257,7 +318,7 @@ function renderCashierTable() {
         <td class="text-center right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg py-3 px-3">
           <div class="flex items-center justify-center gap-2">
             <button onclick="editCashierEntry('${item.uniqueId}')" class="p-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg transition" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
-            ${canDelete ? `<button onclick="deleteCashierEntry('${item.uniqueId}')" class="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition btn-delete" title="Delete"><i class="fa-solid fa-trash"></i></button>` : ''}
+            <button onclick="deleteCashierEntry('${item.uniqueId}')" class="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition btn-delete" title="Delete"><i class="fa-solid fa-trash"></i></button>
           </div>
         </td>
       `;
@@ -382,7 +443,6 @@ async function saveCashierForm(e) {
     closeCashierModal();
     const actionName = uniqueId ? 'updateCashierEntry' : 'saveCashierEntry';
 
-    // 💡 FIXED: Uses callApi (NOT fetchAPI)
     const response = await callApi(actionName, payload);
 
     if (response && response.success) {
@@ -427,7 +487,6 @@ async function deleteCashierEntry(uniqueId) {
   if (!confirm("ဤ စာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) return;
 
   try {
-    // 💡 FIXED: Uses callApi (NOT fetchAPI)
     const response = await callApi('deleteCashierEntry', { uniqueId, bookName: currentCashierSubBook });
 
     if (response && response.success) {
