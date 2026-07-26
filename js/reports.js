@@ -1,11 +1,14 @@
 /**
  * GOLDEN ERP SYSTEM - FINANCIAL & DEMOGRAPHIC REPORTS CONTROLLER
- * File: js/reports.js (FULL UNABRIDGED WITH DETAILED EXPENSES & INDETAIL SEARCH)
+ * File: js/reports.js
+ * 💡 Full Unabridged Financial & Demographic Analytics Engine with Full CSV Export & Real-time Search
  */
 
 let gStudentReportRawData = null;
 let gIncomeDetailRawData = null;
 let gFinancialReportRawData = null;
+let gMonthlyIncomeRawData = null;
+let gStaffFundRawData = null;
 
 // 💡 SAFE LOADING & TOAST WRAPPERS
 function safeShowLoading(show) {
@@ -77,7 +80,7 @@ async function loadReportFinancialData(forceRefresh = false) {
       renderFinancialReportData(res.data);
     }
   } catch (err) {
-    safeShowToast('Financial Statement Load Error: ' + err.message, 'error');
+    safeShowToast('ဘဏ္ဍာရေး အစီရင်ခံစာ ရယူ၍ မရပါ: ' + err.message, 'error');
   } finally {
     safeShowLoading(false);
   }
@@ -108,7 +111,7 @@ function renderFinancialReportData(data) {
     `;
   }
 
-  // (ဂ) FULL GRANULAR EXPENSE BREAKDOWN (၂၀ ခုလုံး အသေးစိတ် ပြသမည်)
+  // (ဂ) FULL GRANULAR EXPENSE BREAKDOWN (၂၀ ခုလုံး အသေးစိတ်)
   const expBody = document.getElementById('report-fin-exp-body');
   if (expBody) {
     const o = data.office || {};
@@ -167,8 +170,37 @@ function onSearchInputReportFinancial() {
 }
 
 function exportToCSVReportFinancial() {
-  if (!gFinancialReportRawData) return safeShowToast('No financial data to export', 'warning');
-  safeShowToast('Exporting Financial Statement to CSV...', 'info');
+  if (!gFinancialReportRawData) {
+    safeShowToast('ထုတ်ယူရန် ဘဏ္ဍာရေး အစီရင်ခံစာ အချက်အလက် မရှိပါ။', 'warning');
+    return;
+  }
+
+  const d = gFinancialReportRawData;
+  let csv = "SECTION,HEAD / CATEGORY,AMOUNT (MMK)\n";
+
+  if (d.categories) {
+    csv += `"Income by Category","Boarder",${d.categories.boarder || 0}\n`;
+    csv += `"Income by Category","Semi Boarder",${d.categories.semiBoarder || 0}\n`;
+    csv += `"Income by Category","Day Student",${d.categories.dayStudent || 0}\n`;
+    csv += `"Income by Category","Total Category Income",${d.categories.total || 0}\n\n`;
+  }
+
+  if (d.accounts) {
+    csv += `"Income by Account","Registration",${d.accounts.registration || 0}\n`;
+    csv += `"Income by Account","Services",${d.accounts.services || 0}\n`;
+    csv += `"Income by Account","Ferry",${d.accounts.ferry || 0}\n`;
+    csv += `"Income by Account","Night Study Fees",${d.accounts.nightStudy || 0}\n`;
+    csv += `"Income by Account","Others",${d.accounts.others || 0}\n`;
+    csv += `"Income by Account","Total Account Income",${d.accounts.total || 0}\n\n`;
+  }
+
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `financial_statement_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 // ==========================================
@@ -184,7 +216,7 @@ async function loadReportIncomeData(forceRefresh = false) {
       renderIncomeDetailTable();
     }
   } catch (err) {
-    safeShowToast('Income Detail Load Error: ' + err.message, 'error');
+    safeShowToast('ဝင်ငွေ အသေးစိတ် အစီရင်ခံစာ ရယူ၍ မရပါ: ' + err.message, 'error');
   } finally {
     safeShowLoading(false);
   }
@@ -212,17 +244,19 @@ function onSearchInputReportIncome() {
 }
 
 function exportToCSVReportIncome() {
-  if (!gIncomeDetailRawData || !gIncomeDetailRawData.data) return safeShowToast('No Income Detail data to export', 'warning');
+  if (!gIncomeDetailRawData || !gIncomeDetailRawData.data) {
+    return safeShowToast('ထုတ်ယူရန် ဝင်ငွေ အသေးစိတ် အချက်အလက် မရှိပါ။', 'warning');
+  }
 
   let csvRows = [];
   if (gIncomeDetailRawData.headers) csvRows.push(gIncomeDetailRawData.headers.map(h => `"${h || ''}"`));
   gIncomeDetailRawData.data.forEach(r => csvRows.push(r.map(c => `"${c || ''}"`)));
 
-  const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
-  const encodedUri = encodeURI(csvContent);
+  const csvContent = "\uFEFF" + csvRows.map(e => e.join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", "Income_Detail_Report.csv");
+  link.href = URL.createObjectURL(blob);
+  link.download = `Income_Detail_Report_${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -237,18 +271,46 @@ async function loadReportGeneralData(forceRefresh = false) {
     safeShowLoading(true);
     const res = await callApi('getMonthlyIncomeReportData', { forceRefresh });
     if (res && res.success) {
+      gMonthlyIncomeRawData = res;
       if (res.table1) renderGenericTable('report-general-table-1', res.table1.headers || [], res.table1.data || []);
       if (res.table2) renderGenericTable('report-general-table-2', res.table2.headers || [], res.table2.data || []);
     }
   } catch (err) {
-    safeShowToast('Monthly Income Report Load Error: ' + err.message, 'error');
+    safeShowToast('လအလိုက် ဝင်ငွေ အစီရင်ခံစာ ရယူ၍ မရပါ: ' + err.message, 'error');
   } finally {
     safeShowLoading(false);
   }
 }
 
 function exportToCSVReportGeneral() {
-  safeShowToast('Exporting Monthly Income Report to CSV...', 'info');
+  if (!gMonthlyIncomeRawData) {
+    return safeShowToast('ထုတ်ယူရန် လအလိုက် ဝင်ငွေ အချက်အလက် မရှိပါ။', 'warning');
+  }
+
+  let csvRows = [];
+  const { table1, table2 } = gMonthlyIncomeRawData;
+
+  if (table1) {
+    csvRows.push(['"Primary Revenue Breakdown"']);
+    if (table1.headers) csvRows.push(table1.headers.map(h => `"${h || ''}"`));
+    if (table1.data) table1.data.forEach(r => csvRows.push(r.map(c => `"${c || ''}"`)));
+    csvRows.push([]);
+  }
+
+  if (table2) {
+    csvRows.push(['"Secondary Category Summary"']);
+    if (table2.headers) csvRows.push(table2.headers.map(h => `"${h || ''}"`));
+    if (table2.data) table2.data.forEach(r => csvRows.push(r.map(c => `"${c || ''}"`)));
+  }
+
+  const csvContent = "\uFEFF" + csvRows.map(e => e.join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `Monthly_Income_Report_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 function renderGenericTable(tableId, headers, rows) {
@@ -275,7 +337,7 @@ function renderGenericTable(tableId, headers, rows) {
 }
 
 // ==========================================
-// 💡 4. STUDENT DEMOGRAPHICS (StRep SHEET READER WITH 2 BEAUTIFUL COLORED TABLES)
+// 💡 4. STUDENT DEMOGRAPHICS (StRep SHEET READER)
 // ==========================================
 
 async function loadReportStudentData(forceRefresh = false) {
@@ -287,7 +349,7 @@ async function loadReportStudentData(forceRefresh = false) {
       renderStudentReportTables();
     }
   } catch (err) {
-    safeShowToast('Student Demographics Load Error: ' + err.message, 'error');
+    safeShowToast('ကျောင်းသား လူဦးရေစာရင်း အစီရင်ခံစာ ရယူ၍ မရပါ: ' + err.message, 'error');
   } finally {
     safeShowLoading(false);
   }
@@ -428,7 +490,7 @@ function onSearchInputReportStudent() {
 }
 
 function exportToCSVReportStudent() {
-  if (!gStudentReportRawData) return safeShowToast('No student demographics data available', 'warning');
+  if (!gStudentReportRawData) return safeShowToast('ထုတ်ယူရန် ကျောင်းသား လူဦးရေ အချက်အလက် မရှိပါ။', 'warning');
 
   const { table1, table2 } = gStudentReportRawData;
   let csvRows = [];
@@ -447,11 +509,11 @@ function exportToCSVReportStudent() {
   if (table2?.data) table2.data.forEach(r => csvRows.push(r.map(c => `"${c || ''}"`)));
   if (table2?.total) csvRows.push(table2.total.map(c => `"${c || ''}"`));
 
-  const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
-  const encodedUri = encodeURI(csvContent);
+  const csvContent = "\uFEFF" + csvRows.map(e => e.join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", "Student_Demographics_Report.csv");
+  link.href = URL.createObjectURL(blob);
+  link.download = `Student_Demographics_Report_${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -466,10 +528,11 @@ async function loadReportStaffFundData(forceRefresh = false) {
     safeShowLoading(true);
     const res = await callApi('getFundReportData', { forceRefresh });
     if (res && res.success && Array.isArray(res.data)) {
+      gStaffFundRawData = res.data;
       renderStaffFundReportData(res.data);
     }
   } catch (err) {
-    safeShowToast('Staff Fund Report Load Error: ' + err.message, 'error');
+    safeShowToast('ဝန်ထမ်း ရန်ပုံငွေ အစီရင်ခံစာ ရယူ၍ မရပါ: ' + err.message, 'error');
   } finally {
     safeShowLoading(false);
   }
@@ -505,6 +568,11 @@ function renderStaffFundReportData(list) {
   if (elAll) elAll.innerText = formatNumWithCommas(totAll) + ' MMK';
   if (elCount) elCount.innerText = list.length;
 
+  if (!filtered || filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော ရန်ပုံငွေ စာရင်း မရှိပါ။</td></tr>`;
+    return;
+  }
+
   tbody.innerHTML = filtered.map((r, i) => `
     <tr class="hover:bg-slate-800/30 transition">
       <td class="py-2.5 text-center font-bold text-slate-400">${r.no || (i + 1)}</td>
@@ -520,9 +588,30 @@ function renderStaffFundReportData(list) {
 }
 
 function onSearchInputReportStaffFund() {
-  loadReportStaffFundData();
+  if (gStaffFundRawData) {
+    renderStaffFundReportData(gStaffFundRawData);
+  } else {
+    loadReportStaffFundData();
+  }
 }
 
 function exportToCSVReportStaffFund() {
-  safeShowToast('Exporting Staff Fund Report to CSV...', 'info');
+  const list = gStaffFundRawData || [];
+  if (!list || list.length === 0) {
+    return safeShowToast('ထုတ်ယူရန် ဝန်ထမ်း ရန်ပုံငွေ အချက်အလက် မရှိပါ။', 'warning');
+  }
+
+  let csv = "NO,FUND DATE,STAFF ID,STAFF NAME,BONUS BALANCE,FUND BALANCE,TOTAL BALANCES,STATUS\n";
+  list.forEach((r, i) => {
+    let name = `"${(r.name || '').replace(/"/g, '""')}"`;
+    csv += `${r.no || i + 1},${r.fundDate || ''},${r.staffId || ''},${name},${r.bonusBalance || 0},${r.fundBalance || 0},${r.totalBalances || 0},${r.status || 'Active'}\n`;
+  });
+
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `staff_fund_report_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
