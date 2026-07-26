@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - OFFICE EXPENSE & INVENTORY MODULE
  * File: js/office.js
- * 💡 19-Column Schema (ID PID Removed) + Strict Search Criteria + Transfer Auto-Description
+ * 💡 19-Column Schema (ID PID Removed) + Strict Search Criteria + Transfer Auto-Description + Universal Lock Engine
  */
 
 window.OfficeState = {
@@ -15,7 +15,7 @@ window.OfficeState = {
 };
 
 /**
- * 💡 Strict Filter Function for Office & Kitchen Expenses
+ * 💡 Strict Filter Function for Office Expenses
  * Searches strictly by: Description, Category, Debit Amount, Credit Amount.
  * Excluded: Method, VR NO, UniqueID.
  */
@@ -104,7 +104,6 @@ function onCategoryChangeOffice() {
     if (qtyPriceContainer) qtyPriceContainer.classList.add('hidden');
     if (liabilitiesContainer) liabilitiesContainer.classList.remove('hidden');
 
-    // Liabilities Box မှလွဲ၍ ကျန်တာ အားလုံး ပိတ်မည်
     if (debitInput) { debitInput.value = 0; debitInput.disabled = true; }
     if (creditInput) { creditInput.value = 0; creditInput.disabled = true; }
     if (methodSelect) methodSelect.disabled = true;
@@ -178,18 +177,15 @@ function calculateDebitOffice() {
     const unitPrice = parseFloat(document.getElementById('office-unit-price').value) || 0;
     const creditVal = parseFloat(document.getElementById('office-credit').value) || 0;
 
-    // Debit (Cost) Auto Calculate
     if (creditVal === 0) {
       document.getElementById('office-debit').value = unit * unitPrice;
     }
 
-    // Auto Update Description with Qty
     if (productId && window.OfficeState.uniformProducts) {
       const prod = window.OfficeState.uniformProducts.find(p => p.productId === productId);
       if (prod) {
         document.getElementById('office-description').value = `${prod.productId} ${prod.productName} ${prod.type} ${prod.size} - ${unit}Nos`;
         
-        // Calculate Profit Preview: unit * (sellingPrice - unitPrice)
         const sellingPrice = prod.sellingPrice || 0;
         const profitPerUnit = sellingPrice - unitPrice;
         const totalProfit = unit * profitPerUnit;
@@ -268,7 +264,7 @@ function updateStatsOffice() {
 }
 
 /**
- * 💡 Render Office Table (Strict Search Applied: Description, Category, Debit, Credit Only)
+ * 💡 Render Office Table (Strict Search & Universal Transfer Lock Applied)
  */
 function renderOfficeTable() {
   const tableBody = document.getElementById('office-table-body');
@@ -277,7 +273,6 @@ function renderOfficeTable() {
   const rawData = window.OfficeState.activeData || [];
   const searchVal = window.OfficeState.searchVal || '';
 
-  // Apply Strict Filtering Criteria
   const data = filterOfficeData(rawData, searchVal);
 
   if (!data || data.length === 0) {
@@ -285,7 +280,8 @@ function renderOfficeTable() {
     return;
   }
 
-  const isViewer = (window.AppState ? window.AppState.currentUserRole === "Viewer" : false);
+  const userRole = (window.AppState ? window.AppState.currentUserRole : 'Viewer');
+  const isViewer = (userRole === "Viewer");
 
   tableBody.innerHTML = data.map((row) => {
     let displayDate = row.date || "";
@@ -294,8 +290,9 @@ function renderOfficeTable() {
       if (parts.length === 3) displayDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
 
-    const lockClass = (row.isLocked && window.AppState && window.AppState.currentUserRole !== "Admin") ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
-    const lockTitle = row.isLocked ? "Locked (Older than 7 days)" : "";
+    // 🔒 UNIVERSAL LOCK: Income Sync & Transfer Received rows are locked for ALL users in destination book
+    const lockClass = (row.isLocked || isViewer) ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
+    const lockTitle = row.isLocked ? "Locked (Must be edited from Source Book)" : "";
 
     return `
       <tr class="hover:bg-slate-800/20 text-slate-300">
@@ -315,11 +312,11 @@ function renderOfficeTable() {
         <td>${escapeHtml(row.my || '-')}</td>
         <td>${escapeHtml(row.fy || '-')}</td>
         <td class="right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg text-center">
-          <div class="flex items-center justify-center gap-3 ${isViewer ? 'hidden' : ''}">
-            <button onclick="editOfficeEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition ${lockClass}" title="${lockTitle}" ${row.isLocked && window.AppState && window.AppState.currentUserRole !== "Admin" ? 'disabled' : ''}>
+          <div class="flex items-center justify-center gap-3">
+            <button onclick="editOfficeEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition ${lockClass}" title="${lockTitle}" ${row.isLocked || isViewer ? 'disabled' : ''}>
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
-            <button onclick="deleteOfficeEntry('${row.uniqueId}')" class="text-rose-400 hover:text-rose-300 transition ${lockClass}" title="${lockTitle}" ${row.isLocked && window.AppState && window.AppState.currentUserRole !== "Admin" ? 'disabled' : ''}>
+            <button onclick="deleteOfficeEntry('${row.uniqueId}')" class="text-rose-400 hover:text-rose-300 transition ${lockClass}" title="${lockTitle}" ${row.isLocked || isViewer ? 'disabled' : ''}>
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
