@@ -111,7 +111,6 @@ function renderTableBankCashKit() {
   const searchInput = document.getElementById('bck-search');
   const searchVal = searchInput ? searchInput.value.trim() : '';
 
-  // 💡 Client-side Strict Multi-Column Filter (Description, Category, Debit, Credit Only)
   const filteredRows = filterBankCashKitData(bckActiveData, searchVal);
 
   if (!filteredRows || filteredRows.length === 0) {
@@ -122,7 +121,7 @@ function renderTableBankCashKit() {
   tbody.innerHTML = filteredRows.map((row) => {
     const isViewer = (window.AppState ? window.AppState.currentUserRole : '') === "Viewer";
     const lockClass = (row.isLocked || isViewer) ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
-    const lockTitle = row.isLocked ? "Older than 7 days (Locked)" : "";
+    const lockTitle = row.isLocked ? "Locked (Must be edited from Source Book)" : "";
 
     return `
       <tr class="hover:bg-slate-800/30 text-slate-300">
@@ -176,6 +175,9 @@ function closeBankCashKitModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+/**
+ * 💡 Dropdown Options များကို စာအုပ်အမျိုးအစားအလိုက် စနစ်တကျ Filter ပြုလုပ်၍ ဖြည့်ပေးခြင်း
+ */
 function populateDropdownsBCK() {
   const catSelect = document.getElementById('bck-category');
   const methodSelect = document.getElementById('bck-method');
@@ -199,15 +201,21 @@ function populateDropdownsBCK() {
     `;
   }
 
+  // 💡 SELF-TRANSFER PREVENT: Filter out current active book from transfer options
   if (transferSelect) {
-    transferSelect.innerHTML = `
-      <option value="">-- No Transfer --</option>
-      <option value="Main Bank Book">Main Bank Book</option>
-      <option value="Main Cash Book">Main Cash Book</option>
-      <option value="Office Exp Book">Office Exp Book</option>
-      <option value="Kitchen Exp Book">Kitchen Exp Book</option>
-      <option value="HR Payroll Exp Book">HR Payroll Exp Book</option>
-    `;
+    const allBooks = [
+      { name: "Main Bank Book", key: "bank" },
+      { name: "Main Cash Book", key: "cash" },
+      { name: "Office Exp Book", key: "office" },
+      { name: "Kitchen Exp Book", key: "kitchen" },
+      { name: "HR Payroll Exp Book", key: "payroll" }
+    ];
+
+    // Filter out current active sub-book
+    const availableBooks = allBooks.filter(b => b.key !== currentSubBook);
+
+    transferSelect.innerHTML = `<option value="">-- No Transfer --</option>` +
+      availableBooks.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
   }
 }
 
@@ -290,7 +298,11 @@ function editBankCashKitEntry(uniqueId) {
   document.getElementById('bck-date').value = row.date || "";
   document.getElementById('bck-category').value = row.category || "Income";
   document.getElementById('bck-method').value = row.method || (currentSubBook === 'bank' ? 'Bank' : 'Cash');
+  
+  // Repopulate with filter before setting value
+  populateDropdownsBCK();
   document.getElementById('bck-transfer').value = row.transfer || "";
+  
   document.getElementById('bck-debit').value = row.debit || 0;
   document.getElementById('bck-credit').value = row.credit || 0;
   document.getElementById('bck-description').value = row.description || "";
