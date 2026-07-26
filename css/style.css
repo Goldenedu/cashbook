@@ -53,18 +53,18 @@
 /* 💡 Cards & Containers - Subtle Eye-Friendly Dark Borders */
 .stats-card { 
   background: linear-gradient(145deg, #0e172a, #0c1322) !important; 
-  border: 1px solid rgba(30, 41, 59, 0.4) !important; 
+  border: 1px solid rgba(30, 41, 59, 0.35) !important; 
 }
 .table-container { 
   border-radius: 0.75rem; 
-  border: 1px solid rgba(30, 41, 59, 0.4) !important; 
+  border: 1px solid rgba(30, 41, 59, 0.35) !important; 
 }
 
-/* 💡 Soften Harsh White Borders Globally Across Slate Utility Classes */
+/* 💡 Soften Harsh White Borders Globally Across Utility Classes */
 .border-slate-800, 
 .border-slate-700, 
 div[class*="border-slate-"] {
-  border-color: rgba(30, 41, 59, 0.45) !important;
+  border-color: rgba(30, 41, 59, 0.35) !important;
 }
 
 /* 💡 Header Height & Horizontal Border Line Alignment Fix */
@@ -73,7 +73,7 @@ header,
 #app-header,
 div#erp-workspace header {
   height: 64px !important;
-  border-bottom: 1px solid rgba(30, 41, 59, 0.45) !important;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.35) !important;
 }
 
 /* 💡 Table Styling & Softened Eye-Comfort Contrast */
@@ -87,17 +87,30 @@ table thead th {
   text-transform: uppercase; 
   letter-spacing: 0.05em; 
   color: #94a3b8 !important;
-  border-bottom: 1px solid rgba(30, 41, 59, 0.5) !important;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.4) !important;
 }
 table tbody td {
   padding: 10px 16px; 
-  border-bottom: 1px solid rgba(30, 41, 59, 0.3) !important;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.25) !important;
   font-size: 0.8rem !important; 
   white-space: nowrap !important;
   color: #cbd5e1 !important;
 }
 table tbody tr:hover { 
-  background-color: rgba(30, 41, 59, 0.25) !important; 
+  background-color: rgba(30, 41, 59, 0.2) !important; 
+}
+
+/* 💡 FIX STICKY ACTION COLUMN OPAQUE BACKGROUND (PREVENTS SCROLL OVERLAP BLEED) */
+table th.sticky,
+table td.sticky,
+th.right-0,
+td.right-0 {
+  position: sticky !important;
+  right: 0 !important;
+  background-color: #0c1322 !important;
+  opacity: 1 !important;
+  z-index: 25 !important;
+  border-left: 1px solid rgba(30, 41, 59, 0.5) !important;
 }
 
 /* 💡 Soften Stark Pure White Text Globally for Eye Comfort */
@@ -153,12 +166,13 @@ button[onclick*="Delete"]:hover i,
 #staff-modal > div,
 #promo-modal > div,
 #uniform-modal > div,
+#cashier-modal > div,
 #grade-modal > div,
 div[id$="-modal"] > div {
   background-color: #0c1322 !important;
   opacity: 1 !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85) !important;
-  border: 1px solid rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(30, 41, 59, 0.5) !important;
 }
 
 .backdrop-blur-sm,
@@ -169,7 +183,7 @@ div[id$="-modal"].fixed.inset-0 {
 /* 💡 Dark Mode Forms Overrides with Eye-Comfort Backgrounds */
 input, select, textarea {
   background-color: #0b1120 !important;
-  border: 1px solid rgba(30, 41, 59, 0.5) !important;
+  border: 1px solid rgba(30, 41, 59, 0.4) !important;
   color: #e2e8f0 !important;
   font-size: 0.75rem !important;
   font-variant-numeric: lining-nums tabular-nums !important;
@@ -227,12 +241,10 @@ body.hide-delete-btn a[onclick*="delete"] {
 
 /* 💡 A4 DUAL-COPY PRINT ENGINE */
 @media print {
-  /* Hide all Web Workspace Elements during Print */
   body > *:not(.active-print) {
     display: none !important;
   }
 
-  /* Display ONLY the active print container */
   #invoice-print-area.active-print,
   #payslip-print-area.active-print {
     display: flex !important;
