@@ -1,6 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - UNIFORM INVENTORY LEDGER MODULE
  * File: js/uniform.js
+ * 💡 Uniform Inventory Ledger with Strict Search Criteria (PID, Name, Type, Size) & Auto PID Engine
  */
 
 window.UniformState = {
@@ -13,10 +14,29 @@ window.UniformState = {
 };
 
 /**
+ * 💡 Strict Search Filter Function for Uniform Inventory Ledger
+ * Searches strictly by: Product ID, Product Name, Type, Size.
+ * Excluded: Unit Price, Selling Price, Total Amount, Stock Values.
+ */
+function filterUniformData(list = [], searchVal = '') {
+  if (!searchVal || !searchVal.trim()) return list;
+  const q = searchVal.trim().toLowerCase();
+
+  return list.filter(row => {
+    const pidMatch = String(row.productId || '').toLowerCase().includes(q);
+    const nameMatch = String(row.productName || '').toLowerCase().includes(q);
+    const typeMatch = String(row.type || '').toLowerCase().includes(q);
+    const sizeMatch = String(row.size || '').toLowerCase().includes(q);
+
+    return pidMatch || nameMatch || typeMatch || sizeMatch;
+  });
+}
+
+/**
  * 💡 Load Uniform Inventory Data
  */
 async function loadUniformData(isSilent = false) {
-  if (!isSilent) toggleLoading(true);
+  if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
 
   const state = window.UniformState;
 
@@ -27,11 +47,11 @@ async function loadUniformData(isSilent = false) {
       searchVal: state.searchVal
     }, 'GET');
 
-    if (!isSilent) toggleLoading(false);
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(false);
 
     if (response && response.data) {
       state.activeData = response.data;
-      state.totalRows = response.totalRows || 0;
+      state.totalRows = response.totalRows || response.data.length || 0;
       state.stats = response.stats || { sellingUnit: 0, currentQty: 0, totalStockValue: 0, totalProduct: 0 };
 
       updateStatsUniform();
@@ -39,7 +59,7 @@ async function loadUniformData(isSilent = false) {
       updatePaginationUniform();
     }
   } catch (err) {
-    if (!isSilent) toggleLoading(false);
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(false);
     console.error("Error loading Uniform data:", err);
   }
 }
@@ -64,25 +84,30 @@ function updateStatsUniform() {
 }
 
 /**
- * 💡 Render Uniform Table Rows
+ * 💡 Render Uniform Table Rows with Strict Search Filtering
  */
 function renderUniformTable() {
   const tableBody = document.getElementById('uniform-table-body');
   if (!tableBody) return;
 
-  const data = window.UniformState.activeData;
+  const rawData = window.UniformState.activeData || [];
+  const searchInput = document.getElementById('uniform-search');
+  const searchVal = searchInput ? searchInput.value.trim() : (window.UniformState.searchVal || '');
+
+  // Apply Strict Filtering Criteria (PID, Name, Type, Size Only)
+  const data = filterUniformData(rawData, searchVal);
 
   if (!data || data.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-slate-500 font-bold">No uniform products found in inventory.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော ယူနီဖောင်း ပစ္စည်း မရှိပါ။</td></tr>`;
     return;
   }
 
-  const isViewer = (window.AppState.currentUserRole === "Viewer");
+  const isViewer = (window.AppState ? window.AppState.currentUserRole : '') === "Viewer";
 
   tableBody.innerHTML = data.map((row) => {
     return `
       <tr class="hover:bg-slate-800/20 text-slate-300">
-        <td class="text-center font-semibold text-slate-500">${row.no}</td>
+        <td class="text-center font-semibold text-slate-500">${row.no || '-'}</td>
         <td class="font-bold text-slate-200">${escapeHtml(row.productId || '-')}</td>
         <td class="font-bold text-slate-300">${escapeHtml(row.productName || '-')}</td>
         <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">${escapeHtml(row.type || '-')}</span></td>
@@ -97,8 +122,8 @@ function renderUniformTable() {
         <td class="text-right font-bold text-indigo-400">${Number(row.totalStockValue || 0).toLocaleString('en-US')}</td>
         <td class="right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg text-center">
           <div class="flex items-center justify-center gap-3 ${isViewer ? 'hidden' : ''}">
-            <button onclick="editUniformEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition"><i class="fa-solid fa-pen-to-square"></i></button>
-            <button onclick="deleteUniformEntry('${row.uniqueId}')" class="text-rose-400 hover:text-rose-300 transition"><i class="fa-solid fa-trash"></i></button>
+            <button onclick="editUniformEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition" title="Edit Product"><i class="fa-solid fa-pen-to-square"></i></button>
+            <button onclick="deleteUniformEntry('${row.uniqueId}')" class="text-rose-400 hover:text-rose-300 transition" title="Delete Product"><i class="fa-solid fa-trash"></i></button>
           </div>
         </td>
       </tr>
@@ -133,9 +158,8 @@ function onSearchInputUniform() {
   searchTimeoutUniform = setTimeout(() => {
     const input = document.getElementById('uniform-search');
     window.UniformState.searchVal = input ? input.value.trim() : '';
-    window.UniformState.page = 1;
-    loadUniformData(true);
-  }, 300);
+    renderUniformTable();
+  }, 200);
 }
 
 /**
@@ -188,22 +212,24 @@ async function saveUniformForm(e) {
     openingStock: parseFloat(document.getElementById('uni-stock').value) || 0,
     unitPrice: parseFloat(document.getElementById('uni-price').value) || 0,
     sellingPrice: parseFloat(document.getElementById('uni-sellprice').value) || 0,
-    createdBy: window.AppState.currentUser || "System"
+    createdBy: (window.AppState ? window.AppState.currentUser : '') || "System"
   };
 
   const action = isAdd ? 'saveUniformEntry' : 'updateUniformEntry';
-  showToast("SUCCESS", "ကုန်ပစ္စည်းအချက်အလက် သိမ်းဆည်းနေပါသည်...");
+  if (typeof showToast === 'function') showToast("SUCCESS", "ကုန်ပစ္စည်း အချက်အလက်များ သိမ်းဆည်းနေပါသည်...");
 
   try {
     const response = await callApi(action, entry);
     if (response && response.success) {
-      showToast("SUCCESS", isAdd ? "ကုန်ပစ္စည်းသစ် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီရှင်။" : "ကုန်ပစ္စည်း အချက်အလက် ပြင်ဆင်ပြီးပါပြီရှင်။");
+      if (typeof showToast === 'function') {
+        showToast("SUCCESS", isAdd ? "ကုန်ပစ္စည်း သစ် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။" : "ကုန်ပစ္စည်း အချက်အလက်များ ပြင်ဆင်ပြီးပါပြီ။");
+      }
       loadUniformData(true);
     } else {
-      showToast("ERROR", "မအောင်မြင်ပါ: " + (response.message || ""));
+      if (typeof showToast === 'function') showToast("ERROR", "သိမ်းဆည်းမှု မအောင်မြင်ပါ: " + (response.message || ""));
     }
   } catch (err) {
-    showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
   }
 }
 
@@ -213,7 +239,7 @@ async function saveUniformForm(e) {
 function editUniformEntry(uniqueId) {
   const row = window.UniformState.activeData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    showToast("ERROR", "မူရင်းဒေတာကို ရှာမတွေ့ပါရှင်။");
+    if (typeof showToast === 'function') showToast("ERROR", "မူရင်း အချက်အလက် ရှာမတွေ့ပါ။");
     return;
   }
 
@@ -235,18 +261,18 @@ function editUniformEntry(uniqueId) {
  * 💡 Delete Uniform Entry
  */
 async function deleteUniformEntry(uniqueId) {
-  if (confirm("ဤကုန်ပစ္စည်းမှတ်တမ်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလားရှင်?")) {
-    showToast("SUCCESS", "မှတ်တမ်းကို ဖျက်သိမ်းနေပါသည်...");
+  if (confirm("ဤ ကုန်ပစ္စည်း မှတ်တမ်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) {
+    if (typeof showToast === 'function') showToast("SUCCESS", "မှတ်တမ်းအား ဖျက်သိမ်းနေပါသည်...");
     try {
       const response = await callApi('deleteUniformEntry', { uniqueId });
       if (response && response.success) {
-        showToast("SUCCESS", "ကုန်ပစ္စည်းမှတ်တမ်းအား ဖျက်သိမ်းပြီးပါပြီရှင်။");
+        if (typeof showToast === 'function') showToast("SUCCESS", "ကုန်ပစ္စည်း မှတ်တမ်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။");
         loadUniformData(true);
       } else {
-        showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response.message || ""));
+        if (typeof showToast === 'function') showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response.message || ""));
       }
     } catch (err) {
-      showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
+      if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
     }
   }
 }
@@ -257,7 +283,7 @@ async function deleteUniformEntry(uniqueId) {
 function exportToCSVUniform() {
   const data = window.UniformState.activeData;
   if (!data || data.length === 0) {
-    showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါရှင်။");
+    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့် စာရင်းမျှ မရှိပါ။");
     return;
   }
 
