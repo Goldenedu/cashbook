@@ -1,26 +1,39 @@
 <!-- views/cashier.html -->
 <div class="space-y-5">
 
-  <!-- ၁။ Sub-Tabs Navigation Bar (၆ ခု) -->
-  <div class="flex flex-wrap items-center gap-2 p-1.5 bg-[#0c1322] border border-slate-800/60 rounded-xl w-fit">
-    <button onclick="switchCashierSubTab('CACash')" id="ca-tab-CACash" class="ca-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-emerald-600 text-white flex items-center gap-2">
-      <i class="fa-solid fa-money-bill-wave text-emerald-300"></i> Cash Book (CACash)
+  <!-- ၁။ Top Sub-Tabs Navigation Bar (SINGLE ROW WITH DISTINCT VIBRANT COLORS) -->
+  <div class="flex items-center gap-2 p-2 bg-[#0c1322] border border-slate-800/60 rounded-xl w-full overflow-x-auto whitespace-nowrap shadow-xl">
+    
+    <!-- 1. CACash (Emerald Green Theme) -->
+    <button onclick="switchCashierSubTab('CACash')" id="ca-tab-CACash" class="ca-sub-tab-btn px-3.5 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 border bg-emerald-950/40 border-emerald-500/30 text-emerald-300 hover:bg-emerald-900/50">
+      <i class="fa-solid fa-money-bill-wave text-emerald-400"></i> Cash (CACash)
     </button>
-    <button onclick="switchCashierSubTab('CABank')" id="ca-tab-CABank" class="ca-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
-      <i class="fa-solid fa-building-columns text-amber-400"></i> Bank Book (CABank)
+
+    <!-- 2. CABank (Amber Gold Theme) -->
+    <button onclick="switchCashierSubTab('CABank')" id="ca-tab-CABank" class="ca-sub-tab-btn px-3.5 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 border bg-amber-950/40 border-amber-500/30 text-amber-300 hover:bg-amber-900/50">
+      <i class="fa-solid fa-building-columns text-amber-400"></i> Bank (CABank)
     </button>
-    <button onclick="switchCashierSubTab('CAOffice')" id="ca-tab-CAOffice" class="ca-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
-      <i class="fa-solid fa-briefcase text-cyan-400"></i> Office Book (CAOffice)
+
+    <!-- 3. CAOffice (Cyan Blue Theme) -->
+    <button onclick="switchCashierSubTab('CAOffice')" id="ca-tab-CAOffice" class="ca-sub-tab-btn px-3.5 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 border bg-cyan-950/40 border-cyan-500/30 text-cyan-300 hover:bg-cyan-900/50">
+      <i class="fa-solid fa-briefcase text-cyan-400"></i> Office (CAOffice)
     </button>
-    <button onclick="switchCashierSubTab('CAKitchen')" id="ca-tab-CAKitchen" class="ca-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
-      <i class="fa-solid fa-utensils text-rose-400"></i> Kitchen Book (CAKitchen)
+
+    <!-- 4. CAKitchen (Rose Red Theme) -->
+    <button onclick="switchCashierSubTab('CAKitchen')" id="ca-tab-CAKitchen" class="ca-sub-tab-btn px-3.5 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 border bg-rose-950/40 border-rose-500/30 text-rose-300 hover:bg-rose-900/50">
+      <i class="fa-solid fa-utensils text-rose-400"></i> Kitchen (CAKitchen)
     </button>
-    <button onclick="switchCashierSubTab('CAPayroll')" id="ca-tab-CAPayroll" class="ca-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
-      <i class="fa-solid fa-hand-holding-dollar text-teal-400"></i> Payroll Book (CAPayroll)
+
+    <!-- 5. CAPayroll (Teal Theme) -->
+    <button onclick="switchCashierSubTab('CAPayroll')" id="ca-tab-CAPayroll" class="ca-sub-tab-btn px-3.5 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 border bg-teal-950/40 border-teal-500/30 text-teal-300 hover:bg-teal-900/50">
+      <i class="fa-solid fa-hand-holding-dollar text-teal-400"></i> Payroll (CAPayroll)
     </button>
-    <button onclick="switchCashierSubTab('todayIncome')" id="ca-tab-todayIncome" class="ca-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
-      <i class="fa-solid fa-receipt text-sky-400"></i> Today Income (Print Invoice)
+
+    <!-- 6. Today Income (Sky Blue Theme) -->
+    <button onclick="switchCashierSubTab('todayIncome')" id="ca-tab-todayIncome" class="ca-sub-tab-btn px-3.5 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 border bg-sky-950/40 border-sky-500/30 text-sky-300 hover:bg-sky-900/50">
+      <i class="fa-solid fa-receipt text-sky-400"></i> Today Income (Invoice)
     </button>
+
   </div>
 
   <!-- ၂။ Top KPI Stats Cards Grid -->
@@ -59,7 +72,6 @@
   <div class="flex flex-col md:flex-row justify-between items-center bg-[#0c1322] border border-slate-800/60 p-4 rounded-xl gap-4">
     <div class="relative w-full md:w-[500px]">
       <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
-      <!-- 💡 STRICT SEARCH PLACEHOLDER FOR CASHIER (Description, Category, Responsibility Person, Debit, Credit) -->
       <input type="text" id="cashier-search" oninput="onSearchInputCashier()" placeholder="Search description, category, responsibility person, debit, credit..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
     </div>
 
