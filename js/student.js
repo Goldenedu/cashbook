@@ -1,6 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - STUDENT LIST & DEMOGRAPHICS MODULE
- * File: js/student.js (PRECISE SEARCH ENGINE & FORMAL TONE)
+ * File: js/student.js
+ * 💡 Student Directory with Strict Search Criteria (Name, FYID, ID Only) & Formal Tone
  */
 
 window.StudentState = {
@@ -11,6 +12,24 @@ window.StudentState = {
   searchVal: '',
   stats: { totalActive: 0, totalInactive: 0, total: 0 }
 };
+
+/**
+ * 💡 Strict Search Filter Function for Student Master List
+ * Searches strictly by: Student Name (NAME / FYIDNAME), FYID, Student ID.
+ * Excluded: Phone, NRC, Parents Name, Address, Remark.
+ */
+function filterStudentData(list = [], searchVal = '') {
+  if (!searchVal || !searchVal.trim()) return list;
+  const q = searchVal.trim().toLowerCase();
+
+  return list.filter(row => {
+    const nameMatch = String(row.name || '').toLowerCase().includes(q) || String(row.fyidName || '').toLowerCase().includes(q);
+    const fyidMatch = String(row.fyid || '').toLowerCase().includes(q);
+    const idMatch = String(row.id || '').toLowerCase().includes(q);
+
+    return nameMatch || fyidMatch || idMatch;
+  });
+}
 
 /**
  * 💡 Load Student List Data
@@ -31,7 +50,7 @@ async function loadStudentData(isSilent = false) {
 
     if (response && response.data) {
       state.activeData = response.data;
-      state.totalRows = response.totalRows || 0;
+      state.totalRows = response.totalRows || response.data.length || 0;
       state.stats = response.stats || { totalActive: 0, totalInactive: 0, total: 0 };
 
       updateStatsStudent();
@@ -71,24 +90,15 @@ function renderStudentTable() {
   const tableBody = document.getElementById('student-table-body');
   if (!tableBody) return;
 
-  const data = window.StudentState.activeData || [];
+  const rawData = window.StudentState.activeData || [];
   const searchInput = document.getElementById('student-search');
-  const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : (window.StudentState.searchVal || '').toLowerCase();
+  const searchVal = searchInput ? searchInput.value.trim() : (window.StudentState.searchVal || '');
 
-  let filteredData = data;
-
-  // 💡 Client-side Precise Multi-Column Filter (NAME, FYIDNAME, FYID, ID)
-  if (searchVal) {
-    filteredData = data.filter(row => {
-      const nameMatch = String(row.name || '').toLowerCase().includes(searchVal) || String(row.fyidName || '').toLowerCase().includes(searchVal);
-      const fyidMatch = String(row.fyid || '').toLowerCase().includes(searchVal);
-      const idMatch = String(row.id || '').toLowerCase() === searchVal || String(row.id || '').toLowerCase().includes(searchVal);
-      return nameMatch || fyidMatch || idMatch;
-    });
-  }
+  // 💡 Client-side Strict Multi-Column Filter (NAME, FYIDNAME, FYID, ID Only)
+  const filteredData = filterStudentData(rawData, searchVal);
 
   if (!filteredData || filteredData.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="16" class="text-center py-8 text-slate-500 font-bold">ကျောင်းသား စာရင်း မှတ်တမ်းများ မရှိသေးပါ။</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="16" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော ကျောင်းသား စာရင်း မရှိပါ။</td></tr>`;
     return;
   }
 
@@ -132,10 +142,10 @@ function renderStudentTable() {
         <td class="max-w-xs truncate" title="${escapeHtml(row.address || '')}">${escapeHtml(row.address || '-')}</td>
         <td class="right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg text-center">
           <div class="flex items-center justify-center gap-3 ${isViewer ? 'hidden' : ''}">
-            <button onclick="editStudentEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition">
+            <button onclick="editStudentEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition" title="Edit Profile">
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
-            <button onclick="deleteStudentEntry('${row.uniqueId}')" class="text-rose-400 hover:text-rose-300 transition">
+            <button onclick="deleteStudentEntry('${row.uniqueId}')" class="text-rose-400 hover:text-rose-300 transition" title="Delete Profile">
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
@@ -170,8 +180,10 @@ let searchTimeoutStudent;
 function onSearchInputStudent() {
   clearTimeout(searchTimeoutStudent);
   searchTimeoutStudent = setTimeout(() => {
+    const searchInput = document.getElementById('student-search');
+    window.StudentState.searchVal = searchInput ? searchInput.value.trim() : '';
     renderStudentTable();
-  }, 100);
+  }, 200);
 }
 
 /**
@@ -225,20 +237,20 @@ async function saveStudentForm(e) {
   };
 
   const action = isAdd ? 'saveStudentEntry' : 'updateStudentEntry';
-  if (typeof showToast === 'function') showToast("SUCCESS", "ကျောင်းသားအချက်အလက် သိမ်းဆည်းနေပါသည်...");
+  if (typeof showToast === 'function') showToast("SUCCESS", "ကျောင်းသား အချက်အလက် ထည့်သွင်း/ပြင်ဆင်နေပါသည်...");
 
   try {
     const response = await callApi(action, entry);
     if (response && response.success) {
       if (typeof showToast === 'function') {
-        showToast("SUCCESS", isAdd ? "ကျောင်းသားသစ်မှတ်တမ်း အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။" : "ကျောင်းသားမှတ်တမ်း ပြင်ဆင်ခြင်း အောင်မြင်ပါသည်။");
+        showToast("SUCCESS", isAdd ? "ကျောင်းသားသစ် မှတ်တမ်း အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။" : "ကျောင်းသား မှတ်တမ်း ပြင်ဆင်ခြင်း အောင်မြင်ပါသည်။");
       }
       loadStudentData(true);
     } else {
-      if (typeof showToast === 'function') showToast("ERROR", "မအောင်မြင်ပါ: " + (response.message || ""));
+      if (typeof showToast === 'function') showToast("ERROR", "သိမ်းဆည်းမှု မအောင်မြင်ပါ: " + (response.message || ""));
     }
   } catch (err) {
-    if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
   }
 }
 
@@ -269,7 +281,7 @@ function closeStudentModal() {
 function editStudentEntry(uniqueId) {
   const row = window.StudentState.activeData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    if (typeof showToast === 'function') showToast("ERROR", "မူရင်းဒေတာ ရှာမတွေ့ပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "မူရင်း အချက်အလက် ရှာမတွေ့ပါ။");
     return;
   }
 
@@ -294,18 +306,18 @@ function editStudentEntry(uniqueId) {
  * 💡 Delete Student Entry
  */
 async function deleteStudentEntry(uniqueId) {
-  if (confirm("ဤကျောင်းသားမှတ်တမ်းအား အပြီးတိုင် ပယ်ဖျက်ရန် သေချာပါသလား။")) {
-    if (typeof showToast === 'function') showToast("SUCCESS", "ကျောင်းသားစာရင်း ပယ်ဖျက်နေပါသည်...");
+  if (confirm("ဤ ကျောင်းသား မှတ်တမ်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) {
+    if (typeof showToast === 'function') showToast("SUCCESS", "ကျောင်းသား စာရင်း ဖျက်သိမ်းနေပါသည်...");
     try {
       const response = await callApi('deleteStudentEntry', { uniqueId });
       if (response && response.success) {
-        if (typeof showToast === 'function') showToast("SUCCESS", "ကျောင်းသားစာရင်း ပယ်ဖျက်ခြင်း အောင်မြင်ပါသည်။");
+        if (typeof showToast === 'function') showToast("SUCCESS", "ကျောင်းသား စာရင်း ဖျက်သိမ်းခြင်း အောင်မြင်ပါသည်။");
         loadStudentData(true);
       } else {
-        if (typeof showToast === 'function') showToast("ERROR", "ပယ်ဖျက်ခြင်း မအောင်မြင်ပါ: " + (response.message || ""));
+        if (typeof showToast === 'function') showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response.message || ""));
       }
     } catch (err) {
-      if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား: " + err.message);
+      if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
     }
   }
 }
@@ -316,7 +328,7 @@ async function deleteStudentEntry(uniqueId) {
 function exportToCSVStudent() {
   const data = window.StudentState.activeData;
   if (!data || data.length === 0) {
-    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့် စာရင်းမျှ မရှိပါ။");
     return;
   }
 
