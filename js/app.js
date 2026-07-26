@@ -1,6 +1,6 @@
 /**
  * GOLDEN ERP SYSTEM - MAIN SPA ROUTER & APPLICATION CONTROLLER
- * File: js/app.js (LIVE CLOCK ENGINE ENFORCED)
+ * File: js/app.js (INSTANT ROUTER & BACKGROUND PREFETCH INTEGRATED)
  */
 
 window.viewCache = window.viewCache || {};
@@ -21,6 +21,11 @@ function initApp() {
 
   document.documentElement.className = 'dark is-authed';
   updateHeaderMetadata(user);
+
+  // 💡 Trigger Background Prefetching for 0ms Instant Navigation
+  if (typeof window.prefetchCoreModules === 'function') {
+    window.prefetchCoreModules();
+  }
 
   const currentTab = window.AppState ? window.AppState.currentModule : 'dashboard';
   switchTab(currentTab || 'dashboard');
@@ -48,7 +53,6 @@ function updateHeaderMetadata(username) {
   const formattedHours = String(hours).padStart(2, '0');
   const formattedTime = `${formattedHours}:${minutes} ${ampm}`;
 
-  // 💡 Exact Live Format: "FY 2026-2027 | Sat | 11:34 AM | User: Admin"
   metaEl.textContent = `FY 2026-2027 | ${dayName} | ${formattedTime} | User: ${activeUser}`;
 }
 
@@ -61,7 +65,7 @@ if (!window.headerClockInterval) {
 }
 
 /**
- * 💡 Central Tab & View Router Engine
+ * 💡 Central Tab & View Router Engine (Instant 0ms Rendering)
  */
 async function switchTab(tabId) {
   const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
@@ -109,15 +113,21 @@ async function switchTab(tabId) {
 
   const titleEl = document.getElementById('page-title');
   if (titleEl) {
-    titleEl.textContent = titleMap[tabId] || 'HR Payroll Group';
+    titleEl.textContent = titleMap[tabId] || 'Home Dashboard';
   }
 
   if (window.AppState) {
     window.AppState.currentModule = tabId;
   }
 
+  const isTemplateCached = !!window.viewCache[viewFileName];
+
   try {
-    toggleLoading(true);
+    // Only show loading spinner if template is NOT cached yet
+    if (!isTemplateCached && typeof toggleLoading === 'function') {
+      toggleLoading(true);
+    }
+
     let htmlContent = window.viewCache[viewFileName];
 
     if (!htmlContent) {
@@ -138,9 +148,13 @@ async function switchTab(tabId) {
 
   } catch (err) {
     console.error(`[SwitchTab Error] Tab '${tabId}':`, err);
-    showToast("ERROR", "စာမျက်နှာ ဖွင့်ယူ၍ မရပါ: " + err.message);
+    if (typeof showToast === 'function') {
+      showToast("ERROR", "စာမျက်နှာ ခေါ်ယူခြင်း မအောင်မြင်ပါ: " + err.message);
+    }
   } finally {
-    toggleLoading(false);
+    if (typeof toggleLoading === 'function') {
+      toggleLoading(false);
+    }
   }
 }
 
@@ -151,7 +165,7 @@ async function triggerModuleInit(tabId) {
   try {
     switch (tabId) {
       case 'dashboard':
-        await loadDashboardData(false, true);
+        await loadDashboardData(false, false);
         break;
 
       case 'bank':
@@ -159,7 +173,7 @@ async function triggerModuleInit(tabId) {
         if (typeof window.switchSubBook === 'function') {
           window.switchSubBook(tabId === 'bank' ? 'Bank' : 'Cash');
         } else if (typeof loadBankCashKitData === 'function') {
-          await loadBankCashKitData(false, true);
+          await loadBankCashKitData(false, false);
         }
         break;
 
@@ -219,6 +233,9 @@ async function triggerModuleInit(tabId) {
         break;
 
       case 'settings':
+        if (typeof loadSettingsData === 'function') {
+          await loadSettingsData(false);
+        }
         break;
 
       default:
@@ -246,7 +263,7 @@ async function loadDashboardData(isSilent = false, forceRefresh = false) {
   if (!token) return;
 
   try {
-    if (!isSilent) toggleLoading(true);
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
 
     const res = await callApi('getDashboardData', { forceRefresh: forceRefresh });
 
@@ -312,9 +329,9 @@ async function loadDashboardData(isSilent = false, forceRefresh = false) {
     setElementText('db-demo-tot-all', formatNumber(grandAll));
 
   } catch (err) {
-    console.warn("Dashboard empty/loading fallback applied:", err.message);
+    console.warn("Dashboard loading fallback applied:", err.message);
   } finally {
-    if (!isSilent) toggleLoading(false);
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
