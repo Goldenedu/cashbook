@@ -1,11 +1,11 @@
-/* css/style.css - GOLDEN ERP SYSTEM GLOBAL DARK STYLES & PRINT ENGINE */
+/* css/style.css - GOLDEN ERP SYSTEM EYE-COMFORT DARK STYLES & PRINT ENGINE */
 
-/* 💡 Force Browser Elements Dark Scheme */
+/* 💡 Force Browser Elements Dark Scheme & Comfort Theme */
 :root { 
   color-scheme: dark; 
 }
 
-/* 💡 Custom Scrollbar */
+/* 💡 Custom Eye-Friendly Scrollbar */
 ::-webkit-scrollbar { 
   width: 6px; 
   height: 6px; 
@@ -26,64 +26,100 @@
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
   font-size: 0.8125rem !important;
   font-weight: 600 !important;
+  color: #94a3b8 !important;
 }
 .nav-btn:hover { 
   padding-left: 1.25rem; 
-  background-color: rgba(30, 41, 59, 0.6); 
+  background-color: rgba(30, 41, 59, 0.5) !important; 
+  color: #f1f5f9 !important;
 }
 .nav-btn.active { 
   background-color: #1e293b !important; 
-  color: #ffffff !important; 
+  color: #f8fafc !important; 
   font-weight: 700 !important; 
   border-left: 4px solid #6366f1; 
 }
 
-/* 💡 Cards & Containers */
+/* 💡 Soften Sidebar Section Heading Labels */
+#sidebar-nav p {
+  font-size: 0.625rem !important; /* 10px */
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  color: #64748b !important;
+  margin-top: 1.25rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* 💡 Cards & Containers - Subtle Eye-Friendly Dark Borders */
 .stats-card { 
-  background: linear-gradient(145deg, #0e172a, #0c1322); 
-  border: 1px solid #1e293b; 
+  background: linear-gradient(145deg, #0e172a, #0c1322) !important; 
+  border: 1px solid rgba(30, 41, 59, 0.4) !important; 
 }
 .table-container { 
   border-radius: 0.75rem; 
-  border: 1px solid #1e293b; 
+  border: 1px solid rgba(30, 41, 59, 0.4) !important; 
 }
 
-/* 💡 Table Styling & Sticky Header */
+/* 💡 Soften Harsh White Borders Globally Across Slate Utility Classes */
+.border-slate-800, 
+.border-slate-700, 
+div[class*="border-slate-"] {
+  border-color: rgba(30, 41, 59, 0.45) !important;
+}
+
+/* 💡 Header Height & Horizontal Border Line Alignment Fix */
+aside > div:first-child,
+header,
+#app-header,
+div#erp-workspace header {
+  height: 64px !important;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.45) !important;
+}
+
+/* 💡 Table Styling & Softened Eye-Comfort Contrast */
 table thead th {
   position: sticky; 
   top: 0; 
   z-index: 20;
   background-color: #0c1322 !important;
   padding: 12px 16px; 
-  font-size: 0.75rem !important;
+  font-size: 0.725rem !important;
   text-transform: uppercase; 
   letter-spacing: 0.05em; 
-  color: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.5) !important;
 }
 table tbody td {
   padding: 10px 16px; 
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.3) !important;
   font-size: 0.8rem !important; 
   white-space: nowrap !important;
+  color: #cbd5e1 !important;
 }
 table tbody tr:hover { 
-  background-color: rgba(30, 41, 59, 0.3); 
+  background-color: rgba(30, 41, 59, 0.25) !important; 
 }
 
-/* 💡 Dark Mode Forms Overrides */
+/* 💡 Soften Stark Pure White Text Globally for Eye Comfort */
+.text-white {
+  color: #f1f5f9 !important;
+}
+
+/* 💡 Dark Mode Forms Overrides with Eye-Comfort Backgrounds */
 input, select, textarea {
-  background-color: #0f172a !important;
-  border: 1px solid #1e293b !important;
-  color: #f8fafc !important;
+  background-color: #0b1120 !important;
+  border: 1px solid rgba(30, 41, 59, 0.5) !important;
+  color: #e2e8f0 !important;
   font-size: 0.75rem !important;
   font-variant-numeric: lining-nums tabular-nums !important;
 }
 input:focus, select:focus, textarea:focus {
   border-color: #6366f1 !important;
   outline: none !important;
+  box-shadow: 0 0 0 1px #6366f1 !important;
 }
 textarea::placeholder, input::placeholder {
-  color: #64748b !important;
+  color: #475569 !important;
   opacity: 1 !important;
 }
 
