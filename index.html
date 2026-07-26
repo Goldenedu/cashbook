@@ -27,7 +27,7 @@
     html.not-authed #erp-workspace { display: none; }
   </style>
   
-  <!-- 💡 PRODUCTION-READY TAILWIND CSS (NO CONSOLE WARNINGS) -->
+  <!-- Production Tailwind CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
   <!-- Font Awesome Icons CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -44,7 +44,7 @@
         <div class="inline-flex p-3.5 bg-indigo-500/10 text-indigo-400 rounded-2xl mb-1 shadow-lg shadow-indigo-500/5">
           <i class="fa-solid fa-graduation-cap text-3xl"></i>
         </div>
-        <h2 class="text-base font-extrabold text-white tracking-wide">GOLDEN CASH BOOK</h2>
+        <h2 class="text-base font-extrabold text-slate-100 tracking-wide">GOLDEN CASH BOOK</h2>
         <p class="text-[10px] text-slate-500 uppercase tracking-wider">Secure Authorization Portal</p>
       </div>
 
@@ -82,10 +82,11 @@
   <!-- MAIN ERP WORKSPACE -->
   <div id="erp-workspace" class="hidden h-full w-full">
     <aside class="w-64 bg-[#0c1322] border-r border-slate-800 flex flex-col h-full shadow-2xl shrink-0">
-      <div class="h-[60px] px-4 border-b border-slate-800 flex items-center justify-between text-white bg-[#0e172a]">
+      <!-- 💡 FIXED HEADER HEIGHT 64px TO ALIGN WITH MAIN HEADER -->
+      <div class="h-[64px] px-4 border-b border-slate-800 flex items-center justify-between text-slate-200 bg-[#0e172a] shrink-0">
         <div class="flex items-center gap-2.5 font-extrabold text-sm tracking-wide">
           <i class="fa-solid fa-graduation-cap text-indigo-400 text-lg"></i>
-          <span>GOLDEN ERP</span>
+          <span class="text-slate-100">GOLDEN ERP</span>
         </div>
         <button onclick="handleLogout()" class="text-slate-500 hover:text-rose-400 transition p-1.5 rounded-lg" title="Logout">
           <i class="fa-solid fa-power-off text-xs"></i>
@@ -93,14 +94,15 @@
       </div>
 
       <!-- SIDEBAR NAV -->
-      <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto" id="sidebar-nav">
+      <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto" id="sidebar-nav">
         <!-- Dashboard -->
         <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-gauge-high w-4 text-center text-indigo-400"></i> Home Dashboard
         </button>
 
         <!-- Main Books -->
-        <p class="text-[10.5px] font-black text-slate-500 px-4 uppercase tracking-widest mt-5 mb-2">Main Books</p>
+        <!-- 💡 SOFTENED SIDEBAR CATEGORY HEADERS (text-[9.5px] font-bold) -->
+        <p class="text-[9.5px] font-bold text-slate-500 px-4 uppercase tracking-wider mt-4 mb-1.5">Main Books</p>
         <button onclick="switchTab('bank')" id="btn-bank" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-building-columns text-amber-400 w-4 text-center"></i> Main Bank Book
         </button>
@@ -112,7 +114,7 @@
         </button>
 
         <!-- Expense Book -->
-        <p class="text-[10.5px] font-black text-slate-500 px-4 uppercase tracking-widest mt-5 mb-2">Expense Book</p>
+        <p class="text-[9.5px] font-bold text-slate-500 px-4 uppercase tracking-wider mt-4 mb-1.5">Expense Book</p>
         <button onclick="switchTab('office')" id="btn-office" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-briefcase text-cyan-400 w-4 text-center"></i> Office Exp Book
         </button>
@@ -127,7 +129,7 @@
         </div>
 
         <!-- List & Inventory -->
-        <p class="text-[10.5px] font-black text-slate-500 px-4 uppercase tracking-widest mt-5 mb-2">List & Inventory</p>
+        <p class="text-[9.5px] font-bold text-slate-500 px-4 uppercase tracking-wider mt-4 mb-1.5">List & Inventory</p>
         <button onclick="switchTab('student')" id="btn-student" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-user-graduate text-indigo-400 w-4 text-center"></i> Student List
         </button>
@@ -139,7 +141,7 @@
         </button>
 
         <!-- Reporting -->
-        <p class="text-[10.5px] font-black text-slate-500 px-4 uppercase tracking-widest mt-5 mb-2">Reporting</p>
+        <p class="text-[9.5px] font-bold text-slate-500 px-4 uppercase tracking-wider mt-4 mb-1.5">Reporting</p>
         <button onclick="switchTab('report-financial')" id="btn-report-financial" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
           <i class="fa-solid fa-chart-pie text-emerald-400 w-4 text-center"></i> Financial Reports
         </button>
@@ -148,7 +150,7 @@
         </button>
 
         <div id="nav-settings-section">
-          <p class="text-[10.5px] font-black text-slate-500 px-4 uppercase tracking-widest mt-5 mb-2">System Controls</p>
+          <p class="text-[9.5px] font-bold text-slate-500 px-4 uppercase tracking-wider mt-4 mb-1.5">System Controls</p>
           <button onclick="switchTab('settings')" id="btn-settings" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
             <i class="fa-solid fa-gears text-indigo-400 w-4 text-center"></i> System Settings
           </button>
@@ -157,8 +159,9 @@
     </aside>
 
     <div class="flex-1 flex flex-col overflow-hidden">
-      <header class="bg-[#0c1322] border-b border-slate-800 h-[60px] px-6 flex justify-between items-center z-10 shrink-0">
-        <h1 id="page-title" class="text-base md:text-lg font-extrabold text-white tracking-wide">Home Dashboard</h1>
+      <!-- 💡 FIXED MAIN HEADER HEIGHT 64px TO ALIGN WITH SIDEBAR DIVIDER -->
+      <header class="bg-[#0c1322] border-b border-slate-800 h-[64px] px-6 flex justify-between items-center z-10 shrink-0">
+        <h1 id="page-title" class="text-base md:text-lg font-extrabold text-slate-100 tracking-wide">Home Dashboard</h1>
         <!-- 💡 LIVE METADATA BADGE -->
         <div id="live-metadata" class="text-xs font-bold text-emerald-400 bg-[#111c44] border border-emerald-500/20 px-3.5 py-1.5 rounded-lg">
           FY 2026-2027 | Sat | --:-- | User: Admin
