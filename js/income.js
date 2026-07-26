@@ -122,9 +122,9 @@ function renderTableIncome() {
         <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">${escapeHtml(row.category) || '-'}</span></td>
         <td class="font-semibold text-slate-200">${escapeHtml(row.accountName) || '-'}</td>
         <td class="font-bold text-slate-400">${escapeHtml(row.method) || '-'}</td>
-        <td class="text-right text-rose-400 font-mono font-bold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US') : '-'}</td>
-        <td class="text-right text-emerald-400 font-mono font-bold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US') : '-'}</td>
-        <td class="text-right text-indigo-400 font-mono font-bold">${row.autAmount > 0 ? Number(row.autAmount).toLocaleString('en-US') : '-'}</td>
+        <td class="text-right text-rose-400 font-mono font-bold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+<td class="text-right text-emerald-400 font-mono font-bold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+<td class="text-right text-indigo-400 font-mono font-bold">${row.autAmount > 0 ? Number(row.autAmount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
         <td class="text-xs">${escapeHtml(row.promo) || '-'}</td>
         <td class="font-mono text-xs">${escapeHtml(row.my) || '-'}</td>
         <td class="font-mono text-xs text-slate-400">${escapeHtml(row.vrNo) || '-'}</td>
