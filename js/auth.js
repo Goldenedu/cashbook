@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - AUTHENTICATION & ROLE ENGINE
  * File: js/auth.js
- * 💡 JWT Session Management, RBAC Permission Matrix & Workspace Toggler
+ * 💡 SECURED: Bulletproof Navigation & System Settings Menu Visibility Engine
  */
 
 /**
@@ -63,7 +63,7 @@ async function handleLoginSubmit(e) {
       localStorage.setItem('erp_token', response.token);
       localStorage.setItem('erp_role', response.role);
 
-      // 💡 1. Switch UI Workspace & Apply RBAC UI Restrictions
+      // 💡 Switch UI Workspace & Force Navigation Permissions
       showWorkspace();
       applyRoleRestrictions();
 
@@ -87,23 +87,40 @@ async function handleLoginSubmit(e) {
 }
 
 /**
- * 💡 Apply Navigation & Button Level Permissions by User Role
+ * 💡 Apply Navigation & Button Level Permissions by User Role (FIXED PERMANENTLY)
  */
 function applyRoleRestrictions() {
   const role = (window.AppState?.currentUserRole || localStorage.getItem('golden_user_role') || 'Viewer').trim();
   const hrSection = document.getElementById('nav-hr-section');
   const settingsSection = document.getElementById('nav-settings-section');
 
-  // Sidebar Section Restrictions
-  if (role === "Cashier" || role === "Main Cashier" || role === "Staff" || role === "Viewer") {
-    if (hrSection && (role === "Cashier" || role === "Main Cashier" || role === "Viewer")) hrSection.classList.add('hidden');
-    if (settingsSection) settingsSection.classList.add('hidden');
-  } else {
-    if (hrSection) hrSection.classList.remove('hidden');
-    if (settingsSection) settingsSection.classList.remove('hidden');
+  // 💡 Roles authorized to view System Settings: Owner, Admin, Finance, Accountant, HR Staff
+  const allowedSettingsRoles = ["Owner", "Admin", "Finance", "Accountant", "HR Staff"];
+  
+  // 💡 Roles authorized to view HR Section: Owner, Admin, Finance, Accountant, HR Staff, Staff
+  const allowedHrRoles = ["Owner", "Admin", "Finance", "Accountant", "HR Staff", "Staff"];
+
+  // 1. Settings Section Menu Visibility
+  if (settingsSection) {
+    if (allowedSettingsRoles.includes(role)) {
+      settingsSection.classList.remove('hidden');
+      settingsSection.style.removeProperty('display');
+    } else {
+      settingsSection.classList.add('hidden');
+    }
   }
 
-  // Hide Delete Buttons across the DOM if role cannot delete
+  // 2. HR Section Menu Visibility
+  if (hrSection) {
+    if (allowedHrRoles.includes(role)) {
+      hrSection.classList.remove('hidden');
+      hrSection.style.removeProperty('display');
+    } else {
+      hrSection.classList.add('hidden');
+    }
+  }
+
+  // 3. Hide Delete Buttons across the DOM if role cannot delete
   const canDelete = hasPermission('can_delete');
   if (!canDelete) {
     document.body.classList.add('hide-delete-btn');
@@ -113,7 +130,7 @@ function applyRoleRestrictions() {
 }
 
 /**
- * 💡 BULLETPROOF WORKSPACE TOGGLER (Tailwind .flex / .hidden Collision Resolution)
+ * 💡 BULLETPROOF WORKSPACE TOGGLER
  */
 function showWorkspace() {
   document.documentElement.className = 'dark is-authed';
