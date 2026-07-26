@@ -1,6 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - PROMOTION MATRIX MODULE
  * File: js/promotion.js
+ * 💡 Promotion Rate Matrix Controller with Precise Search Filters & Formal Corporate Tone
  */
 
 let gPromotionData = [];
@@ -8,6 +9,9 @@ let gPromotionSearch = '';
 let gPromotionFyFilter = '';
 let gPromotionCatFilter = '';
 
+/**
+ * 💡 Generate Dynamic 3-Year Fiscal Years
+ */
 function getDynamicFiscalYears() {
   const d = new Date();
   const year = d.getFullYear();
@@ -25,6 +29,9 @@ function getDynamicFiscalYears() {
   ];
 }
 
+/**
+ * 💡 Populate Dropdowns from Config or Fallbacks
+ */
 function populatePromotionDropdowns() {
   const fys = getDynamicFiscalYears();
   
@@ -63,6 +70,9 @@ function populatePromotionDropdowns() {
   }
 }
 
+/**
+ * 💡 Load Promotion Rates Matrix Data
+ */
 async function loadPromotionData(useCache = false) {
   try {
     if (typeof toggleLoading === 'function') toggleLoading(true);
@@ -74,15 +84,18 @@ async function loadPromotionData(useCache = false) {
       gPromotionData = res.data || [];
       applyPromotionFilters();
     } else {
-      showToast("ERROR", res.message || "Promotion ဒေတာ ရယူ၍ မရပါ");
+      if (typeof showToast === 'function') showToast("ERROR", res.message || "Promotion Rate အချက်အလက်များ ရယူ၍ မရပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "Error loading Promotion data: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
+/**
+ * 💡 Apply Search Input & Category/FY Dropdown Filters
+ */
 function applyPromotionFilters() {
   const searchInput = document.getElementById('promo-search');
   const fyFilter = document.getElementById('promo-filter-fy');
@@ -95,7 +108,12 @@ function applyPromotionFilters() {
   let filtered = gPromotionData;
 
   if (gPromotionSearch) {
-    filtered = filtered.filter(item => (item.class || '').toLowerCase().includes(gPromotionSearch));
+    filtered = filtered.filter(item => 
+      (item.class || '').toLowerCase().includes(gPromotionSearch) ||
+      (item.category || '').toLowerCase().includes(gPromotionSearch) ||
+      (item.fy || '').toLowerCase().includes(gPromotionSearch) ||
+      (item.remark || '').toLowerCase().includes(gPromotionSearch)
+    );
   }
 
   if (gPromotionFyFilter) {
@@ -109,6 +127,9 @@ function applyPromotionFilters() {
   renderPromotionTable(filtered);
 }
 
+/**
+ * 💡 Render Table Grid
+ */
 function renderPromotionTable(data) {
   const tbody = document.getElementById('promo-table-body');
   const totalCountEl = document.getElementById('promo-total-count');
@@ -117,7 +138,7 @@ function renderPromotionTable(data) {
   if (!tbody) return;
 
   if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="15" class="text-center py-8 text-slate-500 font-bold">Promotion Matrix ဒေတာ မရှိသေးပါ</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="15" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော Promotion Rate စာရင်း မရှိပါ။</td></tr>`;
     return;
   }
 
@@ -141,9 +162,9 @@ function renderPromotionTable(data) {
     return `
       <tr class="hover:bg-slate-800/40 transition ${rowBorderClass}">
         <td class="text-center text-slate-400 py-3">${item.no || (idx + 1)}</td>
-        <td class="py-3"><span class="inline-block px-2 py-0.5 rounded text-[10px] border ${fyBadgeStyle}">${item.fy || 'N/A'}</span></td>
-        <td class="font-bold text-white py-3">${item.class || ''}</td>
-        <td class="text-slate-300 py-3">${item.category || ''}</td>
+        <td class="py-3"><span class="inline-block px-2 py-0.5 rounded text-[10px] border ${fyBadgeStyle}">${escapeHtml(item.fy || 'N/A')}</span></td>
+        <td class="font-bold text-white py-3">${escapeHtml(item.class || '')}</td>
+        <td class="text-slate-300 py-3">${escapeHtml(item.category || '')}</td>
         <td class="text-right font-bold text-indigo-400 font-mono py-3">${(item.registration || 0).toLocaleString()}</td>
         <td class="text-right font-bold text-slate-200 font-mono py-3">${(item.originalPrice || 0).toLocaleString()}</td>
         <td class="text-right font-bold text-teal-400 font-mono py-3">${(item.proA || 0).toLocaleString()}</td>
@@ -153,11 +174,11 @@ function renderPromotionTable(data) {
         <td class="text-right font-bold text-teal-400 font-mono py-3">${(item.proE || 0).toLocaleString()}</td>
         <td class="text-right font-bold text-amber-400 font-mono py-3">${(item.halfScholar || 0).toLocaleString()}</td>
         <td class="text-right font-bold text-emerald-400 font-mono py-3">${(item.fullScholar || 0).toLocaleString()}</td>
-        <td class="text-slate-400 py-3">${item.remark || ''}</td>
+        <td class="text-slate-400 py-3">${escapeHtml(item.remark || '')}</td>
         <td class="text-center py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">
           <div class="flex items-center justify-center gap-2">
-            <button onclick="editPromotionEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded transition"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-            <button onclick="deletePromotionEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            <button onclick="editPromotionEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded transition" title="Edit Rate"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+            <button onclick="deletePromotionEntry('${item.uniqueId}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded transition" title="Delete Rate"><i class="fa-solid fa-trash-can text-xs"></i></button>
           </div>
         </td>
       </tr>
@@ -191,11 +212,14 @@ function closePromotionModal() {
 }
 
 /**
- * 💡 EDIT PRE-FILL FIX: မူလ ဒေတာများ Form ထဲသို့ အပြည့်အဝ ဝင်ရောက်လာစေခြင်း
+ * 💡 EDIT PRE-FILL: မူလ ဒေတာများ Form ထဲသို့ အပြည့်အဝ ဝင်ရောက်လာစေခြင်း
  */
 function editPromotionEntry(uniqueId) {
   const item = gPromotionData.find(p => String(p.uniqueId).trim() === String(uniqueId).trim());
-  if (!item) return;
+  if (!item) {
+    if (typeof showToast === 'function') showToast("ERROR", "မူရင်း အချက်အလက် ရှာမတွေ့ပါ။");
+    return;
+  }
 
   populatePromotionDropdowns();
 
@@ -221,6 +245,9 @@ function editPromotionEntry(uniqueId) {
   if (modal) modal.classList.remove('hidden');
 }
 
+/**
+ * 💡 Save / Submit Promotion Rate Entry
+ */
 async function savePromotionForm(event) {
   event.preventDefault();
 
@@ -249,49 +276,55 @@ async function savePromotionForm(event) {
     const res = await callApi(actionName, payload);
 
     if (res && res.success) {
-      showToast("SUCCESS", "Promotion Rate နှုန်းထား သိမ်းဆည်းပြီးပါပြီ");
+      if (typeof showToast === 'function') showToast("SUCCESS", "Promotion Rate နှုန်းထားများ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       closePromotionModal();
       loadPromotionData(false);
     } else {
-      showToast("ERROR", res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ");
+      if (typeof showToast === 'function') showToast("ERROR", res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "Save Error: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
+/**
+ * 💡 Delete Promotion Entry
+ */
 async function deletePromotionEntry(uniqueId) {
-  if (!confirm("ဤ Promotion နှုန်းထားကို ဖျက်ရန် သေချာပါသလား?")) return;
+  if (!confirm("ဤ Promotion Rate နှုန်းထားအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) return;
 
   try {
     if (typeof toggleLoading === 'function') toggleLoading(true);
     const res = await callApi('deletePromotionEntry', { uniqueId });
 
     if (res && res.success) {
-      showToast("SUCCESS", "Promotion နှုန်းထား ဖျက်ပြီးပါပြီ");
+      if (typeof showToast === 'function') showToast("SUCCESS", "Promotion Rate နှုန်းထားအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။");
       loadPromotionData(false);
     } else {
-      showToast("ERROR", res.message || "ဖျက်ဆီးမှု မအောင်မြင်ပါ");
+      if (typeof showToast === 'function') showToast("ERROR", res.message || "ဖျက်သိမ်းမှု မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "Delete Error: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
+/**
+ * 💡 CSV Export
+ */
 function exportToCSVPromotion() {
   if (!gPromotionData || gPromotionData.length === 0) {
-    showToast("ERROR", "Export ပြုလုပ်ရန် စာရင်း မရှိပါ");
+    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့် စာရင်းမျှ မရှိပါ။");
     return;
   }
   let csv = "NO,FY,CLASS,CATEGORY,REGISTRATION,ORIGINAL_PRICE,PRO_A,PRO_B,PRO_C,PRO_D,PRO_E,HALF_SCHOLAR,FULL_SCHOLAR,REMARK\n";
   gPromotionData.forEach(r => {
     csv += `"${r.no}","${r.fy}","${r.class}","${r.category}",${r.registration},${r.originalPrice},${r.proA},${r.proB},${r.proC},${r.proD},${r.proE},${r.halfScholar},${r.fullScholar},"${r.remark}"\n`;
   });
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
