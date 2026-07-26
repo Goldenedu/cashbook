@@ -92,64 +92,70 @@
         </button>
       </div>
 
-      <!-- SIDEBAR NAV -->
-      <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto" id="sidebar-nav">
+      <!-- 💡 SIDEBAR NAV (COMPACT SPACING FOR ONE-PAGE FIT) -->
+      <nav class="flex-1 px-2.5 py-2.5 space-y-0.5 overflow-y-auto" id="sidebar-nav">
         <!-- Dashboard -->
-        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
           <i class="fa-solid fa-gauge-high w-4 text-center text-indigo-400"></i> Home Dashboard
         </button>
 
         <!-- Main Books -->
-        <p class="text-[9.5px] font-bold text-slate-500 px-4 uppercase tracking-wider mt-4 mb-1.5">Main Books</p>
-        <button onclick="switchTab('bank')" id="btn-bank" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+        <p class="text-[9px] font-bold text-slate-500 px-3 uppercase tracking-wider mt-2.5 mb-1">Main Books</p>
+        <button onclick="switchTab('bank')" id="btn-bank" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
           <i class="fa-solid fa-building-columns text-amber-400 w-4 text-center"></i> Main Bank Book
         </button>
-        <button onclick="switchTab('cash')" id="btn-cash" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+        <button onclick="switchTab('cash')" id="btn-cash" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
           <i class="fa-solid fa-money-bill-wave text-emerald-400 w-4 text-center"></i> Main Cash Book
         </button>
-        <button onclick="switchTab('income')" id="btn-income" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+        <button onclick="switchTab('income')" id="btn-income" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
           <i class="fa-solid fa-wallet text-sky-400 w-4 text-center"></i> Main Income Book
         </button>
 
         <!-- Expense Book -->
-        <p class="text-[9.5px] font-bold text-slate-500 px-4 uppercase tracking-wider mt-4 mb-1.5">Expense Book</p>
-        <button onclick="switchTab('office')" id="btn-office" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+        <p class="text-[9px] font-bold text-slate-500 px-3 uppercase tracking-wider mt-2.5 mb-1">Expense Book</p>
+        <button onclick="switchTab('office')" id="btn-office" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
           <i class="fa-solid fa-briefcase text-cyan-400 w-4 text-center"></i> Office Exp Book
         </button>
-        <button onclick="switchTab('kitchen')" id="btn-kitchen" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+        <button onclick="switchTab('kitchen')" id="btn-kitchen" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
           <i class="fa-solid fa-utensils text-rose-400 w-4 text-center"></i> Kitchen Exp Book
         </button>
 
         <div id="nav-hr-section">
-          <button onclick="switchTab('hr')" id="btn-hr" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+          <button onclick="switchTab('hr')" id="btn-hr" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
             <i class="fa-solid fa-money-check-dollar text-teal-400 w-4 text-center"></i> HR Payroll & Staff
           </button>
         </div>
 
         <!-- List & Inventory -->
-        <p class="text-[9.5px] font-bold text-slate-500 px-4 uppercase tracking-wider mt-4 mb-1.5">List & Inventory</p>
-        <button onclick="switchTab('student')" id="btn-student" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+        <p class="text-[9px] font-bold text-slate-500 px-3 uppercase tracking-wider mt-2.5 mb-1">List & Inventory</p>
+        <button onclick="switchTab('student')" id="btn-student" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
           <i class="fa-solid fa-user-graduate text-indigo-400 w-4 text-center"></i> Student List
         </button>
-        <button onclick="switchTab('uniform')" id="btn-uniform" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+        <button onclick="switchTab('uniform')" id="btn-uniform" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
           <i class="fa-solid fa-shirt text-amber-400 w-4 text-center"></i> Uniform Ledger
         </button>
-        <button onclick="switchTab('promotion')" id="btn-promotion" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+        <button onclick="switchTab('promotion')" id="btn-promotion" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
           <i class="fa-solid fa-coins text-yellow-400 w-4 text-center"></i> Promotion List
         </button>
 
         <!-- Reporting -->
-        <p class="text-[9.5px] font-bold text-slate-500 px-4 uppercase tracking-wider mt-4 mb-1.5">Reporting</p>
-        <button onclick="switchTab('report-financial')" id="btn-report-financial" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+        <p class="text-[9px] font-bold text-slate-500 px-3 uppercase tracking-wider mt-2.5 mb-1">Reporting</p>
+        <button onclick="switchTab('report-financial')" id="btn-report-financial" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
           <i class="fa-solid fa-chart-pie text-emerald-400 w-4 text-center"></i> Financial Reports
         </button>
-        <button onclick="switchTab('report-staff-fund')" id="btn-report-staff-fund" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+        <button onclick="switchTab('report-staff-fund')" id="btn-report-staff-fund" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
           <i class="fa-solid fa-hand-holding-dollar text-teal-400 w-4 text-center"></i> Staff Fund Report
         </button>
 
-        <!-- 💡 SYSTEM CONTROLS (WRAPPER REMOVED - ALWAYS PERMANENTLY VISIBLE) -->
-        <p class="text-[9.5px] font-bold text-slate-500 px-4 uppercase tracking-wider mt-4 mb-1.5">System Controls</p>
-        <button onclick="switchTab('settings')" id="btn-settings" class="nav-btn w-full text-left px-4 py-2.5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 text-sm font-semibold">
+        <!-- 💡 CASHIER CASH BOOK MENU BUTTON (RIGHT ABOVE SYSTEM CONTROLS) -->
+        <p class="text-[9px] font-bold text-slate-500 px-3 uppercase tracking-wider mt-2.5 mb-1">Cashier Sub-Ledger</p>
+        <button onclick="switchTab('cashier')" id="btn-cashier" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
+          <i class="fa-solid fa-cash-register text-emerald-400 w-4 text-center"></i> Cashier Cash Book
+        </button>
+
+        <!-- System Controls -->
+        <p class="text-[9px] font-bold text-slate-500 px-3 uppercase tracking-wider mt-2.5 mb-1">System Controls</p>
+        <button onclick="switchTab('settings')" id="btn-settings" class="nav-btn w-full text-left px-3.5 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2.5 text-xs font-semibold">
           <i class="fa-solid fa-gears text-indigo-400 w-4 text-center"></i> System Settings
         </button>
       </nav>
@@ -393,6 +399,8 @@
   <script src="js/student.js"></script>
   <script src="js/promotion.js"></script>
   <script src="js/uniform.js"></script>
+  <!-- 💡 CASHIER MODULE JS SCRIPT -->
+  <script src="js/cashier.js"></script>
   <script src="js/reports.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/app.js"></script>
