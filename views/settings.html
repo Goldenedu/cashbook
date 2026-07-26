@@ -1,118 +1,230 @@
-<!-- views/settings.html -->
-<div class="space-y-5">
+/**
+ * GOLDEN ERP SYSTEM - AUTHENTICATION & ROLE ENGINE
+ * File: js/auth.js
+ * 💡 SECURED: Bulletproof Navigation & System Settings Menu Visibility Engine
+ */
 
-  <!-- Setting Panel Header Banner -->
-  <div class="p-4 rounded-xl shadow-xl space-y-1" style="background: linear-gradient(135deg, #0c1322 0%, #111c38 50%, #0c1322 100%); border: 1px solid rgba(99, 102, 241, 0.3);">
-    <h2 class="text-sm font-extrabold tracking-wide uppercase flex items-center gap-2" style="color: #a5b4fc;">
-      <i class="fa-solid fa-gears text-base" style="color: #818cf8;"></i> System Control Center
-    </h2>
-    <p class="text-[11px] leading-relaxed" style="color: #94a3b8;">
-      ERP စနစ်၏ ဘဏ်/လက်ငင်းငွေစာရင်း ထိန်းချုပ်မှုများ၊ ဓမ္မသတိပေးစာနှင့် အချက်အလက်များ အရန်သင့် သိမ်းဆည်းခြင်း စင်တာ ဖြစ်ပါသည်။
-    </p>
-  </div>
+/**
+ * 💡 Central Role-Based Access Control (RBAC) Permission Verifier
+ * @param {string} permissionName - 'can_delete' | 'can_edit' | 'can_manage_grades' | 'can_backup'
+ * @returns {boolean}
+ */
+function hasPermission(permissionName) {
+  const role = (window.AppState?.currentUserRole || localStorage.getItem('golden_user_role') || 'Viewer').trim();
 
-  <!-- Top Row: Grid 2 Columns (Balances Control + Mindfulness Quote Card) -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+  const matrix = {
+    'Owner': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: true, can_backup: true },
+    'Admin': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: true, can_backup: true },
+    'Finance': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: false, can_backup: true },
+    'Accountant': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: false, can_backup: true },
+    'HR Staff': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: true, can_backup: false },
+    'Cashier': { can_view: true, can_add: true, can_edit: true, can_delete: false, can_manage_grades: false, can_backup: false },
+    'Main Cashier': { can_view: true, can_add: true, can_edit: true, can_delete: false, can_manage_grades: false, can_backup: false },
+    'Staff': { can_view: true, can_add: true, can_edit: false, can_delete: false, can_manage_grades: false, can_backup: false },
+    'Viewer': { can_view: true, can_add: false, can_edit: false, can_delete: false, can_manage_grades: false, can_backup: false }
+  };
 
-    <!-- 1️⃣ BOX 1: BALANCES CONTROL (Home!J4:M10) -->
-    <div class="p-5 rounded-xl shadow-2xl space-y-3 flex flex-col justify-between" style="background-color: #0c1322; border: 1px solid rgba(30, 41, 59, 0.5);">
-      <div>
-        <div class="flex justify-between items-center pb-2.5 mb-3" style="border-bottom: 1px solid rgba(30, 41, 59, 0.5);">
-          <h3 class="text-xs font-black uppercase tracking-wider flex items-center gap-2" style="color: #38bdf8;">
-            <i class="fa-solid fa-scale-balanced text-sm"></i> Balances Control (Home!J4:M10)
-          </h3>
-          <button onclick="loadSettingsData(true)" class="p-1.5 rounded-lg text-xs font-bold transition-all" style="background-color: #1e293b; border: 1px solid #334155; color: #cbd5e1;" title="Refresh Balances">
-            <i class="fa-solid fa-rotate text-xs"></i>
-          </button>
-        </div>
+  const userPerms = matrix[role] || matrix['Viewer'];
+  return !!userPerms[permissionName];
+}
 
-        <div class="overflow-x-auto table-container">
-          <table class="w-full text-left border-collapse text-xs min-w-[420px]">
-            <thead>
-              <tr class="text-slate-400 font-bold uppercase text-[11px]" style="background-color: #0e172a; border-bottom: 1px solid #1e293b;">
-                <th class="py-2 px-3">Book Name</th>
-                <th class="py-2 px-3 text-right">Accountant</th>
-                <th class="py-2 px-3 text-right">Cashier</th>
-                <th class="py-2 px-3 text-right">Control</th>
-              </tr>
-            </thead>
-            <tbody id="settings-balances-table-body" class="divide-y divide-slate-800/30 text-slate-200">
-              <tr><td colspan="4" class="py-4 text-center italic" style="color: #64748b;">Balances Control အချက်အလက်များ ဖတ်ယူနေပါသည်...</td></tr>
-            </tbody>
-            <tfoot id="settings-balances-table-foot"></tfoot>
-          </table>
-        </div>
-      </div>
-      <!-- 💡 SUBTLE CAPTION FOOTNOTE -->
-      <p class="text-[9px] italic mt-2" style="color: #64748b;">* Google Sheet 'Home' Tab range J4:M10 ထဲမှ တိုက်ရိုက်ဖတ်ယူထားသော လက်ကျန်ငွေ နှိုင်းယှဉ်ချက် ဖြစ်ပါသည်။</p>
-    </div>
+/**
+ * 💡 Handle Login Form Submission
+ */
+async function handleLoginSubmit(e) {
+  e.preventDefault();
+  const usernameSelect = document.getElementById('login-username');
+  const passwordInput = document.getElementById('login-password');
+  const errorBox = document.getElementById('login-error');
 
-    <!-- 2️⃣ BOX 2: MINDFULNESS WISDOM QUOTE CARD (ဓမ္မသတိပေးစာ - MULTI-COLOR LINES & AMBER ACCENTS) -->
-    <div class="p-5 rounded-xl shadow-2xl space-y-4 flex flex-col justify-between relative overflow-hidden" style="background: linear-gradient(145deg, #0c1322 0%, #18192d 50%, #1c1508 100%); border: 1px solid rgba(245, 158, 11, 0.35);">
-      
-      <!-- Glowing Background Accent -->
-      <div class="absolute -top-12 -right-12 w-40 h-40 rounded-full blur-3xl pointer-events-none" style="background-color: rgba(245, 158, 11, 0.12);"></div>
+  if (!usernameSelect || !passwordInput) return;
 
-      <div class="space-y-3 relative z-10">
-        <div class="flex items-center gap-3 pb-2.5" style="border-bottom: 1px solid rgba(245, 158, 11, 0.2);">
-          <div class="p-2.5 rounded-lg" style="background-color: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24;">
-            <i class="fa-solid fa-dharmachakra text-lg"></i>
-          </div>
-          <div>
-            <h3 class="text-xs font-black uppercase tracking-widest" style="color: #fbbf24;">Always Be Mindful</h3>
-            <p class="text-[10px] uppercase tracking-wider font-semibold" style="color: #f59e0b;">Mindfulness in Action</p>
-          </div>
-        </div>
+  const username = usernameSelect.value;
+  const password = passwordInput.value;
 
-        <!-- 💡 DISTINCT MULTI-COLOR QUOTE LINES -->
-        <div class="p-4 rounded-lg space-y-2 font-serif italic text-xs sm:text-sm shadow-inner" style="background-color: rgba(9, 13, 22, 0.65); border: 1px solid rgba(245, 158, 11, 0.2);">
-          <p style="color: #fef08a;" class="font-medium">In every sight,</p>
-          <p style="color: #7dd3fc;" class="font-medium">In every sound,</p>
-          <p style="color: #6ee7b7;" class="font-medium">In every smell,</p>
-          <p style="color: #fda4af;" class="font-medium">In every taste,</p>
-          <p style="color: #5eead4;" class="font-medium">In every touch,</p>
-          <p style="color: #fbbf24; border-top: 1px solid rgba(245, 158, 11, 0.25);" class="font-extrabold not-italic pt-1.5 tracking-wide text-sm">In every thought—stay mindful.</p>
-        </div>
-      </div>
+  if (errorBox) errorBox.classList.add('hidden');
+  if (typeof window.showLoading === 'function') window.showLoading(true);
 
-      <div class="pt-2 flex justify-between items-center relative z-10 text-xs" style="border-top: 1px solid rgba(245, 158, 11, 0.2);">
-        <div class="space-y-0.5">
-          <span class="text-[11px] font-black tracking-wider block" style="color: #fbbf24;">Appamadena sampadetha</span>
-          <span class="text-[10px] font-sans italic" style="color: #f59e0b;">— The Buddha</span>
-        </div>
-        <div class="text-[9px] font-extrabold px-3 py-1 rounded-full font-sans uppercase tracking-widest" style="background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35);">
-          ERP Wisdom
-        </div>
-      </div>
-    </div>
+  try {
+    const response = await callApi('checkLogin', { username, password });
+    if (typeof window.hideLoading === 'function') window.hideLoading();
 
-  </div>
+    if (response && response.success) {
+      window.AppState = window.AppState || {};
+      window.AppState.currentUser = response.username;
+      window.AppState.currentUserRole = response.role;
+      window.AppState.authToken = response.token;
 
-  <!-- 3️⃣ BOX 3: SPREADSHEET EXCEL BACKUP SYSTEM (EMERALD GREEN BACKUP BUTTON & HIGHLIGHT) -->
-  <div class="p-5 rounded-xl shadow-2xl" style="background: linear-gradient(135deg, #0c1322 0%, #0a2122 50%, #0c1322 100%); border: 1px solid rgba(16, 185, 129, 0.3);">
-    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-      <div class="flex items-center gap-3.5">
-        <div class="p-3.5 rounded-xl shrink-0" style="background-color: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399;">
-          <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
-        </div>
-        <div class="space-y-0.5">
-          <h3 class="text-xs font-black uppercase tracking-wider" style="color: #34d399;">Spreadsheet Excel Backup System</h3>
-          <p class="text-[11px] leading-relaxed" style="color: #cbd5e1;">
-            ကျောင်း၏ ERP စနစ် တစ်ခုလုံးရှိ အချက်အလက်များ မပျောက်ပျက်စေရန် <span class="font-bold px-2 py-0.5 rounded" style="background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">goldeneduprivateschool@gmail.com</span> သို့ Excel (.xlsx) Backup ချက်ချင်း ပေးပို့ရယူနိုင်ပါသည်။
-          </p>
-        </div>
-      </div>
+      const userObj = JSON.stringify({ username: response.username, role: response.role });
+      localStorage.setItem('golden_user_name', response.username);
+      localStorage.setItem('golden_user_role', response.role);
+      localStorage.setItem('golden_auth_token', response.token);
+      localStorage.setItem('golden_user', userObj);
+      localStorage.setItem('erp_token', response.token);
+      localStorage.setItem('erp_role', response.role);
 
-      <!-- 💡 VIBRANT MATCHING EMERALD BACKUP BUTTON -->
-      <div class="shrink-0 w-full md:w-auto">
-        <button onclick="triggerManualBackup()" class="w-full md:w-auto px-5 py-2.5 text-white text-xs font-black rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 whitespace-nowrap" style="background-color: #059669; border: 1px solid #10b981;">
-          <i class="fa-solid fa-arrow-rotate-right text-xs"></i> Run Immediate Manual Backup
-        </button>
-      </div>
-    </div>
-  </div>
+      // 💡 Switch UI Workspace & Force Navigation Permissions
+      showWorkspace();
+      applyRoleRestrictions();
 
-</div>
+      if (typeof switchTab === 'function') {
+        switchTab('dashboard');
+      }
+      showToast("SUCCESS", "လော့ဂ်အင် ဝင်ရောက်မှု အောင်မြင်ပါသည်။");
+    } else {
+      if (errorBox) {
+        errorBox.innerText = (response ? response.message : "") || "အသုံးပြုသူအမည် သို့မဟုတ် လျှို့ဝှက်နံပါတ် မှားယွင်းနေပါသည်။";
+        errorBox.classList.remove('hidden');
+      }
+    }
+  } catch (err) {
+    if (typeof window.hideLoading === 'function') window.hideLoading();
+    if (errorBox) {
+      errorBox.innerText = "ဆာဗာ ချိတ်ဆက်မှု အမှား ဖြစ်ပေါ်ခဲ့သည်: " + err.message;
+      errorBox.classList.remove('hidden');
+    }
+  }
+}
 
-<!-- 💡 AUTO-LOAD TRIGGER -->
-<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="if(typeof loadSettingsData==='function'){loadSettingsData();} this.remove();" class="hidden">
+/**
+ * 💡 Apply Navigation & Button Level Permissions by User Role (FIXED PERMANENTLY)
+ */
+function applyRoleRestrictions() {
+  const role = (window.AppState?.currentUserRole || localStorage.getItem('golden_user_role') || 'Viewer').trim();
+  const hrSection = document.getElementById('nav-hr-section');
+  const settingsSection = document.getElementById('nav-settings-section');
+
+  // 💡 Roles authorized to view System Settings: Owner, Admin, Finance, Accountant, HR Staff
+  const allowedSettingsRoles = ["Owner", "Admin", "Finance", "Accountant", "HR Staff"];
+  
+  // 💡 Roles authorized to view HR Section: Owner, Admin, Finance, Accountant, HR Staff, Staff
+  const allowedHrRoles = ["Owner", "Admin", "Finance", "Accountant", "HR Staff", "Staff"];
+
+  // 1. Settings Section Menu Visibility
+  if (settingsSection) {
+    if (allowedSettingsRoles.includes(role)) {
+      settingsSection.classList.remove('hidden');
+      settingsSection.style.removeProperty('display');
+    } else {
+      settingsSection.classList.add('hidden');
+    }
+  }
+
+  // 2. HR Section Menu Visibility
+  if (hrSection) {
+    if (allowedHrRoles.includes(role)) {
+      hrSection.classList.remove('hidden');
+      hrSection.style.removeProperty('display');
+    } else {
+      hrSection.classList.add('hidden');
+    }
+  }
+
+  // 3. Hide Delete Buttons across the DOM if role cannot delete
+  const canDelete = hasPermission('can_delete');
+  if (!canDelete) {
+    document.body.classList.add('hide-delete-btn');
+  } else {
+    document.body.classList.remove('hide-delete-btn');
+  }
+}
+
+/**
+ * 💡 BULLETPROOF WORKSPACE TOGGLER
+ */
+function showWorkspace() {
+  document.documentElement.className = 'dark is-authed';
+
+  const overlay = document.getElementById('login-overlay');
+  const ws = document.getElementById('erp-workspace');
+
+  if (overlay) {
+    overlay.classList.remove('flex');
+    overlay.classList.add('hidden');
+    overlay.style.setProperty('display', 'none', 'important');
+  }
+
+  if (ws) {
+    ws.classList.remove('hidden');
+    ws.classList.add('flex');
+    ws.style.setProperty('display', 'flex', 'important');
+  }
+}
+
+function showLogin() {
+  document.documentElement.className = 'dark not-authed';
+
+  const overlay = document.getElementById('login-overlay');
+  const ws = document.getElementById('erp-workspace');
+
+  if (overlay) {
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+    overlay.style.setProperty('display', 'flex', 'important');
+  }
+
+  if (ws) {
+    ws.classList.remove('flex');
+    ws.classList.add('hidden');
+    ws.style.setProperty('display', 'none', 'important');
+  }
+
+  const passwordInput = document.getElementById('login-password');
+  if (passwordInput) passwordInput.value = '';
+}
+
+/**
+ * 💡 Handle System Logout Action
+ */
+function handleLogout() {
+  if (confirm("စနစ်မှ ထွက်ခွာလိုပါသလား။")) {
+    localStorage.removeItem('golden_user_name');
+    localStorage.removeItem('golden_user_role');
+    localStorage.removeItem('golden_auth_token');
+    localStorage.removeItem('golden_user');
+    localStorage.removeItem('erp_token');
+    localStorage.removeItem('erp_role');
+
+    if (window.AppState) {
+      window.AppState.currentUser = null;
+      window.AppState.currentUserRole = null;
+      window.AppState.authToken = null;
+    }
+
+    if (window.invalidateCache) {
+      window.invalidateCache();
+    }
+
+    showLogin();
+    showToast("SUCCESS", "စနစ်မှ အောင်မြင်စွာ ထွက်ခွာပြီးပါပြီ။");
+
+    setTimeout(function() {
+      window.location.reload();
+    }, 300);
+  }
+}
+
+/**
+ * 💡 Verify Existing Session State
+ */
+function checkExistingSession() {
+  const savedUser = localStorage.getItem('golden_user_name');
+  const savedRole = localStorage.getItem('golden_user_role');
+  const savedToken = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
+
+  if (savedUser && savedRole && savedToken) {
+    window.AppState = window.AppState || {};
+    window.AppState.currentUser = savedUser;
+    window.AppState.currentUserRole = savedRole;
+    window.AppState.authToken = savedToken;
+
+    showWorkspace();
+    applyRoleRestrictions();
+
+    if (typeof switchTab === 'function') {
+      switchTab('dashboard');
+    }
+  } else {
+    showLogin();
+  }
+}
