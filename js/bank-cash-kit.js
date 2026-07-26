@@ -1,6 +1,6 @@
 /**
  * GOLDEN ERP SYSTEM - BANK & CASH BOOK CONTROLLER
- * File: js/bank-cash-kit.js
+ * File: js/bank-cash-kit.js (PRECISE SEARCH ENGINE & TRANSFER AUTO-DESC)
  */
 
 var bckPage = 1;
@@ -33,7 +33,7 @@ async function loadBankCashKitData(isSilent = false, forceRefresh = false) {
   if (!token) return;
 
   try {
-    if (!isSilent) toggleLoading(true);
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
 
     const searchInput = document.getElementById('bck-search');
     const searchVal = searchInput ? searchInput.value.trim() : '';
@@ -48,7 +48,7 @@ async function loadBankCashKitData(isSilent = false, forceRefresh = false) {
     });
 
     if (!res || !res.success) {
-      throw new Error(res?.message || "Failed to load ledger data.");
+      throw new Error(res?.message || "စာရင်း ဒေတာများ ခေါ်ယူခြင်း မအောင်မြင်ပါ။");
     }
 
     bckActiveData = res.data || [];
@@ -60,9 +60,11 @@ async function loadBankCashKitData(isSilent = false, forceRefresh = false) {
 
   } catch (err) {
     console.error("Bank/Cash Load Error:", err);
-    if (!isSilent) showToast("ERROR", "စာရင်း ဒေတာများ ဆွဲယူ၍ မရပါ: " + err.message);
+    if (!isSilent && typeof showToast === 'function') {
+      showToast("ERROR", "စာရင်း ဒေတာများ ဆွဲယူ၍ မရပါ: " + err.message);
+    }
   } finally {
-    if (!isSilent) toggleLoading(false);
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
@@ -78,17 +80,37 @@ function renderStatsBankCashKit(stats) {
   if (countTotal) countTotal.textContent = Number(bckTotalRows || 0).toLocaleString('en-US');
 }
 
+/**
+ * 💡 Render Table Grid Rows with Precise Search Filtering
+ * 🎯 Criteria: Search ONLY by Description, Category, Debit, Credit
+ */
 function renderTableBankCashKit() {
   const tbody = document.getElementById('bck-table-body');
   if (!tbody) return;
 
-  if (!bckActiveData || bckActiveData.length === 0) {
+  const searchInput = document.getElementById('bck-search');
+  const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+  let filteredRows = bckActiveData || [];
+
+  // 💡 Client-side Precise Filter (Description, Category, Debit, Credit)
+  if (searchVal) {
+    filteredRows = filteredRows.filter(row => {
+      const descMatch = String(row.description || '').toLowerCase().includes(searchVal);
+      const catMatch = String(row.category || '').toLowerCase().includes(searchVal);
+      const debitMatch = String(row.debit || '').includes(searchVal);
+      const creditMatch = String(row.credit || '').includes(searchVal);
+      return descMatch || catMatch || debitMatch || creditMatch;
+    });
+  }
+
+  if (!filteredRows || filteredRows.length === 0) {
     tbody.innerHTML = `<tr><td colspan="13" class="text-center py-8 text-slate-500 font-bold">မည်သည့် စာရင်းမှ မရှိသေးပါ။</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = bckActiveData.map((row) => {
-    const isViewer = (localStorage.getItem('golden_user_role') === "Viewer");
+  tbody.innerHTML = filteredRows.map((row) => {
+    const isViewer = (window.AppState ? window.AppState.currentUserRole : '') === "Viewer";
     const lockClass = (row.isLocked || isViewer) ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
     const lockTitle = row.isLocked ? "Older than 7 days (Locked)" : "";
 
@@ -179,8 +201,27 @@ function populateDropdownsBCK() {
   }
 }
 
-function onCategoryChangeBCK() {}
-function onTransferTargetChangeBCK() {}
+/**
+ * 💡 TRANSFER AUTO-DESCRIPTION ENGINE
+ */
+function onCategoryChangeBCK() {
+  autoFillTransferDescriptionBCK();
+}
+
+function onTransferTargetChangeBCK() {
+  autoFillTransferDescriptionBCK();
+}
+
+function autoFillTransferDescriptionBCK() {
+  const cat = document.getElementById('bck-category')?.value;
+  const transferTo = document.getElementById('bck-transfer')?.value;
+  const descEl = document.getElementById('bck-description');
+  const currentBook = currentSubBook === 'bank' ? 'Main Bank Book' : 'Main Cash Book';
+
+  if (cat === "Transfer" && transferTo && descEl) {
+    descEl.value = `${currentBook} Transfer to ${transferTo}`;
+  }
+}
 
 /**
  * 💡 Save / Submit Entry (Add or Update)
@@ -205,21 +246,21 @@ async function saveBankCashKitForm(e) {
 
   try {
     closeBankCashKitModal();
-    toggleLoading(true);
+    if (typeof toggleLoading === 'function') toggleLoading(true);
 
     const actionName = uniqueId ? 'updateBankCashEntry' : 'saveBankCashEntry';
     const res = await callApi(actionName, payload);
 
     if (res && res.success) {
-      showToast("SUCCESS", "စာရင်း သိမ်းဆည်းမှု အောင်မြင်ပါသည်ရှင်!");
-      await loadBankCashKitData(true, true); // Force Refresh Data
+      if (typeof showToast === 'function') showToast("SUCCESS", "စာရင်း သိမ်းဆည်းမှု အောင်မြင်ပါသည်။");
+      await loadBankCashKitData(true, true);
     } else {
-      throw new Error(res?.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ");
+      throw new Error(res?.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "မအောင်မြင်ပါ: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "မအောင်မြင်ပါ: " + err.message);
   } finally {
-    toggleLoading(false);
+    if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
@@ -229,7 +270,7 @@ async function saveBankCashKitForm(e) {
 function editBankCashKitEntry(uniqueId) {
   const row = bckActiveData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    showToast("ERROR", "မူရင်းဒေတာကို ရှာမတွေ့ပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "မူရင်းဒေတာ ရှာမတွေ့ပါ။");
     return;
   }
 
@@ -251,24 +292,24 @@ function editBankCashKitEntry(uniqueId) {
  * 💡 Delete Entry
  */
 async function deleteBankCashKitEntry(uniqueId) {
-  if (!confirm("ဤစာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလားရှင်။")) {
+  if (!confirm("ဤစာရင်းအား အပြီးတိုင် ပယ်ဖျက်ရန် သေချာပါသလား။")) {
     return;
   }
 
   try {
-    toggleLoading(true);
+    if (typeof toggleLoading === 'function') toggleLoading(true);
     const res = await callApi('deleteBankCashEntry', { uniqueId: uniqueId });
 
     if (res && res.success) {
-      showToast("SUCCESS", "စာရင်း ဖျက်ပြီးပါပြီရှင်!");
+      if (typeof showToast === 'function') showToast("SUCCESS", "စာရင်း ပယ်ဖျက်ခြင်း အောင်မြင်ပါသည်။");
       await loadBankCashKitData(true, true);
     } else {
-      throw new Error(res?.message || "ဖျက်သိမ်းမှု မအောင်မြင်ပါ");
+      throw new Error(res?.message || "ပယ်ဖျက်ခြင်း မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "မအောင်မြင်ပါ: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "မအောင်မြင်ပါ: " + err.message);
   } finally {
-    toggleLoading(false);
+    if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
@@ -300,14 +341,13 @@ function updatePaginationUIBankCashKit() {
 function onSearchInputBankCashKit() {
   if (window.searchTimeoutBck) clearTimeout(window.searchTimeoutBck);
   window.searchTimeoutBck = setTimeout(() => {
-    bckPage = 1;
-    loadBankCashKitData(false);
-  }, 300);
+    renderTableBankCashKit();
+  }, 100);
 }
 
 function exportToCSVBankCashKit() {
   if (!bckActiveData || bckActiveData.length === 0) {
-    showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါ!");
+    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါ။");
     return;
   }
 
