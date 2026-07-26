@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - CASHIER CASH BOOK MODULE
  * File: js/cashier.js
- * 💡 Cashier Sub-Ledger Controller (17 Columns Schema, RESPONSIBILITY PERSON, Strict Search & Invoice Print Engine)
+ * 💡 SECURED: Uses callApi(), 17 Columns Schema, RESPONSIBILITY PERSON, Strict Search & Invoice Print Engine
  */
 
 let currentCashierSubBook = 'CACash'; // 'CACash' | 'CABank' | 'CAOffice' | 'CAKitchen' | 'CAPayroll' | 'todayIncome'
@@ -28,16 +28,17 @@ function switchCashierSubTab(subTab = 'CACash', useCache = true) {
   currentCashierSubBook = subTab;
   currentCashierPage = 1;
 
-  // Update Active Button Styling
+  // Reset All Sub-Tab Styling to Inactive State
   document.querySelectorAll('.ca-sub-tab-btn').forEach(btn => {
-    btn.classList.remove('bg-emerald-600', 'text-white');
-    btn.classList.add('bg-slate-800', 'text-slate-400');
+    btn.classList.remove('ring-2', 'ring-white', 'shadow-lg', 'scale-105', 'opacity-100');
+    btn.classList.add('opacity-70');
   });
 
+  // Highlight Active Sub-Tab
   const activeBtn = document.getElementById(`ca-tab-${subTab}`);
   if (activeBtn) {
-    activeBtn.classList.remove('bg-slate-800', 'text-slate-400');
-    activeBtn.classList.add('bg-emerald-600', 'text-white');
+    activeBtn.classList.remove('opacity-70');
+    activeBtn.classList.add('ring-2', 'ring-white', 'shadow-lg', 'opacity-100');
   }
 
   // Toggle "Add New Entry" button visibility (Hidden for Read-Only 'todayIncome' tab)
@@ -64,16 +65,24 @@ async function loadCashierData(useCache = true) {
       return;
     }
 
-    const endpoint = `/api/cashier?action=getCashierData&bookName=${encodeURIComponent(currentCashierSubBook)}`;
-    const response = await fetchAPI(endpoint, { method: 'GET' }, useCache, useCache);
+    if (typeof toggleLoading === 'function') toggleLoading(true);
 
-    if (response && response.status === 'success') {
+    // 💡 FIXED: Uses callApi (NOT fetchAPI)
+    const response = await callApi('getCashierData', {
+      bookName: currentCashierSubBook,
+      forceRefresh: !useCache
+    });
+
+    if (response && response.success) {
       allCashierData = response.data || [];
       renderStatsCashier(response.stats || { totalIncome: 0, totalExpense: 0, balance: 0 });
       applyCashierSearchAndRender();
     }
   } catch (error) {
     console.error('Failed to load Cashier data:', error);
+    if (typeof showToast === 'function') showToast("ERROR", "Cashier စာရင်းများ ဖတ်ယူ၍ မရပါ: " + error.message);
+  } finally {
+    if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
@@ -83,10 +92,14 @@ async function loadCashierData(useCache = true) {
  */
 async function loadTodayIncomeForCashier(useCache = true) {
   try {
-    const endpoint = `/api/cashier?action=getTodayIncomeForCashier`;
-    const response = await fetchAPI(endpoint, { method: 'GET' }, useCache, useCache);
+    if (typeof toggleLoading === 'function') toggleLoading(true);
 
-    if (response && response.status === 'success') {
+    // 💡 FIXED: Uses callApi (NOT fetchAPI)
+    const response = await callApi('getTodayIncomeForCashier', {
+      forceRefresh: !useCache
+    });
+
+    if (response && response.success) {
       allCashierData = response.data || [];
       
       let totalInc = 0, totalExp = 0;
@@ -100,6 +113,9 @@ async function loadTodayIncomeForCashier(useCache = true) {
     }
   } catch (error) {
     console.error("Failed to load Today Income for Cashier:", error);
+    if (typeof showToast === 'function') showToast("ERROR", "ယနေ့ ဝင်ငွေစာရင်းများ ဖတ်ယူ၍ မရပါ: " + error.message);
+  } finally {
+    if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
@@ -214,8 +230,8 @@ function renderCashierTable() {
         <td class="py-3 px-3">-</td>
         <td class="text-center right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg py-3 px-3">
           <!-- 💡 ONLY PRINT INVOICE BUTTON ENABLED FOR TODAY INCOME -->
-          <button onclick="printInvoice('${item.uniqueId}')" class="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition" title="Print Invoice">
-            <i class="fa-solid fa-print"></i> Print
+          <button onclick="printInvoice('${item.uniqueId}')" class="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition font-bold" title="Print Invoice">
+            <i class="fa-solid fa-print mr-1"></i> Print
           </button>
         </td>
       `;
@@ -365,18 +381,17 @@ async function saveCashierForm(e) {
   try {
     closeCashierModal();
     const actionName = uniqueId ? 'updateCashierEntry' : 'saveCashierEntry';
-    const response = await fetchAPI('/api/cashier', {
-      method: uniqueId ? 'PUT' : 'POST',
-      body: JSON.stringify({ action: actionName, ...payload })
-    });
 
-    if (response && response.status === 'success') {
-      showToast('Cashier စာရင်း အချက်အလက်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။', 'success');
-      invalidateCache('/api/cashier');
+    // 💡 FIXED: Uses callApi (NOT fetchAPI)
+    const response = await callApi(actionName, payload);
+
+    if (response && response.success) {
+      showToast('SUCCESS', 'Cashier စာရင်း အချက်အလက်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။');
+      if (typeof clearAllApiCache === 'function') clearAllApiCache();
       loadCashierData(false);
     }
   } catch (error) {
-    showToast(`အမှားအယွင်း ဖြစ်ပေါ်ခဲ့သည်: ${error.message}`, 'error');
+    showToast('ERROR', `အမှားအယွင်း ဖြစ်ပေါ်ခဲ့သည်: ${error.message}`);
   }
 }
 
@@ -386,7 +401,7 @@ async function saveCashierForm(e) {
 function editCashierEntry(uniqueId) {
   const row = allCashierData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    showToast("မူရင်း အချက်အလက် ရှာမတွေ့ပါ။", "error");
+    showToast("ERROR", "မူရင်း အချက်အလက် ရှာမတွေ့ပါ။");
     return;
   }
 
@@ -412,18 +427,16 @@ async function deleteCashierEntry(uniqueId) {
   if (!confirm("ဤ စာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) return;
 
   try {
-    const response = await fetchAPI('/api/cashier', {
-      method: 'DELETE',
-      body: JSON.stringify({ action: 'deleteCashierEntry', uniqueId, bookName: currentCashierSubBook })
-    });
+    // 💡 FIXED: Uses callApi (NOT fetchAPI)
+    const response = await callApi('deleteCashierEntry', { uniqueId, bookName: currentCashierSubBook });
 
-    if (response && response.status === 'success') {
-      showToast('Cashier စာရင်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။', 'success');
-      invalidateCache('/api/cashier');
+    if (response && response.success) {
+      showToast('SUCCESS', 'Cashier စာရင်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။');
+      if (typeof clearAllApiCache === 'function') clearAllApiCache();
       loadCashierData(false);
     }
   } catch (error) {
-    showToast(`ဖျက်သိမ်းမှု အမှား: ${error.message}`, 'error');
+    showToast('ERROR', `ဖျက်သိမ်းမှု အမှား: ${error.message}`);
   }
 }
 
@@ -432,7 +445,7 @@ async function deleteCashierEntry(uniqueId) {
  */
 function exportToCSVCashier() {
   if (!allCashierData || allCashierData.length === 0) {
-    showToast("ထုတ်ယူရန် မည်သည့် စာရင်းမျှ မရှိပါ။", "warning");
+    showToast("ERROR", "ထုတ်ယူရန် မည်သည့် စာရင်းမျှ မရှိပါ။");
     return;
   }
 
