@@ -1,27 +1,27 @@
 <!-- views/settings.html -->
-<div class="space-y-6">
+<div class="space-y-5">
 
   <!-- Setting Panel Header Banner -->
-  <div class="bg-gradient-to-r from-[#0c1322] via-[#111c38] to-[#0c1322] border border-indigo-500/20 p-5 rounded-2xl shadow-xl space-y-1.5">
-    <h2 class="text-base font-extrabold text-indigo-300 tracking-wide uppercase flex items-center gap-2.5">
-      <i class="fa-solid fa-gears text-indigo-400 text-lg"></i> System Control Center
+  <div class="bg-gradient-to-r from-[#0c1322] via-[#111c38] to-[#0c1322] border border-indigo-500/20 p-4 rounded-xl shadow-xl space-y-1">
+    <h2 class="text-sm font-extrabold text-indigo-300 tracking-wide uppercase flex items-center gap-2">
+      <i class="fa-solid fa-gears text-indigo-400 text-base"></i> System Control Center
     </h2>
-    <p class="text-xs text-slate-400 leading-relaxed">
+    <p class="text-[11px] text-slate-400 leading-relaxed">
       ERP စနစ်၏ ဘဏ်/လက်ငင်းငွေစာရင်း ထိန်းချုပ်မှုများ၊ ဓမ္မသတိပေးစာနှင့် အချက်အလက်များ အရန်သင့် သိမ်းဆည်းခြင်း စင်တာ ဖြစ်ပါသည်။
     </p>
   </div>
 
   <!-- Top Row: Grid 2 Columns (Balances Control + Mindfulness Quote Card) -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
 
     <!-- 1️⃣ BOX 1: BALANCES CONTROL (Home!J4:M10) -->
-    <div class="bg-[#0c1322] border border-slate-800/80 p-6 rounded-2xl shadow-2xl space-y-4 flex flex-col justify-between">
+    <div class="bg-[#0c1322] border border-slate-800/60 p-5 rounded-xl shadow-2xl space-y-3 flex flex-col justify-between">
       <div>
-        <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-3">
+        <div class="flex justify-between items-center border-b border-slate-800/60 pb-2.5 mb-3">
           <h3 class="text-xs font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
             <i class="fa-solid fa-scale-balanced text-sm"></i> Balances Control (Home!J4:M10)
           </h3>
-          <button onclick="loadSettingsData(true)" class="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg text-xs font-bold transition-all hover:text-white" title="Refresh Balances">
+          <button onclick="loadSettingsData(true)" class="p-1.5 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 text-slate-300 rounded-lg text-xs font-bold transition-all hover:text-white" title="Refresh Balances">
             <i class="fa-solid fa-rotate text-xs"></i>
           </button>
         </div>
@@ -30,13 +30,13 @@
           <table class="w-full text-left border-collapse text-xs min-w-[420px]">
             <thead>
               <tr class="bg-[#0e172a] text-slate-400 font-bold border-b border-slate-800 uppercase text-[11px]">
-                <th class="py-2.5 px-3">Book Name</th>
-                <th class="py-2.5 px-3 text-right">Accountant</th>
-                <th class="py-2.5 px-3 text-right">Cashier</th>
-                <th class="py-2.5 px-3 text-right">Control</th>
+                <th class="py-2 px-3">Book Name</th>
+                <th class="py-2 px-3 text-right">Accountant</th>
+                <th class="py-2 px-3 text-right">Cashier</th>
+                <th class="py-2 px-3 text-right">Control</th>
               </tr>
             </thead>
-            <tbody id="settings-balances-table-body" class="divide-y divide-slate-800/40 text-slate-200">
+            <tbody id="settings-balances-table-body" class="divide-y divide-slate-800/30 text-slate-200">
               <tr><td colspan="4" class="py-4 text-center text-slate-500 italic">Balances Control အချက်အလက်များ ဖတ်ယူနေပါသည်...</td></tr>
             </tbody>
             <tfoot id="settings-balances-table-foot"></tfoot>
@@ -46,40 +46,40 @@
       <p class="text-[10px] text-slate-500 italic mt-2">* Google Sheet 'Home' Tab range J4:M10 ထဲမှ တိုက်ရိုက်ဖတ်ယူထားသော လက်ကျန်ငွေ နှိုင်းယှဉ်ချက် ဖြစ်ပါသည်။</p>
     </div>
 
-    <!-- 2️⃣ BOX 2: MINDFULNESS WISDOM QUOTE CARD (ဓမ္မသတိပေးစာ - RICH HANDSOME COLORS) -->
-    <div class="bg-gradient-to-br from-[#0c1322] via-[#1a1c36] to-[#20180a] border border-amber-500/30 p-6 rounded-2xl shadow-2xl space-y-5 flex flex-col justify-between relative overflow-hidden">
+    <!-- 2️⃣ BOX 2: MINDFULNESS WISDOM QUOTE CARD (ဓမ္မသတိပေးစာ - RICH COLOR-CODED QUOTE LINES) -->
+    <div class="bg-gradient-to-br from-[#0c1322] via-[#1a1c36] to-[#1e1709] border border-amber-500/20 p-5 rounded-xl shadow-2xl space-y-4 flex flex-col justify-between relative overflow-hidden">
       
       <!-- Glowing Background Accent -->
-      <div class="absolute -top-12 -right-12 w-40 h-40 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -top-12 -right-12 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div class="space-y-4 relative z-10">
-        <div class="flex items-center gap-3 border-b border-amber-500/20 pb-3">
-          <div class="p-2.5 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20 shadow-lg shadow-amber-500/5">
-            <i class="fa-solid fa-dharmachakra text-xl"></i>
+      <div class="space-y-3 relative z-10">
+        <div class="flex items-center gap-3 border-b border-amber-500/15 pb-2.5">
+          <div class="p-2 bg-amber-500/10 text-amber-400 rounded-lg border border-amber-500/20">
+            <i class="fa-solid fa-dharmachakra text-lg"></i>
           </div>
           <div>
-            <h3 class="text-sm font-black text-amber-300 uppercase tracking-widest">Always Be Mindful</h3>
+            <h3 class="text-xs font-black text-amber-300 uppercase tracking-widest">Always Be Mindful</h3>
             <p class="text-[10px] text-amber-400/80 uppercase tracking-wider font-semibold">Mindfulness in Action</p>
           </div>
         </div>
 
         <!-- 💡 RICH COLOR-CODED QUOTE LINES -->
-        <div class="p-5 bg-slate-950/60 border border-amber-500/20 rounded-xl space-y-2 font-serif italic leading-relaxed text-sm sm:text-base shadow-inner">
-          <p class="text-amber-200/90 font-medium">In every sight,</p>
-          <p class="text-sky-300/90 font-medium">In every sound,</p>
-          <p class="text-emerald-300/90 font-medium">In every smell,</p>
-          <p class="text-rose-300/90 font-medium">In every taste,</p>
-          <p class="text-teal-300/90 font-medium">In every touch,</p>
-          <p class="text-amber-300 font-extrabold not-italic pt-1 border-t border-amber-500/20 tracking-wide text-base">In every thought—stay mindful.</p>
+        <div class="p-4 bg-slate-950/50 border border-amber-500/15 rounded-lg space-y-1.5 font-serif italic text-xs sm:text-sm shadow-inner">
+          <p class="text-amber-200/90">In every sight,</p>
+          <p class="text-sky-300/90">In every sound,</p>
+          <p class="text-emerald-300/90">In every smell,</p>
+          <p class="text-rose-300/90">In every taste,</p>
+          <p class="text-teal-300/90">In every touch,</p>
+          <p class="text-amber-300 font-extrabold not-italic pt-1 border-t border-amber-500/20 tracking-wide">In every thought—stay mindful.</p>
         </div>
       </div>
 
-      <div class="pt-3 border-t border-amber-500/20 flex justify-between items-end relative z-10">
+      <div class="pt-2 border-t border-amber-500/15 flex justify-between items-center relative z-10 text-xs">
         <div class="space-y-0.5">
-          <span class="text-xs font-black text-amber-400 tracking-wider block">Appamadena sampadetha</span>
-          <span class="text-[10px] text-amber-300/70 font-sans tracking-wide italic">— The Buddha</span>
+          <span class="text-[11px] font-black text-amber-400 tracking-wider block">Appamadena sampadetha</span>
+          <span class="text-[10px] text-amber-300/70 font-sans italic">— The Buddha</span>
         </div>
-        <div class="text-[10px] font-extrabold text-amber-300 bg-amber-500/10 px-3.5 py-1 rounded-full border border-amber-500/30 font-sans uppercase tracking-widest shadow-md">
+        <div class="text-[9px] font-extrabold text-amber-300 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 font-sans uppercase tracking-widest">
           ERP Wisdom
         </div>
       </div>
@@ -87,26 +87,26 @@
 
   </div>
 
-  <!-- 3️⃣ BOX 3: SPREADSHEET EXCEL BACKUP SYSTEM (DISTINCT CALM EMERALD THEME) -->
-  <div class="bg-gradient-to-r from-[#0c1322] via-[#0f2128] to-[#0c1322] border border-emerald-500/30 p-8 rounded-2xl shadow-2xl space-y-5">
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-emerald-500/20 pb-5">
-      <div class="flex items-center gap-4">
-        <div class="p-4 bg-emerald-500/10 text-emerald-400 rounded-2xl shrink-0 border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
-          <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+  <!-- 3️⃣ BOX 3: SPREADSHEET EXCEL BACKUP SYSTEM (COMPACT SINGLE-ROW HORIZONTAL LAYOUT) -->
+  <div class="bg-gradient-to-r from-[#0c1322] via-[#0d2128] to-[#0c1322] border border-emerald-500/20 p-5 rounded-xl shadow-2xl">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="p-3.5 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 shrink-0">
+          <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
         </div>
-        <div>
-          <h3 class="text-base font-black text-emerald-400 uppercase tracking-wider">Spreadsheet Excel Backup System</h3>
-          <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-            ကျောင်း၏ ERP စနစ် တစ်ခုလုံးရှိ အချက်အလက်များ လုံးဝ ပျက်စီးပျောက်ဆုံးမှု မရှိစေရန်အတွက် <span class="text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">goldeneduprivateschool@gmail.com</span> သို့ Excel (.xlsx) Backup ဖိုင်အဖြစ် ချက်ချင်း ပေးပို့ရန်နှင့် စက်ထဲသို့ ဒေါင်းလုဒ် ရယူရန် ခလုတ်ကို နှိပ်နိုင်ပါသည်။
+        <div class="space-y-0.5">
+          <h3 class="text-xs font-black text-emerald-400 uppercase tracking-wider">Spreadsheet Excel Backup System</h3>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            ကျောင်း၏ ERP စနစ် တစ်ခုလုံးရှိ အချက်အလက်များ မပျောက်ပျက်စေရန် <span class="text-amber-300 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">goldeneduprivateschool@gmail.com</span> သို့ Excel (.xlsx) Backup ချက်ချင်း ပေးပို့ရယူနိုင်ပါသည်။
           </p>
         </div>
       </div>
-    </div>
 
-    <div class="pt-1">
-      <button onclick="triggerManualBackup()" class="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl transition-all flex items-center justify-center gap-2.5 shadow-xl shadow-emerald-600/20 active:scale-95">
-        <i class="fa-solid fa-arrow-rotate-right text-sm"></i> Run Immediate Manual Backup
-      </button>
+      <div class="shrink-0 w-full md:w-auto">
+        <button onclick="triggerManualBackup()" class="w-full md:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95 whitespace-nowrap">
+          <i class="fa-solid fa-arrow-rotate-right text-xs"></i> Run Immediate Manual Backup
+        </button>
+      </div>
     </div>
   </div>
 
