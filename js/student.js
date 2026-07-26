@@ -1,6 +1,6 @@
 /**
  * GOLDEN ERP SYSTEM - STUDENT LIST & DEMOGRAPHICS MODULE
- * File: js/student.js
+ * File: js/student.js (PRECISE SEARCH ENGINE & FORMAL TONE)
  */
 
 window.StudentState = {
@@ -16,7 +16,7 @@ window.StudentState = {
  * 💡 Load Student List Data
  */
 async function loadStudentData(isSilent = false) {
-  if (!isSilent) toggleLoading(true);
+  if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
 
   const state = window.StudentState;
 
@@ -27,7 +27,7 @@ async function loadStudentData(isSilent = false) {
       searchVal: state.searchVal
     }, 'GET');
 
-    if (!isSilent) toggleLoading(false);
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(false);
 
     if (response && response.data) {
       state.activeData = response.data;
@@ -39,7 +39,7 @@ async function loadStudentData(isSilent = false) {
       updatePaginationStudent();
     }
   } catch (err) {
-    if (!isSilent) toggleLoading(false);
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(false);
     console.error("Error loading Student List data:", err);
   }
 }
@@ -64,22 +64,37 @@ function updateStatsStudent() {
 }
 
 /**
- * 💡 Render Student Table Grid Rows
+ * 💡 Render Student Table Grid Rows with Precise Search Filtering
+ * 🎯 Criteria: Search ONLY by Student Name (NAME), FYIDNAME, FYID, ID
  */
 function renderStudentTable() {
   const tableBody = document.getElementById('student-table-body');
   if (!tableBody) return;
 
-  const data = window.StudentState.activeData;
+  const data = window.StudentState.activeData || [];
+  const searchInput = document.getElementById('student-search');
+  const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : (window.StudentState.searchVal || '').toLowerCase();
 
-  if (!data || data.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="16" class="text-center py-8 text-slate-500 font-bold">No student profiles found.</td></tr>`;
+  let filteredData = data;
+
+  // 💡 Client-side Precise Multi-Column Filter (NAME, FYIDNAME, FYID, ID)
+  if (searchVal) {
+    filteredData = data.filter(row => {
+      const nameMatch = String(row.name || '').toLowerCase().includes(searchVal) || String(row.fyidName || '').toLowerCase().includes(searchVal);
+      const fyidMatch = String(row.fyid || '').toLowerCase().includes(searchVal);
+      const idMatch = String(row.id || '').toLowerCase() === searchVal || String(row.id || '').toLowerCase().includes(searchVal);
+      return nameMatch || fyidMatch || idMatch;
+    });
+  }
+
+  if (!filteredData || filteredData.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="16" class="text-center py-8 text-slate-500 font-bold">ကျောင်းသား စာရင်း မှတ်တမ်းများ မရှိသေးပါ။</td></tr>`;
     return;
   }
 
-  const isViewer = (window.AppState.currentUserRole === "Viewer");
+  const isViewer = (window.AppState ? window.AppState.currentUserRole : '') === "Viewer";
 
-  tableBody.innerHTML = data.map((row) => {
+  tableBody.innerHTML = filteredData.map((row) => {
     let displayDate = row.date || "";
     if (displayDate) {
       let parts = displayDate.split('-');
@@ -96,7 +111,7 @@ function renderStudentTable() {
 
     return `
       <tr class="hover:bg-slate-800/20 text-slate-300">
-        <td class="text-center font-semibold text-slate-500">${row.no}</td>
+        <td class="text-center font-semibold text-slate-500">${row.no || '-'}</td>
         <td>${escapeHtml(displayDate)}</td>
         <td>${escapeHtml(row.fy || '-')}</td>
         <td class="font-bold text-slate-200">${escapeHtml(row.fyid || '-')}</td>
@@ -155,11 +170,8 @@ let searchTimeoutStudent;
 function onSearchInputStudent() {
   clearTimeout(searchTimeoutStudent);
   searchTimeoutStudent = setTimeout(() => {
-    const input = document.getElementById('student-search');
-    window.StudentState.searchVal = input ? input.value.trim() : '';
-    window.StudentState.page = 1;
-    loadStudentData(true);
-  }, 300);
+    renderStudentTable();
+  }, 100);
 }
 
 /**
@@ -197,7 +209,7 @@ async function saveStudentForm(e) {
 
   const entry = {
     uniqueId: uniqueId,
-    id: parseInt(document.getElementById('stu-id').value) || "",
+    id: parseInt(document.getElementById('stu-id').value, 10) || "",
     date: document.getElementById('stu-date').value,
     fy: document.getElementById('stu-fy').value,
     name: document.getElementById('stu-name').value,
@@ -209,22 +221,24 @@ async function saveStudentForm(e) {
     parentsName: document.getElementById('stu-parents').value,
     phoneNo: document.getElementById('stu-phone').value,
     address: document.getElementById('stu-address').value,
-    createdBy: window.AppState.currentUser || "System"
+    createdBy: (window.AppState ? window.AppState.currentUser : '') || "System"
   };
 
   const action = isAdd ? 'saveStudentEntry' : 'updateStudentEntry';
-  showToast("SUCCESS", "ကျောင်းသားအချက်အလက် သိမ်းဆည်းနေပါသည်...");
+  if (typeof showToast === 'function') showToast("SUCCESS", "ကျောင်းသားအချက်အလက် သိမ်းဆည်းနေပါသည်...");
 
   try {
     const response = await callApi(action, entry);
     if (response && response.success) {
-      showToast("SUCCESS", isAdd ? "ကျောင်းသားသစ်မှတ်တမ်း အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီရှင်။" : "ကျောင်းသားမှတ်တမ်း ပြင်ဆင်ပြီးပါပြီရှင်။");
+      if (typeof showToast === 'function') {
+        showToast("SUCCESS", isAdd ? "ကျောင်းသားသစ်မှတ်တမ်း အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။" : "ကျောင်းသားမှတ်တမ်း ပြင်ဆင်ခြင်း အောင်မြင်ပါသည်။");
+      }
       loadStudentData(true);
     } else {
-      showToast("ERROR", "မအောင်မြင်ပါ: " + (response.message || ""));
+      if (typeof showToast === 'function') showToast("ERROR", "မအောင်မြင်ပါ: " + (response.message || ""));
     }
   } catch (err) {
-    showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား: " + err.message);
   }
 }
 
@@ -255,7 +269,7 @@ function closeStudentModal() {
 function editStudentEntry(uniqueId) {
   const row = window.StudentState.activeData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    showToast("ERROR", "မူရင်းဒေတာကို ရှာမတွေ့ပါရှင်။");
+    if (typeof showToast === 'function') showToast("ERROR", "မူရင်းဒေတာ ရှာမတွေ့ပါ။");
     return;
   }
 
@@ -280,18 +294,18 @@ function editStudentEntry(uniqueId) {
  * 💡 Delete Student Entry
  */
 async function deleteStudentEntry(uniqueId) {
-  if (confirm("ဤကျောင်းသားမှတ်တမ်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလားရှင်?")) {
-    showToast("SUCCESS", "ကျောင်းသားစာရင်းကို ဖျက်သိမ်းနေပါသည်...");
+  if (confirm("ဤကျောင်းသားမှတ်တမ်းအား အပြီးတိုင် ပယ်ဖျက်ရန် သေချာပါသလား။")) {
+    if (typeof showToast === 'function') showToast("SUCCESS", "ကျောင်းသားစာရင်း ပယ်ဖျက်နေပါသည်...");
     try {
       const response = await callApi('deleteStudentEntry', { uniqueId });
       if (response && response.success) {
-        showToast("SUCCESS", "ကျောင်းသားစာရင်းအား ဖျက်သိမ်းပြီးပါပြီရှင်။");
+        if (typeof showToast === 'function') showToast("SUCCESS", "ကျောင်းသားစာရင်း ပယ်ဖျက်ခြင်း အောင်မြင်ပါသည်။");
         loadStudentData(true);
       } else {
-        showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response.message || ""));
+        if (typeof showToast === 'function') showToast("ERROR", "ပယ်ဖျက်ခြင်း မအောင်မြင်ပါ: " + (response.message || ""));
       }
     } catch (err) {
-      showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
+      if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား: " + err.message);
     }
   }
 }
@@ -302,7 +316,7 @@ async function deleteStudentEntry(uniqueId) {
 function exportToCSVStudent() {
   const data = window.StudentState.activeData;
   if (!data || data.length === 0) {
-    showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါရှင်။");
+    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါ။");
     return;
   }
 
