@@ -1,6 +1,6 @@
 /**
  * GOLDEN ERP SYSTEM - MAIN INCOME BOOK MODULE
- * File: js/income.js
+ * File: js/income.js (PRECISE SEARCH ENGINE & FORMAL TONE)
  */
 
 var incomePage = 1;
@@ -18,7 +18,7 @@ async function loadIncomeData(isSilent = false) {
   if (!token) return;
 
   try {
-    if (!isSilent) toggleLoading(true);
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
 
     const searchInput = document.getElementById('income-search');
     const searchVal = searchInput ? searchInput.value.trim() : '';
@@ -30,7 +30,7 @@ async function loadIncomeData(isSilent = false) {
     });
 
     if (!res || !res.success) {
-      throw new Error(res?.message || "Failed to load income data.");
+      throw new Error(res?.message || "ဝင်ငွေစာရင်း ဒေတာများ ခေါ်ယူခြင်း မအောင်မြင်ပါ။");
     }
 
     incomeActiveData = res.data || [];
@@ -42,9 +42,11 @@ async function loadIncomeData(isSilent = false) {
 
   } catch (err) {
     console.error("Income Data Load Error:", err);
-    if (!isSilent) showToast("ERROR", "ဝင်ငွေစာရင်း ဒေတာများ ဆွဲယူ၍ မရပါ: " + err.message);
+    if (!isSilent && typeof showToast === 'function') {
+      showToast("ERROR", "ဝင်ငွေစာရင်း ဒေတာများ ဆွဲယူ၍ မရပါ: " + err.message);
+    }
   } finally {
-    if (!isSilent) toggleLoading(false);
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
@@ -64,18 +66,34 @@ function renderStatsIncome(stats) {
 }
 
 /**
- * 💡 Render Table Grid Rows
+ * 💡 Render Table Grid Rows with Precise Search Filtering
+ * 🎯 Criteria: Search ONLY by Student Name (NAME), FYIDNAME, FYID, ID
  */
 function renderTableIncome() {
   const tbody = document.getElementById('income-table-body');
   if (!tbody) return;
 
-  if (!incomeActiveData || incomeActiveData.length === 0) {
+  const searchInput = document.getElementById('income-search');
+  const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+  let filteredRows = incomeActiveData || [];
+
+  // 💡 Client-side Precise Multi-Column Filter (NAME, FYIDNAME, FYID, ID)
+  if (searchVal) {
+    filteredRows = filteredRows.filter(row => {
+      const nameMatch = String(row.fyidName || '').toLowerCase().includes(searchVal);
+      const fyidMatch = String(row.fyid || '').toLowerCase().includes(searchVal);
+      const idMatch = String(row.id || '').toLowerCase() === searchVal || String(row.id || '').toLowerCase().includes(searchVal);
+      return nameMatch || fyidMatch || idMatch;
+    });
+  }
+
+  if (!filteredRows || filteredRows.length === 0) {
     tbody.innerHTML = `<tr><td colspan="19" class="text-center py-8 text-slate-500 font-bold">ဝင်ငွေစာရင်း မှတ်တမ်းများ မရှိသေးပါ။</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = incomeActiveData.map((row) => {
+  tbody.innerHTML = filteredRows.map((row) => {
     const isViewer = (localStorage.getItem('golden_user_role') === "Viewer");
     const lockClass = (row.isLocked || isViewer) ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
     const lockTitle = row.isLocked ? "Older than 7 days (Locked)" : "";
@@ -136,7 +154,7 @@ async function onStudentIdOrFYChangeIncome() {
   const fyidNameShow = document.getElementById('inc-fyidname-show');
 
   if (!allStudentsLookupCache) {
-    if (fyidNameShow) fyidNameShow.value = "Searching student database...";
+    if (fyidNameShow) fyidNameShow.value = "ကျောင်းသား စာရင်း ရှာဖွေနေပါသည်...";
     try {
       const res = await callApi('getStudentData', { page: 1, limit: 5000 });
       if (res && res.success) {
@@ -164,7 +182,7 @@ async function onStudentIdOrFYChangeIncome() {
     onAccountNameOrCategoryChangeIncome();
   } else {
     if (fyidShow) fyidShow.value = targetFyid;
-    if (fyidNameShow) fyidNameShow.value = "ကျောင်းသား ရှာမတွေ့ပါ!";
+    if (fyidNameShow) fyidNameShow.value = "ကျောင်းသား စာရင်း ရှာမတွေ့ပါ။";
     
     document.getElementById('inc-class').value = "";
     document.getElementById('inc-promo').value = "";
@@ -298,7 +316,7 @@ async function saveIncomeForm(e) {
   const fyidShowVal = document.getElementById('inc-fyid-show')?.value;
 
   if (fyidShowVal === "Not Found" || !fyidShowVal || fyidShowVal.includes("ကျောင်းသား ရှာမတွေ့ပါ")) {
-    showToast("ERROR", "ကျောင်းသား ရှာမတွေ့သဖြင့် စာရင်းသွင်း၍ မရပါ!");
+    if (typeof showToast === 'function') showToast("ERROR", "ကျောင်းသား စာရင်း ရှာမတွေ့သဖြင့် သွင်းယူ၍ မရပါ။");
     return;
   }
 
@@ -328,21 +346,21 @@ async function saveIncomeForm(e) {
 
   try {
     closeIncomeModal();
-    toggleLoading(true);
+    if (typeof toggleLoading === 'function') toggleLoading(true);
 
     const actionName = payload.uniqueId ? 'updateIncomeEntry' : 'saveIncomeEntry';
     const res = await callApi(actionName, payload);
 
     if (res && res.success) {
-      showToast("SUCCESS", "ဝင်ငွေစာရင်း သိမ်းဆည်းမှု အောင်မြင်ပါသည်!");
+      if (typeof showToast === 'function') showToast("SUCCESS", "ဝင်ငွေစာရင်း သိမ်းဆည်းမှု အောင်မြင်ပါသည်။");
       await loadIncomeData(true);
     } else {
-      throw new Error(res?.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ");
+      throw new Error(res?.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "မအောင်မြင်ပါ: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "မအောင်မြင်ပါ: " + err.message);
   } finally {
-    toggleLoading(false);
+    if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
@@ -352,7 +370,7 @@ async function saveIncomeForm(e) {
 function editIncomeEntry(uniqueId) {
   const row = incomeActiveData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    showToast("ERROR", "မူရင်းဒေတာကို ရှာမတွေ့ပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "မူရင်းဒေတာ ရှာမတွေ့ပါ။");
     return;
   }
 
@@ -381,24 +399,24 @@ function editIncomeEntry(uniqueId) {
  * 💡 Delete Entry
  */
 async function deleteIncomeEntry(uniqueId) {
-  if (!confirm("ဤဝင်ငွေမှတ်တမ်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား?\n(ခွဲပေးချေမှုဖြစ်ပါက ပတ်သက်သော စာရင်း ၂ ကြောင်းစလုံး ပျက်သွားပါမည်)")) {
+  if (!confirm("ဤဝင်ငွေမှတ်တမ်းအား အပြီးတိုင် ပယ်ဖျက်ရန် သေချာပါသလား။\n(ခွဲပေးချေမှုဖြစ်ပါက သက်ဆိုင်သော စာရင်းများပါ ပယ်ဖျက်သွားမည် ဖြစ်ပါသည်။)")) {
     return;
   }
 
   try {
-    toggleLoading(true);
+    if (typeof toggleLoading === 'function') toggleLoading(true);
     const res = await callApi('deleteIncomeEntry', { uniqueId: uniqueId });
 
     if (res && res.success) {
-      showToast("SUCCESS", "ဝင်ငွေစာရင်း ဖျက်ပြီးပါပြီ!");
+      if (typeof showToast === 'function') showToast("SUCCESS", "ဝင်ငွေစာရင်း ပယ်ဖျက်ခြင်း အောင်မြင်ပါသည်။");
       await loadIncomeData(true);
     } else {
-      throw new Error(res?.message || "ဖျက်သိမ်းမှု မအောင်မြင်ပါ");
+      throw new Error(res?.message || "ပယ်ဖျက်ခြင်း မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "မအောင်မြင်ပါ: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "မအောင်မြင်ပါ: " + err.message);
   } finally {
-    toggleLoading(false);
+    if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
 
@@ -433,9 +451,8 @@ function updatePaginationUIIncome() {
 function onSearchInputIncome() {
   if (window.searchTimeoutIncome) clearTimeout(window.searchTimeoutIncome);
   window.searchTimeoutIncome = setTimeout(() => {
-    incomePage = 1;
-    loadIncomeData(false);
-  }, 300);
+    renderTableIncome();
+  }, 100);
 }
 
 /**
@@ -443,7 +460,7 @@ function onSearchInputIncome() {
  */
 function exportToCSVIncome() {
   if (!incomeActiveData || incomeActiveData.length === 0) {
-    showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါ!");
+    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါ။");
     return;
   }
 
@@ -470,11 +487,10 @@ function exportToCSVIncome() {
 function printInvoice(uniqueId) {
   const row = incomeActiveData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    showToast("ERROR", "ပြေစာထုတ်ယူရန် ဒေတာရှာမတွေ့ပါ!");
+    if (typeof showToast === 'function') showToast("ERROR", "ပြေစာထုတ်ယူရန် ဒေတာရှာမတွေ့ပါ။");
     return;
   }
 
-  // 💡 [CRITICAL FIX] Activate ONLY Invoice Print Area and deactivate Payslip
   const invArea = document.getElementById('invoice-print-area');
   const payArea = document.getElementById('payslip-print-area');
 
@@ -533,6 +549,5 @@ function printInvoice(uniqueId) {
     if (totEl) totEl.textContent = Number(displayAmount).toLocaleString('en-US') + " MMK";
   });
 
-  // Trigger Print
   window.print();
 }
