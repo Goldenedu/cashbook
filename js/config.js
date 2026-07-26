@@ -7,6 +7,7 @@
 window.START_ROW = 6;
 
 window.BOOK_MAP = {
+  // Main Master Books
   "Bank Book": "bank",
   "Cash Book": "cash",
   "Office Exp Book": "office",
@@ -20,7 +21,20 @@ window.BOOK_MAP = {
   "kitchen": "kitchen",
   "office": "office",
   "payroll": "payroll",
-  "hr": "payroll"
+  "hr": "payroll",
+
+  // 💡 Cashier Sub-Ledger Books
+  "CABank": "caBank",
+  "CACash": "caCash",
+  "CAOffice": "caOffice",
+  "CAKitchen": "caKitchen",
+  "CAPayroll": "caPayroll",
+  "caBank": "caBank",
+  "caCash": "caCash",
+  "caOffice": "caOffice",
+  "caKitchen": "caKitchen",
+  "caPayroll": "caPayroll",
+  "cashier": "caCash"
 };
 
 window.MAGIC_NUMBERS = {
@@ -49,6 +63,7 @@ window.CONFIG = {
     'kitchen': 'Kitchen Exp Book',
     'payroll': 'HR Payroll Exp Book',
     'hr': 'HR Payroll Exp Book',
+    'cashier': 'Cashier Cash Book',
     'fulltime': 'Full Time Staff List (FID)',
     'parttime': 'Part Time Staff List (PID)',
     'student': 'Student Master Directory',
@@ -63,6 +78,7 @@ window.CONFIG = {
   },
 
   sheets: {
+    // 💡 Main Master Sheets
     bank: {
       bookName: "Bank Book", prefix: "BNK", sheetName: "Bank",
       requiredHeaders: ["NO", "DATE", "CATEGORY", "DESCRIPTION", "METHOD", "DEBIT", "CREDIT", "BALANCES", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "UNIQUEID"]
@@ -83,6 +99,30 @@ window.CONFIG = {
       bookName: "HR Payroll Exp Book", prefix: "SAL", sheetName: "Payroll",
       requiredHeaders: ["NO", "DATE", "CATEGORY", "DESCRIPTION", "METHOD", "DEBIT", "CREDIT", "BALANCES", "UNPAID BONUS", "UNPAID FUND", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "UNIQUEID"]
     },
+
+    // 💡 Cashier Sub-Ledger Sheets (17 Columns Schema)
+    caBank: {
+      bookName: "Cashier Bank Book", prefix: "CAB", sheetName: "CABank",
+      requiredHeaders: ["NO", "DATE", "RESPONSIBILITY PERSON", "CATEGORY", "DESCRIPTION", "METHOD", "DEBIT", "CREDIT", "BALANCES", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "UNIQUEID"]
+    },
+    caCash: {
+      bookName: "Cashier Cash Book", prefix: "CAC", sheetName: "CACash",
+      requiredHeaders: ["NO", "DATE", "RESPONSIBILITY PERSON", "CATEGORY", "DESCRIPTION", "METHOD", "DEBIT", "CREDIT", "BALANCES", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "UNIQUEID"]
+    },
+    caOffice: {
+      bookName: "Cashier Office Book", prefix: "CAO", sheetName: "CAOffice",
+      requiredHeaders: ["NO", "DATE", "RESPONSIBILITY PERSON", "CATEGORY", "DESCRIPTION", "METHOD", "DEBIT", "CREDIT", "BALANCES", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "UNIQUEID"]
+    },
+    caKitchen: {
+      bookName: "Cashier Kitchen Book", prefix: "CAK", sheetName: "CAKitchen",
+      requiredHeaders: ["NO", "DATE", "RESPONSIBILITY PERSON", "CATEGORY", "DESCRIPTION", "METHOD", "DEBIT", "CREDIT", "BALANCES", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "UNIQUEID"]
+    },
+    caPayroll: {
+      bookName: "Cashier Payroll Book", prefix: "CAP", sheetName: "CAPayroll",
+      requiredHeaders: ["NO", "DATE", "RESPONSIBILITY PERSON", "CATEGORY", "DESCRIPTION", "METHOD", "DEBIT", "CREDIT", "BALANCES", "TRANSFER", "VR NO", "MY", "FY", "BOOK NAME", "CREATED BY", "CREATED AT", "UNIQUEID"]
+    },
+
+    // 💡 Directories & Directories Masters
     staffFullTime: {
       bookName: "Full Time Staff List", prefix: "FID", sheetName: "FullTime",
       requiredHeaders: ["NO", "JOIN DATE", "CATEGORY", "STAFF ID", "NAME", "STAFF IDNAME", "EDUCATION", "POSITION", "SALARY GRADE", "WORKING DAYS", "BASIC AMT", "EXTRA AMT", "TOTAL SALARY", "BONUS", "FUND", "TOTAL NET AMT", "RESIGNED DATE", "STATUS", "GENDER", "NRC NO", "BANK ACCOUNT", "PHONE NO", "EMAIL", "FUND DATE", "UNPAID BONUS", "UNPAID FUND", "CREATED BY", "CREATED AT", "UNIQUEID"]
@@ -121,6 +161,7 @@ var CONFIG = window.CONFIG;
 var APP_CONFIG = window.APP_CONFIG;
 
 window.DROPDOWNS = {
+  // 💡 Master Books Dropdowns
   bankBook: {
     category: ["Non", "Opening", "Transfer", "Bank Loan", "Bank Fees", "Other Income", "Income", "Closing"],
     method: ["Bank"],
@@ -146,6 +187,35 @@ window.DROPDOWNS = {
     method: ["Cash", "Bank"],
     transfer: ["Bank Book", "Cash Book"]
   },
+
+  // 💡 Cashier Sub-Ledger Dropdowns
+  caBankBook: {
+    category: ["Non", "Opening", "Transfer", "Bank Loan", "Bank Fees", "Other Income", "Income", "Closing"],
+    method: ["Bank"],
+    transfer: ["CACash", "CAOffice", "CAKitchen", "CAPayroll"]
+  },
+  caCashBook: {
+    category: ["Non", "Opening", "Transfer", "Cash Loan", "Other Income", "Income", "Closing"],
+    method: ["Cash"],
+    transfer: ["CABank", "CAOffice", "CAKitchen", "CAPayroll"]
+  },
+  caOfficeBook: {
+    category: ["Non", "Adv / Ref", "Liabilities", "Admin Exp", "Vehicle Related Exp", "Assets Materials", "Donation & Social", "HR Staff Benefit", "Construction", "Student Refund", "Drawing Account 1", "Drawing Account 2", "Adv Capital Snack Shop", "Ferry Payment", "Advance Uniform", "Opening", "Income", "Closing", "Transfer"],
+    method: ["Cash", "Bank"],
+    transfer: ["CABank", "CACash"]
+  },
+  caKitchenBook: {
+    category: ["Non", "Rice & Oil", "Fish & meat/Eggs", "Beans/Vegetables", "Others", "HOME: 1 Exp", "HOME: 2 Exp", "Income", "Opening", "Closing", "Transfer"],
+    method: ["Cash", "Bank"],
+    transfer: ["CABank", "CACash"]
+  },
+  caPayrollBook: {
+    category: ["Non", "Full Time Salary", "Part Time Salary", "Full Time Bonus", "Full Time Fund", "Income", "Opening", "Closing", "Transfer"],
+    method: ["Cash", "Bank"],
+    transfer: ["CABank", "CACash"]
+  },
+
+  // 💡 Directory Masters
   student: {
     class: ["Non", "Pre School", "KG Student", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"],
     category: ["Boarder", "Semi Boarder", "Day Student"],
