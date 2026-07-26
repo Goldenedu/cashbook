@@ -1,6 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - MAIN INCOME BOOK MODULE
- * File: js/income.js (PRECISE SEARCH ENGINE & FORMAL TONE)
+ * File: js/income.js
+ * 💡 Main Income Book with Strict Search Criteria (Name, FYID, ID Only) & Dual-Copy Print Engine
  */
 
 var incomePage = 1;
@@ -9,6 +10,24 @@ var incomeTotalRows = 0;
 var incomeActiveData = [];
 var allStudentsLookupCache = null;
 var promoMatrixCache = null;
+
+/**
+ * 💡 Strict Search Filter Function for Main Income Book
+ * Searches strictly by: Student Name (fyidName / name), FYID, Student ID.
+ * Excluded: Remark, Phone, Method, VR No, Account Name.
+ */
+function filterIncomeData(list = [], searchVal = '') {
+  if (!searchVal || !searchVal.trim()) return list;
+  const q = searchVal.trim().toLowerCase();
+
+  return list.filter(row => {
+    const nameMatch = String(row.fyidName || row.name || '').toLowerCase().includes(q);
+    const fyidMatch = String(row.fyid || '').toLowerCase().includes(q);
+    const idMatch = String(row.id || '').toLowerCase().includes(q);
+
+    return nameMatch || fyidMatch || idMatch;
+  });
+}
 
 /**
  * 💡 Load Main Income Book Data
@@ -30,11 +49,11 @@ async function loadIncomeData(isSilent = false) {
     });
 
     if (!res || !res.success) {
-      throw new Error(res?.message || "ဝင်ငွေစာရင်း ဒေတာများ ခေါ်ယူခြင်း မအောင်မြင်ပါ။");
+      throw new Error(res?.message || "ဝင်ငွေစာရင်း အချက်အလက်များ ခေါ်ယူခြင်း မအောင်မြင်ပါ။");
     }
 
     incomeActiveData = res.data || [];
-    incomeTotalRows = res.totalRows || 0;
+    incomeTotalRows = res.totalRows || incomeActiveData.length || 0;
 
     renderStatsIncome(res.stats || { totalIncome: 0, totalExpense: 0, balance: 0 });
     renderTableIncome();
@@ -43,7 +62,7 @@ async function loadIncomeData(isSilent = false) {
   } catch (err) {
     console.error("Income Data Load Error:", err);
     if (!isSilent && typeof showToast === 'function') {
-      showToast("ERROR", "ဝင်ငွေစာရင်း ဒေတာများ ဆွဲယူ၍ မရပါ: " + err.message);
+      showToast("ERROR", "ဝင်ငွေစာရင်း အချက်အလက်များ ရယူ၍ မရပါ: " + err.message);
     }
   } finally {
     if (!isSilent && typeof toggleLoading === 'function') toggleLoading(false);
@@ -67,34 +86,26 @@ function renderStatsIncome(stats) {
 
 /**
  * 💡 Render Table Grid Rows with Precise Search Filtering
- * 🎯 Criteria: Search ONLY by Student Name (NAME), FYIDNAME, FYID, ID
+ * 🎯 Criteria: Search ONLY by Student Name (NAME/FYIDNAME), FYID, ID
  */
 function renderTableIncome() {
   const tbody = document.getElementById('income-table-body');
   if (!tbody) return;
 
   const searchInput = document.getElementById('income-search');
-  const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  const searchVal = searchInput ? searchInput.value.trim() : '';
 
-  let filteredRows = incomeActiveData || [];
-
-  // 💡 Client-side Precise Multi-Column Filter (NAME, FYIDNAME, FYID, ID)
-  if (searchVal) {
-    filteredRows = filteredRows.filter(row => {
-      const nameMatch = String(row.fyidName || '').toLowerCase().includes(searchVal);
-      const fyidMatch = String(row.fyid || '').toLowerCase().includes(searchVal);
-      const idMatch = String(row.id || '').toLowerCase() === searchVal || String(row.id || '').toLowerCase().includes(searchVal);
-      return nameMatch || fyidMatch || idMatch;
-    });
-  }
+  // 💡 Client-side Strict Multi-Column Filter (NAME, FYIDNAME, FYID, ID Only)
+  const filteredRows = filterIncomeData(incomeActiveData, searchVal);
 
   if (!filteredRows || filteredRows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="19" class="text-center py-8 text-slate-500 font-bold">ဝင်ငွေစာရင်း မှတ်တမ်းများ မရှိသေးပါ။</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="19" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော ဝင်ငွေစာရင်း မရှိပါ။</td></tr>`;
     return;
   }
 
+  const isViewer = (localStorage.getItem('golden_user_role') === "Viewer");
+
   tbody.innerHTML = filteredRows.map((row) => {
-    const isViewer = (localStorage.getItem('golden_user_role') === "Viewer");
     const lockClass = (row.isLocked || isViewer) ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
     const lockTitle = row.isLocked ? "Older than 7 days (Locked)" : "";
 
@@ -370,7 +381,7 @@ async function saveIncomeForm(e) {
 function editIncomeEntry(uniqueId) {
   const row = incomeActiveData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    if (typeof showToast === 'function') showToast("ERROR", "မူရင်းဒေတာ ရှာမတွေ့ပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "မူရင်း အချက်အလက် ရှာမတွေ့ပါ။");
     return;
   }
 
@@ -399,7 +410,7 @@ function editIncomeEntry(uniqueId) {
  * 💡 Delete Entry
  */
 async function deleteIncomeEntry(uniqueId) {
-  if (!confirm("ဤဝင်ငွေမှတ်တမ်းအား အပြီးတိုင် ပယ်ဖျက်ရန် သေချာပါသလား။\n(ခွဲပေးချေမှုဖြစ်ပါက သက်ဆိုင်သော စာရင်းများပါ ပယ်ဖျက်သွားမည် ဖြစ်ပါသည်။)")) {
+  if (!confirm("ဤ ဝင်ငွေမှတ်တမ်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။\n(ခွဲပေးချေမှုဖြစ်ပါက သက်ဆိုင်သော စာရင်းများပါ အတူတကွ ဖျက်သိမ်းသွားမည် ဖြစ်ပါသည်။)")) {
     return;
   }
 
@@ -408,13 +419,13 @@ async function deleteIncomeEntry(uniqueId) {
     const res = await callApi('deleteIncomeEntry', { uniqueId: uniqueId });
 
     if (res && res.success) {
-      if (typeof showToast === 'function') showToast("SUCCESS", "ဝင်ငွေစာရင်း ပယ်ဖျက်ခြင်း အောင်မြင်ပါသည်။");
+      if (typeof showToast === 'function') showToast("SUCCESS", "ဝင်ငွေစာရင်း ဖျက်သိမ်းခြင်း အောင်မြင်ပါသည်။");
       await loadIncomeData(true);
     } else {
-      throw new Error(res?.message || "ပယ်ဖျက်ခြင်း မအောင်မြင်ပါ။");
+      throw new Error(res?.message || "ဖျက်သိမ်းမှု မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    if (typeof showToast === 'function') showToast("ERROR", "မအောင်မြင်ပါ: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "ဖျက်သိမ်းမှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
@@ -452,7 +463,7 @@ function onSearchInputIncome() {
   if (window.searchTimeoutIncome) clearTimeout(window.searchTimeoutIncome);
   window.searchTimeoutIncome = setTimeout(() => {
     renderTableIncome();
-  }, 100);
+  }, 200);
 }
 
 /**
@@ -460,7 +471,7 @@ function onSearchInputIncome() {
  */
 function exportToCSVIncome() {
   if (!incomeActiveData || incomeActiveData.length === 0) {
-    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့် စာရင်းမျှ မရှိပါ။");
     return;
   }
 
@@ -487,7 +498,7 @@ function exportToCSVIncome() {
 function printInvoice(uniqueId) {
   const row = incomeActiveData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    if (typeof showToast === 'function') showToast("ERROR", "ပြေစာထုတ်ယူရန် ဒေတာရှာမတွေ့ပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "ပြေစာ ထုတ်ယူရန် အချက်အလက် ရှာမတွေ့ပါ။");
     return;
   }
 
