@@ -12,7 +12,7 @@
   </div>
 
   <!-- Top Row: Grid 2 Columns (Balances Control + Mindfulness Quote Card) -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
 
     <!-- 1️⃣ BOX 1: BALANCES CONTROL (Home!J4:M10) -->
     <div class="bg-[#0c1322] border border-slate-800 p-6 rounded-2xl shadow-2xl space-y-4 flex flex-col justify-between">
@@ -46,7 +46,7 @@
       <p class="text-[10px] text-slate-500 italic mt-2">* Google Sheet 'Home' Tab range J4:M10 ထဲမှ တိုက်ရိုက်ဖတ်ယူထားသော လက်ကျန်ငွေ နှိုင်းယှဉ်ချက် ဖြစ်ပါသည်။</p>
     </div>
 
-    <!-- 2️⃣ BOX 2: MINDFULNESS WISDOM QUOTE CARD (ဓမ္မသတိပေးစာ) -->
+    <!-- 2️⃣ BOX 2: MINDFULNESS WISDOM QUOTE CARD (ဓမ္မသတိပေးစာ - FONT SIZE ENLARGED) -->
     <div class="bg-gradient-to-br from-[#0c1322] via-[#111827] to-[#1e1b4b] border border-indigo-500/20 p-6 rounded-2xl shadow-2xl space-y-5 flex flex-col justify-between relative overflow-hidden">
       
       <!-- Glowing Background Accent -->
@@ -63,10 +63,14 @@
           </div>
         </div>
 
-        <div class="p-4 bg-slate-950/40 border border-slate-800/80 rounded-xl space-y-3 font-serif italic text-slate-200 leading-relaxed text-xs sm:text-sm">
-          <p>In every sight, In every sound,</p>
-          <p>In every smell, In every taste,</p>
-          <p class="text-amber-200 font-semibold">In every touch, In every thought—stay mindful.</p>
+        <!-- 💡 ENLARGED FONT SIZE & LINE BREAKS -->
+        <div class="p-5 bg-slate-950/50 border border-slate-800/80 rounded-xl space-y-1.5 font-serif italic text-slate-100 leading-relaxed text-sm sm:text-base">
+          <p class="text-slate-200">In every sight,</p>
+          <p class="text-slate-200">In every sound,</p>
+          <p class="text-slate-200">In every smell,</p>
+          <p class="text-slate-200">In every taste,</p>
+          <p class="text-amber-300 font-medium">In every touch,</p>
+          <p class="text-amber-200 font-bold tracking-wide">In every thought—stay mindful.</p>
         </div>
       </div>
 
@@ -108,5 +112,5 @@
 
 </div>
 
-<!-- 💡 AUTO-LOAD TRIGGER: InnerHTML ဖြင့် Load လုပ်သည်နှင့် loadSettingsData() ကို ၁၀၀% အလိုအလျောက် တန်းခေါ်ပေးမည် -->
+<!-- 💡 AUTO-LOAD TRIGGER -->
 <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="if(typeof loadSettingsData==='function'){loadSettingsData();} this.remove();" class="hidden">
