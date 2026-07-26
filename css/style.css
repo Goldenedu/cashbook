@@ -1,15 +1,27 @@
-/* css/style.css */ 
+/* css/style.css - GOLDEN ERP SYSTEM GLOBAL DARK STYLES & PRINT ENGINE */
 
-/* Force Browser Elements Dark Scheme */
-:root { color-scheme: dark; }
+/* 💡 Force Browser Elements Dark Scheme */
+:root { 
+  color-scheme: dark; 
+}
 
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #090d16; }
-::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #334155; }
+/* 💡 Custom Scrollbar */
+::-webkit-scrollbar { 
+  width: 6px; 
+  height: 6px; 
+}
+::-webkit-scrollbar-track { 
+  background: #090d16; 
+}
+::-webkit-scrollbar-thumb { 
+  background: #1e293b; 
+  border-radius: 4px; 
+}
+::-webkit-scrollbar-thumb:hover { 
+  background: #334155; 
+}
 
-/* Navigation Buttons */
+/* 💡 Sidebar Navigation Buttons */
 .nav-btn { 
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
   font-size: 0.8125rem !important;
@@ -26,24 +38,39 @@
   border-left: 4px solid #6366f1; 
 }
 
-/* Cards & Containers */
-.stats-card { background: linear-gradient(145deg, #0e172a, #0c1322); border: 1px solid #1e293b; }
-.table-container { border-radius: 0.75rem; border: 1px solid #1e293b; }
+/* 💡 Cards & Containers */
+.stats-card { 
+  background: linear-gradient(145deg, #0e172a, #0c1322); 
+  border: 1px solid #1e293b; 
+}
+.table-container { 
+  border-radius: 0.75rem; 
+  border: 1px solid #1e293b; 
+}
 
-/* Table Styling */
+/* 💡 Table Styling & Sticky Header */
 table thead th {
-  position: sticky; top: 0; z-index: 20;
+  position: sticky; 
+  top: 0; 
+  z-index: 20;
   background-color: #0c1322 !important;
-  padding: 12px 16px; font-size: 0.75rem !important;
-  text-transform: uppercase; letter-spacing: 0.05em; color: #cbd5e1 !important;
+  padding: 12px 16px; 
+  font-size: 0.75rem !important;
+  text-transform: uppercase; 
+  letter-spacing: 0.05em; 
+  color: #cbd5e1 !important;
 }
 table tbody td {
-  padding: 10px 16px; border-bottom: 1px solid #1e293b;
-  font-size: 0.8rem !important; white-space: nowrap !important;
+  padding: 10px 16px; 
+  border-bottom: 1px solid #1e293b;
+  font-size: 0.8rem !important; 
+  white-space: nowrap !important;
 }
-table tbody tr:hover { background-color: rgba(30, 41, 59, 0.3); }
+table tbody tr:hover { 
+  background-color: rgba(30, 41, 59, 0.3); 
+}
 
-/* Dark Mode Forms Overrides */
+/* 💡 Dark Mode Forms Overrides */
 input, select, textarea {
   background-color: #0f172a !important;
   border: 1px solid #1e293b !important;
@@ -60,21 +87,26 @@ textarea::placeholder, input::placeholder {
   opacity: 1 !important;
 }
 
-/* Force English Digits on all Number Fields */
+/* 💡 Force Monospace English Digits on all Number Fields */
 input[type="number"], input.font-mono, td.font-mono, span.font-mono, .font-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
   font-variant-numeric: lining-nums tabular-nums !important;
 }
 
-/* View Panel Animation */
-.view-panel { animation: fadeIn 0.2s ease-out; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+/* 💡 View Panel Animation */
+.view-panel { 
+  animation: fadeIn 0.2s ease-out; 
+}
+@keyframes fadeIn { 
+  from { opacity: 0; transform: translateY(4px); } 
+  to { opacity: 1; transform: translateY(0); } 
+}
 
-/* Search Box Width Override */
+/* 💡 Search Box Width Responsive Rule */
 @media (min-width: 768px) {
-  .relative.w-full {
-    width: 50% !important;
-    max-width: 680px !important;
+  .search-container .relative.w-full,
+  div[class*="border-slate-800"] > .relative.w-full {
+    max-width: 500px !important;
   }
 }
 
@@ -91,11 +123,12 @@ body.hide-delete-btn a[onclick*="delete"] {
   visibility: hidden !important;
 }
 
-/* 💡 GLOBAL PRINT STYLING - Default Hidden */
+/* 💡 GLOBAL PRINT STYLING - Default Hidden on Screen */
 #invoice-print-area, #payslip-print-area {
   display: none !important;
 }
 
+/* 💡 A4 DUAL-COPY PRINT ENGINE */
 @media print {
   /* Hide all Web Workspace Elements during Print */
   body > *:not(.active-print) {
