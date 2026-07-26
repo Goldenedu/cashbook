@@ -1,6 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - MAIN SPA ROUTER & APPLICATION CONTROLLER
- * File: js/app.js (INSTANT ROUTER & BACKGROUND PREFETCH INTEGRATED)
+ * File: js/app.js
+ * 💡 SECURED: 0ms Instant Router, Cashier Auto-Landing Redirect & Silent Background Sync
  */
 
 window.viewCache = window.viewCache || {};
@@ -9,9 +10,13 @@ document.addEventListener('DOMContentLoaded', function () {
   initApp();
 });
 
+/**
+ * 💡 Initialize ERP Application Shell with Cashier Auto-Landing Support
+ */
 function initApp() {
   const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
-  const user = localStorage.getItem('golden_user_name') || localStorage.getItem('golden_user_role');
+  const user = localStorage.getItem('golden_user_name') || 'User';
+  const role = (localStorage.getItem('golden_user_role') || '').trim();
 
   if (!token) {
     console.log("[InitApp] User is not authenticated. Displaying login screen.");
@@ -27,7 +32,17 @@ function initApp() {
     window.prefetchCoreModules();
   }
 
-  const currentTab = window.AppState ? window.AppState.currentModule : 'dashboard';
+  // 💡 CASHIER AUTO-LANDING REDIRECT: Redirect Cashier directly to 'cashier' tab
+  let currentTab = window.AppState ? window.AppState.currentModule : null;
+
+  if (!currentTab) {
+    if (role === 'Cashier' || role === 'Main Cashier') {
+      currentTab = 'cashier';
+    } else {
+      currentTab = 'dashboard';
+    }
+  }
+
   switchTab(currentTab || 'dashboard');
 }
 
@@ -83,6 +98,7 @@ async function switchTab(tabId) {
     'office': 'office',
     'kitchen': 'office',
     'hr': 'hr',
+    'cashier': 'cashier', // 💡 NEW: Cashier Sub-Ledger View
     'student': 'student',
     'uniform': 'uniform',
     'promotion': 'promotion',
@@ -99,6 +115,7 @@ async function switchTab(tabId) {
     'office': 'Office Expense Book',
     'kitchen': 'Kitchen Expense Book',
     'hr': 'HR Payroll Group',
+    'cashier': 'Cashier Cash Book', // 💡 NEW: Cashier Title
     'student': 'Student Directory List',
     'uniform': 'Uniform Inventory Ledger',
     'promotion': 'Promotion Fee Rate Matrix',
@@ -159,7 +176,7 @@ async function switchTab(tabId) {
 }
 
 /**
- * 💡 Trigger Data Loading for Specific Module
+ * 💡 Trigger Data Loading & Initialization for Specific Module
  */
 async function triggerModuleInit(tabId) {
   try {
@@ -174,6 +191,15 @@ async function triggerModuleInit(tabId) {
           window.switchSubBook(tabId === 'bank' ? 'Bank' : 'Cash');
         } else if (typeof loadBankCashKitData === 'function') {
           await loadBankCashKitData(false, false);
+        }
+        break;
+
+      case 'cashier':
+        // 💡 CASHIER MODULE INITIALIZATION
+        if (typeof window.initCashierView === 'function') {
+          window.initCashierView('CACash', false);
+        } else if (typeof loadCashierData === 'function') {
+          await loadCashierData(false);
         }
         break;
 
@@ -246,6 +272,9 @@ async function triggerModuleInit(tabId) {
   }
 }
 
+/**
+ * 💡 Update Sidebar Active Button State
+ */
 function updateSidebarHighlight(activeTabId) {
   const navBtns = document.querySelectorAll('.nav-btn');
   navBtns.forEach(btn => {
@@ -258,6 +287,9 @@ function updateSidebarHighlight(activeTabId) {
   }
 }
 
+/**
+ * 💡 Load Home Dashboard Analytics Data
+ */
 async function loadDashboardData(isSilent = false, forceRefresh = false) {
   const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
   if (!token) return;
