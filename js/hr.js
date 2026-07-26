@@ -144,9 +144,11 @@ function renderTableHrPayroll() {
         <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">${escapeHtml(row.category) || '-'}</span></td>
         <td class="font-bold text-slate-100 max-w-sm truncate" title="${escapeHtml(row.description)}">${escapeHtml(row.description) || '-'}</td>
         <td class="font-bold text-slate-400">${escapeHtml(row.method) || '-'}</td>
-        <td class="text-right text-emerald-400 font-mono font-bold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US') : '-'}</td>
-        <td class="text-right text-rose-400 font-mono font-bold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US') : '-'}</td>
-        <td class="text-right text-slate-200 font-mono font-bold">${Number(row.balances || 0).toLocaleString('en-US')}</td>
+        <td class="text-right text-emerald-400 font-mono font-bold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+<td class="text-right text-rose-400 font-mono font-bold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+<td class="text-right text-slate-200 font-mono font-bold">${Number(row.balances || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+<td class="text-right text-emerald-400 font-mono">${row.unpaidBonus > 0 ? Number(row.unpaidBonus).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+<td class="text-right text-teal-400 font-mono">${row.unpaidFund > 0 ? Number(row.unpaidFund).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
         <td class="text-right text-emerald-400 font-mono">${row.unpaidBonus > 0 ? Number(row.unpaidBonus).toLocaleString('en-US') : '-'}</td>
         <td class="text-right text-teal-400 font-mono">${row.unpaidFund > 0 ? Number(row.unpaidFund).toLocaleString('en-US') : '-'}</td>
         <td class="font-mono text-xs text-slate-400">${escapeHtml(row.vrNo) || '-'}</td>
