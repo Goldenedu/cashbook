@@ -1,6 +1,6 @@
 /**
  * GOLDEN ERP SYSTEM - CENTRAL API BRIDGE & UTILITIES
- * File: js/api.js
+ * File: js/api.js (SWR CACHING, BACKGROUND PREFETCH & FORMAL TONE)
  */
 
 const API_WORKER_URL = "https://cashbook-api.goldeneduprivateschool.workers.dev/";
@@ -11,6 +11,38 @@ window.AppState = window.AppState || {
   currentUserRole: localStorage.getItem('golden_user_role') || null,
   authToken: localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token') || null,
   currentModule: 'dashboard'
+};
+
+// 💡 Global In-Memory Cache Store for 0ms Instant Navigation
+window.gDataCache = window.gDataCache || {};
+
+/**
+ * 💡 Cache Helper Functions
+ */
+window.getApiCache = function(cacheKey) {
+  return window.gDataCache[cacheKey] || null;
+};
+
+window.setApiCache = function(cacheKey, data) {
+  if (data && data.success) {
+    window.gDataCache[cacheKey] = data;
+  }
+};
+
+window.clearAllApiCache = function() {
+  window.gDataCache = {};
+};
+
+window.invalidateApiCache = function(actionPrefix = '') {
+  if (!actionPrefix) {
+    window.clearAllApiCache();
+    return;
+  }
+  Object.keys(window.gDataCache).forEach(key => {
+    if (key.toLowerCase().includes(actionPrefix.toLowerCase())) {
+      delete window.gDataCache[key];
+    }
+  });
 };
 
 /**
@@ -34,12 +66,29 @@ window.toggleLoading = function(show) {
 };
 
 /**
- * 💡 Central API Fetch Engine (Explicitly Attached to Window)
+ * 💡 Central API Fetch Engine with In-Memory SWR Caching
  */
 window.callApi = async function(action, payload = {}, method = 'POST') {
   try {
     const currentToken = getFreshAuthToken();
     const currentRole = localStorage.getItem('golden_user_role') || (window.AppState ? window.AppState.currentUserRole : '') || '';
+
+    const isReadAction = action.startsWith('get') || action.startsWith('check');
+    const isWriteAction = action.startsWith('save') || action.startsWith('update') || action.startsWith('delete') || action.startsWith('trigger') || action.startsWith('backup');
+    const forceRefresh = payload.forceRefresh === true;
+
+    // Remove forceRefresh property from payload sent to server
+    const { forceRefresh: _, ...serverPayload } = payload;
+
+    const cacheKey = `${action}_${JSON.stringify(serverPayload)}`;
+
+    // 1. Check Cache for Read Actions (Instant 0ms Load)
+    if (isReadAction && !forceRefresh) {
+      const cachedRes = window.getApiCache(cacheKey);
+      if (cachedRes) {
+        return cachedRes;
+      }
+    }
 
     const headers = {
       'Content-Type': 'application/json'
@@ -57,7 +106,7 @@ window.callApi = async function(action, payload = {}, method = 'POST') {
         action: action,
         token: currentToken,
         role: currentRole,
-        ...payload
+        ...serverPayload
       });
       url += `?${params.toString()}`;
     } else {
@@ -66,7 +115,7 @@ window.callApi = async function(action, payload = {}, method = 'POST') {
         token: currentToken,
         authToken: currentToken,
         role: currentRole,
-        ...payload
+        ...serverPayload
       });
     }
 
@@ -87,11 +136,12 @@ window.callApi = async function(action, payload = {}, method = 'POST') {
         window.AppState.currentUserRole = null;
       }
 
+      window.clearAllApiCache();
       document.documentElement.className = 'dark not-authed';
 
       const loginErrBox = document.getElementById('login-error');
       if (loginErrBox) {
-        loginErrBox.textContent = "Session သက်တမ်းကုန်သွားပါပြီ။ ပြန်လည် Login ဝင်ရောက်ပေးပါရှင်။";
+        loginErrBox.textContent = "Session သက်တမ်းကုန်ဆုံးသွားပါပြီ။ ပြန်လည် Login ဝင်ရောက်ပေးပါရန်။";
         loginErrBox.classList.remove('hidden');
       }
 
@@ -103,6 +153,17 @@ window.callApi = async function(action, payload = {}, method = 'POST') {
     }
 
     const result = await response.json();
+
+    // 2. Cache successful Read Responses in Memory
+    if (isReadAction && result && result.success) {
+      window.setApiCache(cacheKey, result);
+    }
+
+    // 3. Clear Cache on Write Actions so next read fetches fresh data from Google Sheet
+    if (isWriteAction && result && result.success) {
+      window.clearAllApiCache();
+    }
+
     return result;
 
   } catch (err) {
@@ -117,10 +178,22 @@ window.callApi = async function(action, payload = {}, method = 'POST') {
 };
 
 /**
- * 💡 Global Toast Stack Notification Engine (Explicitly Attached to Window)
+ * 💡 Background Prefetching Engine (Login ပြီးသည်နှင့် အဓိက စာအုပ်များ၏ ဒေတာကို နောက်ကွယ်မှ ကြိုတင်ဆွဲယူမည်)
+ */
+window.prefetchCoreModules = function() {
+  setTimeout(() => {
+    window.callApi('getDashboardData', {}).catch(() => {});
+    window.callApi('getBankCashData', { bookName: 'Bank Book' }).catch(() => {});
+    window.callApi('getBankCashData', { bookName: 'Cash Book' }).catch(() => {});
+    window.callApi('getIncomeData', { page: 1, limit: 30 }).catch(() => {});
+    window.callApi('getStudentData', { page: 1, limit: 30 }).catch(() => {});
+  }, 150);
+};
+
+/**
+ * 💡 Global Toast Stack Notification Engine (Formal Enterprise Corporate Tone)
  */
 window.showToast = function(type, message) {
-  // 💡 Login မဝင်ရသေးမီ (Login Screen တွင် ရောက်ရှိနေချိန်) Error Toast မပြအောင် တားဆီးခြင်း
   if (document.documentElement.classList.contains('not-authed') && type === 'ERROR') {
     return;
   }
@@ -130,7 +203,7 @@ window.showToast = function(type, message) {
 
   let msg = String(message || "").trim();
   if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
-    msg = "⚠️ အင်တာနက်လိုင်း နှေးကွေး/ပြတ်တောက်နေသဖြင့် ဆာဗာသို့ ချိတ်ဆက်၍ မရပါရှင်။";
+    msg = "⚠️ အင်တာနက်လိုင်း နှေးကွေး/ပြတ်တောက်နေသဖြင့် ဆာဗာသို့ ချိတ်ဆက်၍ မရပါ။";
   }
 
   const toast = document.createElement('div');
