@@ -161,14 +161,14 @@ var CONFIG = window.CONFIG;
 var APP_CONFIG = window.APP_CONFIG;
 
 window.DROPDOWNS = {
-  // 💡 Master Books Dropdowns
+  // 💡 Master Books Dropdowns (Uniform Profit Added)
   bankBook: {
-    category: ["Non", "Opening", "Transfer", "Bank Loan", "Bank Fees", "Other Income", "Income", "Closing"],
+    category: ["Non", "Opening", "Transfer", "Bank Loan", "Bank Fees", "Other Income", "Income", "Uniform Profit", "Closing"],
     method: ["Bank"],
     transfer: ["Cash Book", "Office Exp Book", "Kitchen Exp Book", "HR Payroll Exp Book"]
   },
   cashBook: {
-    category: ["Non", "Opening", "Transfer", "Cash Loan", "Other Income", "Income", "Closing"],
+    category: ["Non", "Opening", "Transfer", "Cash Loan", "Other Income", "Income", "Uniform Profit", "Closing"],
     method: ["Cash"],
     transfer: ["Bank Book", "Office Exp Book", "Kitchen Exp Book", "HR Payroll Exp Book"]
   },
@@ -188,14 +188,14 @@ window.DROPDOWNS = {
     transfer: ["Bank Book", "Cash Book"]
   },
 
-  // 💡 Cashier Sub-Ledger Dropdowns
+  // 💡 Cashier Sub-Ledger Dropdowns (Uniform Profit Added)
   caBankBook: {
-    category: ["Non", "Opening", "Transfer", "Bank Loan", "Bank Fees", "Other Income", "Income", "Closing"],
+    category: ["Non", "Opening", "Transfer", "Bank Loan", "Bank Fees", "Other Income", "Income", "Uniform Profit", "Closing"],
     method: ["Bank"],
     transfer: ["CACash", "CAOffice", "CAKitchen", "CAPayroll"]
   },
   caCashBook: {
-    category: ["Non", "Opening", "Transfer", "Cash Loan", "Other Income", "Income", "Closing"],
+    category: ["Non", "Opening", "Transfer", "Cash Loan", "Other Income", "Income", "Uniform Profit", "Closing"],
     method: ["Cash"],
     transfer: ["CABank", "CAOffice", "CAKitchen", "CAPayroll"]
   },
