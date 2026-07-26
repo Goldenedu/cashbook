@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - AUTHENTICATION & ROLE ENGINE
  * File: js/auth.js
- * 💡 SECURED: Bulletproof Navigation & System Settings Menu Visibility Engine
+ * 💡 SECURED: Bulletproof Navigation, Cashier Permissions & Auto-Landing Engine
  */
 
 /**
@@ -18,8 +18,9 @@ function hasPermission(permissionName) {
     'Finance': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: false, can_backup: true },
     'Accountant': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: false, can_backup: true },
     'HR Staff': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: true, can_backup: false },
-    'Cashier': { can_view: true, can_add: true, can_edit: true, can_delete: false, can_manage_grades: false, can_backup: false },
-    'Main Cashier': { can_view: true, can_add: true, can_edit: true, can_delete: false, can_manage_grades: false, can_backup: false },
+    // 💡 CASHIER ROLE: Granted permission to manage & delete Cashier entries
+    'Cashier': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: false, can_backup: false },
+    'Main Cashier': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: false, can_backup: false },
     'Staff': { can_view: true, can_add: true, can_edit: false, can_delete: false, can_manage_grades: false, can_backup: false },
     'Viewer': { can_view: true, can_add: false, can_edit: false, can_delete: false, can_manage_grades: false, can_backup: false }
   };
@@ -63,12 +64,14 @@ async function handleLoginSubmit(e) {
       localStorage.setItem('erp_token', response.token);
       localStorage.setItem('erp_role', response.role);
 
-      // 💡 Switch UI Workspace & Force Navigation Permissions
+      // 💡 Switch UI Workspace & Apply Navigation Permissions
       showWorkspace();
       applyRoleRestrictions();
 
+      // 💡 CASHIER AUTO-LANDING: Redirect Cashier directly to 'cashier' tab
       if (typeof switchTab === 'function') {
-        switchTab('dashboard');
+        const initialTab = (response.role === 'Cashier' || response.role === 'Main Cashier') ? 'cashier' : 'dashboard';
+        switchTab(initialTab);
       }
       showToast("SUCCESS", "လော့ဂ်အင် ဝင်ရောက်မှု အောင်မြင်ပါသည်။");
     } else {
@@ -87,30 +90,21 @@ async function handleLoginSubmit(e) {
 }
 
 /**
- * 💡 Apply Navigation & Button Level Permissions by User Role (FIXED PERMANENTLY)
+ * 💡 Apply Navigation & Button Level Permissions by User Role
  */
 function applyRoleRestrictions() {
   const role = (window.AppState?.currentUserRole || localStorage.getItem('golden_user_role') || 'Viewer').trim();
   const hrSection = document.getElementById('nav-hr-section');
   const settingsSection = document.getElementById('nav-settings-section');
 
-  // 💡 Roles authorized to view System Settings: Owner, Admin, Finance, Accountant, HR Staff
-  const allowedSettingsRoles = ["Owner", "Admin", "Finance", "Accountant", "HR Staff"];
-  
-  // 💡 Roles authorized to view HR Section: Owner, Admin, Finance, Accountant, HR Staff, Staff
-  const allowedHrRoles = ["Owner", "Admin", "Finance", "Accountant", "HR Staff", "Staff"];
-
-  // 1. Settings Section Menu Visibility
+  // 1. Settings Section Menu Visibility (Keep Always Visible)
   if (settingsSection) {
-    if (allowedSettingsRoles.includes(role)) {
-      settingsSection.classList.remove('hidden');
-      settingsSection.style.removeProperty('display');
-    } else {
-      settingsSection.classList.add('hidden');
-    }
+    settingsSection.classList.remove('hidden');
+    settingsSection.style.removeProperty('display');
   }
 
   // 2. HR Section Menu Visibility
+  const allowedHrRoles = ["Owner", "Admin", "Finance", "Accountant", "HR Staff", "Staff"];
   if (hrSection) {
     if (allowedHrRoles.includes(role)) {
       hrSection.classList.remove('hidden');
@@ -205,7 +199,7 @@ function handleLogout() {
 }
 
 /**
- * 💡 Verify Existing Session State
+ * 💡 Verify Existing Session State with Cashier Auto-Landing Support
  */
 function checkExistingSession() {
   const savedUser = localStorage.getItem('golden_user_name');
@@ -222,7 +216,8 @@ function checkExistingSession() {
     applyRoleRestrictions();
 
     if (typeof switchTab === 'function') {
-      switchTab('dashboard');
+      const initialTab = (savedRole === 'Cashier' || savedRole === 'Main Cashier') ? 'cashier' : 'dashboard';
+      switchTab(initialTab);
     }
   } else {
     showLogin();
