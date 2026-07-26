@@ -1,6 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - GLOBAL CONFIGURATION & CONSTANTS
  * File: js/config.js
+ * 💡 Central System Configuration, API Endpoints, Sheet Schemas & Dropdown Master Lists
  */
 
 window.START_ROW = 6;
@@ -34,8 +35,10 @@ window.MAGIC_NUMBERS = {
 };
 
 window.CONFIG = {
-  API_URL: "https://cashbook-api.goldeneduprivateschool.workers.dev/",
-  API_BASE_URL: "https://cashbook-api.goldeneduprivateschool.workers.dev/",
+  API_URL: "https://cashbook-api.goldeneduprivateschool.workers.dev",
+  API_BASE_URL: "https://cashbook-api.goldeneduprivateschool.workers.dev",
+  STORAGE_KEY_TOKEN: "golden_auth_token",
+  STORAGE_KEY_USER: "golden_user",
 
   TITLE_MAP: {
     'dashboard': 'Home Dashboard',
@@ -48,15 +51,15 @@ window.CONFIG = {
     'hr': 'HR Payroll Exp Book',
     'fulltime': 'Full Time Staff List (FID)',
     'parttime': 'Part Time Staff List (PID)',
-    'student': 'Student List',
-    'uniform': 'Uniform Ledger',
+    'student': 'Student Master Directory',
+    'uniform': 'Uniform Inventory Ledger',
     'promotion': 'Promotion Reference Matrix',
     'report-financial': 'Financial Statement Report',
     'report-in-detail': 'Income Detail Report (InDetail)',
     'report-in-rep': 'Monthly Income Report (InRep)',
-    'report-staff-fund': 'Staff Fund Report',
+    'report-staff-fund': 'Staff Bonus & Fund Report',
     'report-student': 'Student Demographics Report',
-    'settings': 'System Settings & Controls'
+    'settings': 'System Controls Center'
   },
 
   sheets: {
@@ -111,9 +114,11 @@ window.CONFIG = {
   }
 };
 
-// 💡 Compatibility Aliases
+// 💡 Compatibility Aliases Across Modules
 window.CONFIG.books = window.CONFIG.sheets;
+window.APP_CONFIG = window.CONFIG;
 var CONFIG = window.CONFIG;
+var APP_CONFIG = window.APP_CONFIG;
 
 window.DROPDOWNS = {
   bankBook: {
