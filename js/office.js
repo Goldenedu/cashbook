@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - OFFICE EXPENSE & INVENTORY MODULE
  * File: js/office.js
- * 💡 19-Column Schema + Strict Search Criteria + Transfer Auto-Description + Universal Lock Engine & 2-Decimal Formatting
+ * 💡 19-Column Schema + Strict Search Criteria + Transfer Auto-Description + Universal Lock Engine + Comma-Safe Uniform Profit Engine
  */
 
 window.OfficeState = {
@@ -13,6 +13,17 @@ window.OfficeState = {
   stats: { totalIncome: 0, totalExpense: 0, balance: 0 },
   uniformProducts: []
 };
+
+/**
+ * 💡 Safe Comma String Number Parser (Fixes "25,000" -> 25000 Parsing Issue)
+ */
+function parseCleanNum(val) {
+  if (val === undefined || val === null || val === '') return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  const str = String(val).replace(/,/g, '').trim();
+  const num = parseFloat(str);
+  return isNaN(num) ? 0 : num;
+}
 
 /**
  * 💡 Strict Filter Function for Office Expenses
@@ -139,13 +150,13 @@ function onTransferTargetChangeOffice() {
 function onProductChangeOffice() {
   const productId = document.getElementById('office-product-id') ? document.getElementById('office-product-id').value : '';
   const stockBadge = document.getElementById('office-stock-badge');
-  const unit = parseFloat(document.getElementById('office-unit').value) || 1;
+  const unit = parseCleanNum(document.getElementById('office-unit').value) || 1;
 
   if (productId && window.OfficeState.uniformProducts) {
-    const prod = window.OfficeState.uniformProducts.find(p => p.productId === productId);
+    const prod = window.OfficeState.uniformProducts.find(p => String(p.productId).trim() === String(productId).trim());
     if (prod) {
       document.getElementById('office-description').value = `${prod.productId} ${prod.productName} ${prod.type} ${prod.size} - ${unit}Nos`;
-      document.getElementById('office-unit-price').value = prod.unitPrice || 0;
+      document.getElementById('office-unit-price').value = parseCleanNum(prod.unitPrice) || 0;
 
       if (stockBadge) {
         stockBadge.innerText = `Stock: ${prod.currentQty}`;
@@ -168,20 +179,20 @@ function calculateDebitOffice() {
 
   if (category === "Advance Uniform" || category === "Advance Unifrom") {
     const productId = document.getElementById('office-product-id') ? document.getElementById('office-product-id').value : '';
-    const unit = parseFloat(document.getElementById('office-unit').value) || 0;
-    const unitPrice = parseFloat(document.getElementById('office-unit-price').value) || 0;
-    const creditVal = parseFloat(document.getElementById('office-credit').value) || 0;
+    const unit = parseCleanNum(document.getElementById('office-unit').value);
+    const unitPrice = parseCleanNum(document.getElementById('office-unit-price').value);
+    const creditVal = parseCleanNum(document.getElementById('office-credit').value);
 
     if (creditVal === 0) {
       document.getElementById('office-debit').value = unit * unitPrice;
     }
 
     if (productId && window.OfficeState.uniformProducts) {
-      const prod = window.OfficeState.uniformProducts.find(p => p.productId === productId);
+      const prod = window.OfficeState.uniformProducts.find(p => String(p.productId).trim() === String(productId).trim());
       if (prod) {
         document.getElementById('office-description').value = `${prod.productId} ${prod.productName} ${prod.type} ${prod.size} - ${unit}Nos`;
         
-        const sellingPrice = parseFloat(prod.sellingPrice) || 0;
+        const sellingPrice = parseCleanNum(prod.sellingPrice);
         const profitPerUnit = sellingPrice - unitPrice;
         const totalProfit = unit * profitPerUnit;
 
@@ -384,13 +395,12 @@ function parseLiabilityAmount(val) {
   if (!val) return 0;
   let str = String(val).trim();
   let isNeg = (str.includes('(') && str.includes(')')) || str.startsWith('-');
-  let num = parseFloat(str.replace(/[^\d.]/g, ''));
-  if (isNaN(num)) return 0;
+  let num = parseCleanNum(str);
   return isNeg ? -num : num;
 }
 
 /**
- * 💡 Save / Update Office Entry (Injects Calculated Profit for Uniform Auto-Posting)
+ * 💡 Save / Update Office Entry (Calculates and Injects Clean Profit Payload)
  */
 async function saveOfficeForm(e) {
   e.preventDefault();
@@ -399,15 +409,15 @@ async function saveOfficeForm(e) {
   const isAdd = (!uniqueId);
   const category = document.getElementById('office-category').value;
   const productId = document.getElementById('office-product-id') ? document.getElementById('office-product-id').value : '';
-  const unit = parseFloat(document.getElementById('office-unit').value) || 0;
-  const unitPrice = parseFloat(document.getElementById('office-unit-price').value) || 0;
+  const unit = parseCleanNum(document.getElementById('office-unit').value);
+  const unitPrice = parseCleanNum(document.getElementById('office-unit-price').value);
 
-  // 💡 UNIFORM PROFIT CALCULATION FOR PAYLOAD
+  // 💡 COMMA-SAFE UNIFORM PROFIT CALCULATION FOR PAYLOAD
   let calculatedProfit = 0;
   if ((category === "Advance Uniform" || category === "Advance Unifrom") && productId && window.OfficeState.uniformProducts) {
-    const prod = window.OfficeState.uniformProducts.find(p => p.productId === productId);
+    const prod = window.OfficeState.uniformProducts.find(p => String(p.productId).trim() === String(productId).trim());
     if (prod) {
-      const sellingPrice = parseFloat(prod.sellingPrice) || 0;
+      const sellingPrice = parseCleanNum(prod.sellingPrice);
       const profitPerUnit = sellingPrice - unitPrice;
       calculatedProfit = unit * profitPerUnit;
     }
@@ -420,10 +430,10 @@ async function saveOfficeForm(e) {
     id: productId,
     unit: unit,
     unitPrice: unitPrice,
-    profit: calculatedProfit, // 💡 Profit amount injected into payload
+    profit: calculatedProfit, // 💡 Clean Profit Amount
     method: document.getElementById('office-method').value,
-    debit: parseFloat(document.getElementById('office-debit').value) || 0,
-    credit: parseFloat(document.getElementById('office-credit').value) || 0,
+    debit: parseCleanNum(document.getElementById('office-debit').value),
+    credit: parseCleanNum(document.getElementById('office-credit').value),
     liabilities: parseLiabilityAmount(document.getElementById('office-liabilities').value),
     transfer: document.getElementById('office-transfer').value,
     description: document.getElementById('office-description').value,
