@@ -1,6 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - BANK & CASH BOOK CONTROLLER
- * File: js/bank-cash-kit.js (PRECISE SEARCH ENGINE & TRANSFER AUTO-DESC)
+ * File: js/bank-cash-kit.js
+ * 💡 Main Bank & Cash Books Controller with Strict Search Criteria & Transfer Auto-Description Engine
  */
 
 var bckPage = 1;
@@ -8,6 +9,25 @@ var bckLimit = 30;
 var bckTotalRows = 0;
 var bckActiveData = [];
 var currentSubBook = 'bank'; // 'bank' or 'cash'
+
+/**
+ * 💡 Strict Search Filter Function for Main Bank & Cash Books
+ * Searches strictly by: Description, Category, Debit Amount, Credit Amount.
+ * Excluded: Method, VR No, MY, FY, UniqueID.
+ */
+function filterBankCashKitData(list = [], searchVal = '') {
+  if (!searchVal || !searchVal.trim()) return list;
+  const q = searchVal.trim().toLowerCase();
+
+  return list.filter(row => {
+    const descMatch = String(row.description || '').toLowerCase().includes(q);
+    const catMatch = String(row.category || '').toLowerCase().includes(q);
+    const debitMatch = String(row.debit || '').includes(q);
+    const creditMatch = String(row.credit || '').includes(q);
+
+    return descMatch || catMatch || debitMatch || creditMatch;
+  });
+}
 
 /**
  * 💡 Switch between Bank Book and Cash Book
@@ -48,11 +68,11 @@ async function loadBankCashKitData(isSilent = false, forceRefresh = false) {
     });
 
     if (!res || !res.success) {
-      throw new Error(res?.message || "စာရင်း ဒေတာများ ခေါ်ယူခြင်း မအောင်မြင်ပါ။");
+      throw new Error(res?.message || "စာရင်း အချက်အလက်များ ခေါ်ယူခြင်း မအောင်မြင်ပါ။");
     }
 
     bckActiveData = res.data || [];
-    bckTotalRows = res.totalRows || 0;
+    bckTotalRows = res.totalRows || bckActiveData.length || 0;
 
     renderStatsBankCashKit(res.stats || { totalIncome: 0, totalExpense: 0, balance: 0 });
     renderTableBankCashKit();
@@ -61,7 +81,7 @@ async function loadBankCashKitData(isSilent = false, forceRefresh = false) {
   } catch (err) {
     console.error("Bank/Cash Load Error:", err);
     if (!isSilent && typeof showToast === 'function') {
-      showToast("ERROR", "စာရင်း ဒေတာများ ဆွဲယူ၍ မရပါ: " + err.message);
+      showToast("ERROR", "စာရင်း အချက်အလက်များ ရယူ၍ မရပါ: " + err.message);
     }
   } finally {
     if (!isSilent && typeof toggleLoading === 'function') toggleLoading(false);
@@ -89,23 +109,13 @@ function renderTableBankCashKit() {
   if (!tbody) return;
 
   const searchInput = document.getElementById('bck-search');
-  const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  const searchVal = searchInput ? searchInput.value.trim() : '';
 
-  let filteredRows = bckActiveData || [];
-
-  // 💡 Client-side Precise Filter (Description, Category, Debit, Credit)
-  if (searchVal) {
-    filteredRows = filteredRows.filter(row => {
-      const descMatch = String(row.description || '').toLowerCase().includes(searchVal);
-      const catMatch = String(row.category || '').toLowerCase().includes(searchVal);
-      const debitMatch = String(row.debit || '').includes(searchVal);
-      const creditMatch = String(row.credit || '').includes(searchVal);
-      return descMatch || catMatch || debitMatch || creditMatch;
-    });
-  }
+  // 💡 Client-side Strict Multi-Column Filter (Description, Category, Debit, Credit Only)
+  const filteredRows = filterBankCashKitData(bckActiveData, searchVal);
 
   if (!filteredRows || filteredRows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="13" class="text-center py-8 text-slate-500 font-bold">မည်သည့် စာရင်းမှ မရှိသေးပါ။</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="13" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော စာရင်း မရှိပါ။</td></tr>`;
     return;
   }
 
@@ -270,7 +280,7 @@ async function saveBankCashKitForm(e) {
 function editBankCashKitEntry(uniqueId) {
   const row = bckActiveData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    if (typeof showToast === 'function') showToast("ERROR", "မူရင်းဒေတာ ရှာမတွေ့ပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "မူရင်း အချက်အလက် ရှာမတွေ့ပါ။");
     return;
   }
 
@@ -292,7 +302,7 @@ function editBankCashKitEntry(uniqueId) {
  * 💡 Delete Entry
  */
 async function deleteBankCashKitEntry(uniqueId) {
-  if (!confirm("ဤစာရင်းအား အပြီးတိုင် ပယ်ဖျက်ရန် သေချာပါသလား။")) {
+  if (!confirm("ဤ စာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) {
     return;
   }
 
@@ -301,13 +311,13 @@ async function deleteBankCashKitEntry(uniqueId) {
     const res = await callApi('deleteBankCashEntry', { uniqueId: uniqueId });
 
     if (res && res.success) {
-      if (typeof showToast === 'function') showToast("SUCCESS", "စာရင်း ပယ်ဖျက်ခြင်း အောင်မြင်ပါသည်။");
+      if (typeof showToast === 'function') showToast("SUCCESS", "စာရင်း ဖျက်သိမ်းခြင်း အောင်မြင်ပါသည်။");
       await loadBankCashKitData(true, true);
     } else {
-      throw new Error(res?.message || "ပယ်ဖျက်ခြင်း မအောင်မြင်ပါ။");
+      throw new Error(res?.message || "ဖျက်သိမ်းမှု မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    if (typeof showToast === 'function') showToast("ERROR", "မအောင်မြင်ပါ: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "ဖျက်သိမ်းမှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
@@ -347,7 +357,7 @@ function onSearchInputBankCashKit() {
 
 function exportToCSVBankCashKit() {
   if (!bckActiveData || bckActiveData.length === 0) {
-    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့် စာရင်းမျှ မရှိပါ။");
     return;
   }
 
