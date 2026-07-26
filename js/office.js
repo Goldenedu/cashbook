@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - OFFICE EXPENSE & INVENTORY MODULE
  * File: js/office.js
- * 💡 19-Column Schema (ID PID Removed) + Uniform Profit Preview & Description Formatting (- 4Nos)
+ * 💡 19-Column Schema (ID PID Removed) + Strict Search Criteria + Transfer Auto-Description
  */
 
 window.OfficeState = {
@@ -13,6 +13,25 @@ window.OfficeState = {
   stats: { totalIncome: 0, totalExpense: 0, balance: 0 },
   uniformProducts: []
 };
+
+/**
+ * 💡 Strict Filter Function for Office & Kitchen Expenses
+ * Searches strictly by: Description, Category, Debit Amount, Credit Amount.
+ * Excluded: Method, VR NO, UniqueID.
+ */
+function filterOfficeData(list = [], searchVal = '') {
+  if (!searchVal || !searchVal.trim()) return list;
+  const q = searchVal.trim().toLowerCase();
+
+  return list.filter(row => {
+    const desc = String(row.description || '').toLowerCase();
+    const cat = String(row.category || '').toLowerCase();
+    const debit = String(row.debit || '');
+    const credit = String(row.credit || '');
+
+    return desc.includes(q) || cat.includes(q) || debit.includes(q) || credit.includes(q);
+  });
+}
 
 /**
  * 💡 Dropdown Options များကို Config.js မှ Dynamic ဖြည့်ပေးခြင်း
@@ -107,6 +126,20 @@ function onCategoryChangeOffice() {
 }
 
 /**
+ * 💡 Transfer Target ရွေးချယ်ပါက Description တွင် Auto Text ထည့်သွင်းပေးခြင်း
+ */
+function onTransferTargetChangeOffice() {
+  const transSelect = document.getElementById('office-transfer');
+  const descInput = document.getElementById('office-description');
+  if (!transSelect || !descInput) return;
+
+  const targetBook = transSelect.value;
+  if (targetBook && targetBook !== 'None' && targetBook !== '-') {
+    descInput.value = `[Transfer to ${targetBook}] `;
+  }
+}
+
+/**
  * 💡 Uniform Product ID ရွေးချယ်ပါက Auto Description (- 4Nos) နှင့် Profit Preview Auto တွက်ပေးခြင်း
  */
 function onProductChangeOffice() {
@@ -117,7 +150,6 @@ function onProductChangeOffice() {
   if (productId && window.OfficeState.uniformProducts) {
     const prod = window.OfficeState.uniformProducts.find(p => p.productId === productId);
     if (prod) {
-      // Auto Description with Qty suffix: e.g. "PID 003 Basic Class Pair-Female S - 4Nos"
       document.getElementById('office-description').value = `${prod.productId} ${prod.productName} ${prod.type} ${prod.size} - ${unit}Nos`;
       document.getElementById('office-unit-price').value = prod.unitPrice || 0;
 
@@ -137,7 +169,9 @@ function onProductChangeOffice() {
  * 💡 Debit & Profit Preview Amount Auto တွက်ချက်ပေးခြင်း
  */
 function calculateDebitOffice() {
-  const category = document.getElementById('office-category').value;
+  const categoryEl = document.getElementById('office-category');
+  const category = categoryEl ? categoryEl.value : '';
+
   if (category === "Advance Uniform" || category === "Advance Unifrom") {
     const productId = document.getElementById('office-product-id') ? document.getElementById('office-product-id').value : '';
     const unit = parseFloat(document.getElementById('office-unit').value) || 0;
@@ -203,14 +237,14 @@ async function loadOfficeData(isSilent = false) {
       page: state.page,
       limit: state.limit,
       searchVal: state.searchVal,
-      role: window.AppState.currentUserRole
+      role: window.AppState ? window.AppState.currentUserRole : 'Admin'
     }, 'GET');
 
     if (!isSilent) toggleLoading(false);
 
     if (response && response.data) {
       state.activeData = response.data;
-      state.totalRows = response.totalRows || 0;
+      state.totalRows = response.totalRows || response.data.length || 0;
       state.stats = response.stats || { totalIncome: 0, totalExpense: 0, balance: 0 };
 
       updateStatsOffice();
@@ -234,16 +268,20 @@ function updateStatsOffice() {
 }
 
 /**
- * 💡 Render Office Table (16 Visual Columns - ID PID Removed)
+ * 💡 Render Office Table (Strict Search Applied: Description, Category, Debit, Credit Only)
  */
 function renderOfficeTable() {
   const tableBody = document.getElementById('office-table-body');
   if (!tableBody) return;
 
-  const data = window.OfficeState.activeData;
+  const rawData = window.OfficeState.activeData || [];
+  const searchVal = window.OfficeState.searchVal || '';
+
+  // Apply Strict Filtering Criteria
+  const data = filterOfficeData(rawData, searchVal);
 
   if (!data || data.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="16" class="text-center py-8 text-slate-500 font-bold">No office expense records found.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="16" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော စာရင်း မရှိပါ။</td></tr>`;
     return;
   }
 
@@ -256,7 +294,7 @@ function renderOfficeTable() {
       if (parts.length === 3) displayDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
 
-    const lockClass = (row.isLocked && window.AppState.currentUserRole !== "Admin") ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
+    const lockClass = (row.isLocked && window.AppState && window.AppState.currentUserRole !== "Admin") ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
     const lockTitle = row.isLocked ? "Locked (Older than 7 days)" : "";
 
     return `
@@ -278,10 +316,10 @@ function renderOfficeTable() {
         <td>${escapeHtml(row.fy || '-')}</td>
         <td class="right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg text-center">
           <div class="flex items-center justify-center gap-3 ${isViewer ? 'hidden' : ''}">
-            <button onclick="editOfficeEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition ${lockClass}" title="${lockTitle}" ${row.isLocked && window.AppState.currentUserRole !== "Admin" ? 'disabled' : ''}>
+            <button onclick="editOfficeEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition ${lockClass}" title="${lockTitle}" ${row.isLocked && window.AppState && window.AppState.currentUserRole !== "Admin" ? 'disabled' : ''}>
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
-            <button onclick="deleteOfficeEntry('${row.uniqueId}')" class="text-rose-400 hover:text-rose-300 transition ${lockClass}" title="${lockTitle}" ${row.isLocked && window.AppState.currentUserRole !== "Admin" ? 'disabled' : ''}>
+            <button onclick="deleteOfficeEntry('${row.uniqueId}')" class="text-rose-400 hover:text-rose-300 transition ${lockClass}" title="${lockTitle}" ${row.isLocked && window.AppState && window.AppState.currentUserRole !== "Admin" ? 'disabled' : ''}>
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
@@ -325,8 +363,8 @@ function onSearchInputOffice() {
     const input = document.getElementById('office-search');
     window.OfficeState.searchVal = input ? input.value.trim() : '';
     window.OfficeState.page = 1;
-    loadOfficeData(true);
-  }, 300);
+    renderOfficeTable();
+  }, 200);
 }
 
 function openAddModalOffice() {
@@ -384,7 +422,7 @@ async function saveOfficeForm(e) {
     transfer: document.getElementById('office-transfer').value,
     description: document.getElementById('office-description').value,
     bookName: 'Office Exp Book',
-    createdBy: window.AppState.currentUser || "System"
+    createdBy: (window.AppState && window.AppState.currentUser) ? window.AppState.currentUser : "System"
   };
 
   const action = isAdd ? 'saveExpenseEntry' : 'updateExpenseEntry';
@@ -396,7 +434,7 @@ async function saveOfficeForm(e) {
     toggleLoading(false);
 
     if (response && response.success) {
-      showToast("SUCCESS", isAdd ? "Office Expense စာရင်းသစ် သိမ်းဆည်းပြီးပါပြီရှင်။" : "Office Expense စာရင်း ပြင်ဆင်ပြီးပါပြီရှင်။");
+      showToast("SUCCESS", isAdd ? "Office Expense စာရင်းသစ် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။" : "Office Expense စာရင်း အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။");
       
       if (window.BankCache) window.BankCache = { bank: null, cash: null, kitchen: null };
       loadOfficeData(true);
@@ -412,7 +450,7 @@ async function saveOfficeForm(e) {
 function editOfficeEntry(uniqueId) {
   const row = window.OfficeState.activeData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    showToast("ERROR", "မူရင်းဒေတာကို ရှာမတွေ့ပါရှင်။");
+    showToast("ERROR", "မူရင်းဒေတာကို ရှာမတွေ့ပါ။");
     return;
   }
 
@@ -439,7 +477,7 @@ function editOfficeEntry(uniqueId) {
 }
 
 async function deleteOfficeEntry(uniqueId) {
-  if (confirm("ဤ Office Expense စာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလားရှင်?")) {
+  if (confirm("ဤ Office Expense စာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) {
     showToast("SUCCESS", "စာရင်းကို ဖျက်သိမ်းနေပါသည်...");
     toggleLoading(true);
 
@@ -468,7 +506,7 @@ async function deleteOfficeEntry(uniqueId) {
 function exportToCSVOffice() {
   const data = window.OfficeState.activeData;
   if (!data || data.length === 0) {
-    showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါရှင်။");
+    showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါ။");
     return;
   }
 
