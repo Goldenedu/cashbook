@@ -1,6 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - CENTRAL API BRIDGE & UTILITIES
- * File: js/api.js (SWR CACHING, BACKGROUND PREFETCH & FORMAL TONE)
+ * File: js/api.js
+ * 💡 SECURED: SWR In-Memory Caching, Background Prefetching (with Cashier Sync) & Formal Toast Engine
  */
 
 const API_WORKER_URL = "https://cashbook-api.goldeneduprivateschool.workers.dev/";
@@ -141,7 +142,7 @@ window.callApi = async function(action, payload = {}, method = 'POST') {
 
       const loginErrBox = document.getElementById('login-error');
       if (loginErrBox) {
-        loginErrBox.textContent = "Session သက်တမ်းကုန်ဆုံးသွားပါပြီ။ ပြန်လည် Login ဝင်ရောက်ပေးပါရန်။";
+        loginErrBox.textContent = "Session သက်တမ်း ကုန်ဆုံးသွားပါပြီ။ ပြန်လည် Login ဝင်ရောက်ပါ။";
         loginErrBox.classList.remove('hidden');
       }
 
@@ -170,7 +171,7 @@ window.callApi = async function(action, payload = {}, method = 'POST') {
     console.error(`API Error [${action}]:`, err);
 
     if (!err.message || !err.message.includes("401")) {
-      window.showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု မအောင်မြင်ပါ: " + err.message);
+      window.showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု မအောင်မြင်ပါ: " + err.message);
     }
 
     throw err;
@@ -178,7 +179,8 @@ window.callApi = async function(action, payload = {}, method = 'POST') {
 };
 
 /**
- * 💡 Background Prefetching Engine (Login ပြီးသည်နှင့် အဓိက စာအုပ်များ၏ ဒေတာကို နောက်ကွယ်မှ ကြိုတင်ဆွဲယူမည်)
+ * 💡 Background Prefetching Engine
+ * Login ပြီးသည်နှင့် မာစတာ စာအုပ်များနှင့် Cashier စာအုပ်များ၏ ဒေတာကို နောက်ကွယ်မှ ကြိုတင်ဆွဲယူမည်
  */
 window.prefetchCoreModules = function() {
   setTimeout(() => {
@@ -187,6 +189,11 @@ window.prefetchCoreModules = function() {
     window.callApi('getBankCashData', { bookName: 'Cash Book' }).catch(() => {});
     window.callApi('getIncomeData', { page: 1, limit: 30 }).catch(() => {});
     window.callApi('getStudentData', { page: 1, limit: 30 }).catch(() => {});
+
+    // 💡 CASHIER MODULE BACKGROUND PREFETCH (Instant 0ms Cashier Load)
+    window.callApi('getCashierData', { bookName: 'CACash' }).catch(() => {});
+    window.callApi('getCashierData', { bookName: 'CABank' }).catch(() => {});
+    window.callApi('getTodayIncomeForCashier', {}).catch(() => {});
   }, 150);
 };
 
@@ -222,6 +229,9 @@ window.showToast = function(type, message) {
   }, 4000);
 };
 
+/**
+ * 💡 Utility Functions
+ */
 window.escapeHtml = function(str) {
   if (!str) return "";
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
@@ -231,7 +241,7 @@ window.cleanNumber = function(val) {
   if (val === undefined || val === null || val === "") return 0;
   var strVal = String(val).trim();
   var isNegative = (strVal.includes("(") && strVal.includes(")")) || strVal.indexOf("-") === 0;
-  var cleaned = strVal.replace(/[^\d.]/g, "");
+  var cleaned = strVal.replace(/[^0-9.]/g, "");
   var num = parseFloat(cleaned);
   if (isNaN(num)) return 0;
   return isNegative ? -num : num;
