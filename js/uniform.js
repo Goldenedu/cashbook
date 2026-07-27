@@ -152,7 +152,7 @@ function changePageUniform(dir) {
   }
 }
 
-let searchTimeoutUniform;
+var searchTimeoutUniform;
 function onSearchInputUniform() {
   clearTimeout(searchTimeoutUniform);
   searchTimeoutUniform = setTimeout(() => {
