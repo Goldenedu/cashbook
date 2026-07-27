@@ -148,7 +148,7 @@ function renderTableIncome() {
         <td class="font-mono font-bold text-indigo-400">${escapeHtml(row.fyid) || '-'}</td>
         <td class="font-bold text-slate-100">${escapeHtml(row.fyidName) || '-'}</td>
         <td>${escapeHtml(row.class) || '-'}</td>
-        <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">${escapeHtml(row.category) || '-'}</span></td>
+        <td>${typeof window.formatCategoryBadgeHtml === 'function' ? window.formatCategoryBadgeHtml(row.category) : escapeHtml(row.category)}</td>
         <td class="font-semibold text-slate-200">${escapeHtml(row.accountName) || '-'}</td>
         <td class="font-bold text-slate-400">${escapeHtml(row.method) || '-'}</td>
         <td class="text-right text-rose-400 font-mono font-bold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
