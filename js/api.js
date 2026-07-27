@@ -1,5 +1,5 @@
 /**
- * GOLDEN ERP SYSTEM - CENTRAL API BRIDGE & UTILITIES 
+ * GOLDEN ERP SYSTEM - CENTRAL API BRIDGE & UTILITIES
  * File: js/api.js
  * 💡 SECURED: SWR In-Memory Caching, Background Prefetching (with Cashier Sync) & Formal Toast Engine
  */
@@ -150,7 +150,17 @@ window.callApi = async function(action, payload = {}, method = 'POST') {
     }
 
     if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status}`);
+      // 💡 Try to read the JSON error body so the real server-side reason
+      // (e.g. Google Drive/Sheets API failure detail) isn't swallowed and
+      // shown only as a bare "HTTP Error: 500" in the console/toast.
+      let serverMessage = '';
+      try {
+        const errData = await response.clone().json();
+        serverMessage = errData && (errData.detail || errData.message) ? (errData.detail || errData.message) : '';
+      } catch (parseErr) {
+        // Response body wasn't JSON (or already consumed) — ignore and fall back.
+      }
+      throw new Error(`HTTP Error: ${response.status}${serverMessage ? ` - ${serverMessage}` : ''}`);
     }
 
     const result = await response.json();
