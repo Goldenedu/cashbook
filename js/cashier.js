@@ -131,9 +131,9 @@ function renderStatsCashier(stats) {
   const elBal = document.getElementById('ca-balance');
   const elCount = document.getElementById('ca-entries-count');
 
-  if (elInc) elInc.textContent = `${Number(stats.totalIncome || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MMK`;
-  if (elExp) elExp.textContent = `${Number(stats.totalExpense || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MMK`;
-  if (elBal) elBal.textContent = `${Number(stats.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MMK`;
+  if (elInc) elInc.textContent = `${Number(stats.totalIncome || 0).toLocaleString('en-US')} MMK`;
+  if (elExp) elExp.textContent = `${Number(stats.totalExpense || 0).toLocaleString('en-US')} MMK`;
+  if (elBal) elBal.textContent = `${Number(stats.balance || 0).toLocaleString('en-US')} MMK`;
   if (elCount) elCount.textContent = allCashierData.length.toLocaleString('en-US');
 }
 
