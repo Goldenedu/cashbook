@@ -4,10 +4,10 @@
  * 💡 Promotion Rate Matrix Controller with Precise Search Filters & Formal Corporate Tone
  */
 
-let gPromotionData = [];
-let gPromotionSearch = '';
-let gPromotionFyFilter = '';
-let gPromotionCatFilter = '';
+var gPromotionData = [];
+var gPromotionSearch = '';
+var gPromotionFyFilter = '';
+var gPromotionCatFilter = '';
 
 /**
  * 💡 Generate Dynamic 3-Year Fiscal Years
