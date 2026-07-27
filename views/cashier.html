@@ -69,13 +69,24 @@
   </div>
 
   <!-- ၃။ Control Search & Action Bar -->
-  <div class="flex flex-col md:flex-row justify-between items-center bg-[#0c1322] border border-slate-800/60 p-4 rounded-xl gap-4">
-    <div class="relative w-full md:w-[500px]">
-      <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
-      <input type="text" id="cashier-search" oninput="onSearchInputCashier()" placeholder="Search description, category, responsibility person, debit, credit..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
+  <div class="flex flex-col lg:flex-row justify-between items-center bg-[#0c1322] border border-slate-800/60 p-4 rounded-xl gap-4">
+    <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full lg:w-auto">
+      <div class="relative w-full sm:w-64">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+        <input type="text" id="cashier-search" oninput="onSearchInputCashier()" placeholder="Search description, category, responsibility person, debit, credit..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#0f172a] border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-all">
+      </div>
+
+      <!-- 💡 DATE RANGE FILTER CONTROLS -->
+      <div class="flex items-center gap-1.5 w-full sm:w-auto bg-[#0f172a] border border-slate-800 p-1 rounded-lg text-xs">
+        <span class="text-[10px] text-slate-400 font-bold px-1.5 uppercase">From:</span>
+        <input type="date" id="ca-date-from" onchange="onSearchInputCashier()" class="bg-transparent text-white text-xs outline-none cursor-pointer">
+        <span class="text-[10px] text-slate-400 font-bold px-1.5 uppercase">To:</span>
+        <input type="date" id="ca-date-to" onchange="onSearchInputCashier()" class="bg-transparent text-white text-xs outline-none cursor-pointer">
+        <button onclick="clearDateFilterCashier()" class="p-1 text-slate-400 hover:text-rose-400 transition" title="Clear Date Filter"><i class="fa-solid fa-circle-xmark text-xs"></i></button>
+      </div>
     </div>
 
-    <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
+    <div class="flex items-center gap-2.5 w-full lg:w-auto justify-end">
       <button onclick="loadCashierData(false)" class="p-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all" title="Refresh Data">
         <i class="fa-solid fa-rotate text-xs"></i> Refresh
       </button>

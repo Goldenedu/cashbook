@@ -1,6 +1,25 @@
 <!-- views/reports-fund.html -->
 <div class="space-y-5">
 
+  <!-- Sub-Panel Selector Tabs -->
+  <div class="flex flex-wrap items-center gap-2 p-1.5 bg-[#0c1322] border border-slate-800 rounded-xl w-fit">
+    <button onclick="switchTab('report-financial')" id="btn-rep-fin" class="rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
+      <i class="fa-solid fa-chart-pie text-emerald-400"></i> Financial Statement
+    </button>
+    <button onclick="switchTab('report-financial')" id="btn-rep-indetail" class="rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
+      <i class="fa-solid fa-file-invoice-dollar text-sky-400"></i> Income Detail (InDetail)
+    </button>
+    <button onclick="switchTab('report-financial')" id="btn-rep-inrep" class="rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
+      <i class="fa-solid fa-calendar-check text-indigo-400"></i> Monthly Income (InRep)
+    </button>
+    <button onclick="switchTab('report-financial')" id="btn-rep-student" class="rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
+      <i class="fa-solid fa-users-rectangle text-amber-400"></i> Student Demographics
+    </button>
+    <button onclick="switchTab('report-staff-fund')" id="btn-rep-staff-fund" class="rep-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-teal-600 text-white flex items-center gap-2">
+      <i class="fa-solid fa-hand-holding-dollar"></i> Staff Bonus & Fund
+    </button>
+  </div>
+
   <!-- 💡 ၁။ Top KPI Cards (၄ ခု) -->
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
     <div class="stats-card p-5 rounded-xl flex items-start gap-4">
