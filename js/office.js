@@ -280,9 +280,9 @@ function updateStatsOffice() {
   const stats = window.OfficeState.stats;
   const setT = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
-  setT('off-total-income', Number(stats.totalIncome || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " MMK");
-  setT('off-total-expense', Number(stats.totalExpense || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " MMK");
-  setT('off-balance', Number(stats.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " MMK");
+  setT('off-total-income', Number(stats.totalIncome || 0).toLocaleString('en-US') + " MMK");
+  setT('off-total-expense', Number(stats.totalExpense || 0).toLocaleString('en-US') + " MMK");
+  setT('off-balance', Number(stats.balance || 0).toLocaleString('en-US') + " MMK");
   setT('off-entries-count', window.OfficeState.totalRows.toLocaleString('en-US'));
 }
 
