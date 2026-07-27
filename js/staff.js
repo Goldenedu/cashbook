@@ -4,14 +4,14 @@
  * 💡 Staff Master Directory with Strict Search Criteria & Dynamic Grade Matrix Engine
  */
 
-let gStaffCategory = 'Full Time'; // 'Full Time' or 'Part Time'
-let gStaffPage = 1;
-let gStaffLimit = 30;
-let gStaffSearch = '';
-let gStaffData = [];
+var gStaffCategory = 'Full Time'; // 'Full Time' or 'Part Time'
+var gStaffPage = 1;
+var gStaffLimit = 30;
+var gStaffSearch = '';
+var gStaffData = [];
 
 // Dynamic Payroll Settings cache read from FullTime!I1:U2
-let gPayrollSettings = { grades: {}, bonus: 0, fundRate: 0 };
+var gPayrollSettings = { grades: {}, bonus: 0, fundRate: 0 };
 
 /**
  * 💡 Strict Search Filter Function for Staff Directory
@@ -268,7 +268,7 @@ function changePageStaff(delta) {
   loadStaffData(false);
 }
 
-let searchTimeoutStaff;
+var searchTimeoutStaff;
 function onSearchInputStaff() {
   clearTimeout(searchTimeoutStaff);
   searchTimeoutStaff = setTimeout(() => {
