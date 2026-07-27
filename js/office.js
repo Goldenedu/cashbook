@@ -380,7 +380,7 @@ function changePageOffice(dir) {
   }
 }
 
-let searchTimeoutOffice;
+var searchTimeoutOffice;
 function onSearchInputOffice() {
   clearTimeout(searchTimeoutOffice);
   searchTimeoutOffice = setTimeout(() => {
