@@ -4,11 +4,11 @@
  * 💡 SECURED: Uses callApi(), 19-Column Income Match, RESPONSIBILITY PERSON, Strict Search, 2-Decimal Formatting & Invoice Print Engine
  */
 
-let currentCashierSubBook = 'CACash'; // 'CACash' | 'CABank' | 'CAOffice' | 'CAKitchen' | 'CAPayroll' | 'todayIncome'
-let allCashierData = [];
-let filteredCashierData = [];
-let currentCashierPage = 1;
-const CASHIER_PAGE_SIZE = 15;
+var currentCashierSubBook = 'CACash'; // 'CACash' | 'CABank' | 'CAOffice' | 'CAKitchen' | 'CAPayroll' | 'todayIncome'
+var allCashierData = [];
+var filteredCashierData = [];
+var currentCashierPage = 1;
+var CASHIER_PAGE_SIZE = 15;
 
 /**
  * 💡 Initialize View
@@ -28,18 +28,24 @@ function switchCashierSubTab(subTab = 'CACash', useCache = true) {
   currentCashierSubBook = subTab;
   currentCashierPage = 1;
 
-  // Reset All Sub-Tab Styling to Inactive State
-  document.querySelectorAll('.ca-sub-tab-btn').forEach(btn => {
-    btn.classList.remove('ring-2', 'ring-white', 'shadow-lg', 'scale-105', 'opacity-100');
-    btn.classList.add('opacity-70');
-  });
+  // Tab thematic color map (Active vs Inactive)
+  const tabThemes = {
+    'CACash':      { active: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 ring-2 ring-emerald-500/30 opacity-100 shadow-emerald-950/40', inactive: 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400/60 opacity-60 hover:opacity-100' },
+    'CABank':      { active: 'bg-amber-500/25 text-amber-300 border-amber-400/60 ring-2 ring-amber-500/30 opacity-100 shadow-amber-950/40', inactive: 'bg-amber-950/20 border-amber-500/20 text-amber-400/60 opacity-60 hover:opacity-100' },
+    'CAOffice':    { active: 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 ring-2 ring-cyan-500/30 opacity-100 shadow-cyan-950/40', inactive: 'bg-cyan-950/20 border-cyan-500/20 text-cyan-400/60 opacity-60 hover:opacity-100' },
+    'CAKitchen':   { active: 'bg-rose-500/25 text-rose-300 border-rose-400/60 ring-2 ring-rose-500/30 opacity-100 shadow-rose-950/40', inactive: 'bg-rose-950/20 border-rose-500/20 text-rose-400/60 opacity-60 hover:opacity-100' },
+    'CAPayroll':   { active: 'bg-purple-500/25 text-purple-300 border-purple-400/60 ring-2 ring-purple-500/30 opacity-100 shadow-purple-950/40', inactive: 'bg-purple-950/20 border-purple-500/20 text-purple-400/60 opacity-60 hover:opacity-100' },
+    'todayIncome': { active: 'bg-sky-500/25 text-sky-300 border-sky-400/60 ring-2 ring-sky-500/30 opacity-100 shadow-sky-950/40', inactive: 'bg-sky-950/20 border-sky-500/20 text-sky-400/60 opacity-60 hover:opacity-100' }
+  };
 
-  // Highlight Active Sub-Tab
-  const activeBtn = document.getElementById(`ca-tab-${subTab}`);
-  if (activeBtn) {
-    activeBtn.classList.remove('opacity-70');
-    activeBtn.classList.add('ring-2', 'ring-white', 'shadow-lg', 'opacity-100');
-  }
+  // Reset All Sub-Tab Buttons
+  Object.keys(tabThemes).forEach(key => {
+    const btn = document.getElementById(`ca-tab-${key}`);
+    if (btn) {
+      const theme = tabThemes[key];
+      btn.className = `ca-sub-tab-btn px-3.5 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 border ${subTab === key ? theme.active : theme.inactive}`;
+    }
+  });
 
   // Toggle "Add New Entry" button visibility (Hidden for Read-Only 'todayIncome' tab)
   const btnAdd = document.getElementById('ca-btn-add');
@@ -301,7 +307,7 @@ function renderCashierTable() {
         <td class="font-mono font-bold text-indigo-300 py-3 px-3">${escapeHtml(item.fyid) || '-'}</td>
         <td class="font-bold text-slate-100 py-3 px-3">${escapeHtml(item.fyidName) || '-'}</td>
         <td class="py-3 px-3">${escapeHtml(item.class) || '-'}</td>
-        <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-semibold">${escapeHtml(item.category) || '-'}</span></td>
+        <td class="py-3 px-3">${typeof window.formatCategoryBadgeHtml === 'function' ? window.formatCategoryBadgeHtml(item.category) : escapeHtml(item.category)}</td>
         <td class="font-semibold text-slate-200 py-3 px-3">${escapeHtml(item.accountName) || '-'}</td>
         <td class="font-bold text-slate-400 py-3 px-3">${escapeHtml(item.method) || '-'}</td>
         <td class="text-right font-mono font-bold text-rose-400 py-3 px-3">${item.debit > 0 ? Number(item.debit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
@@ -323,7 +329,7 @@ function renderCashierTable() {
         <td class="text-center font-mono text-slate-400 py-3 px-3">${srNo}</td>
         <td class="font-mono py-3 px-3">${item.date || '-'}</td>
         <td class="font-bold text-amber-300 py-3 px-3">${item.respPerson || '-'}</td>
-        <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-semibold">${item.category || '-'}</span></td>
+        <td class="py-3 px-3">${typeof window.formatCategoryBadgeHtml === 'function' ? window.formatCategoryBadgeHtml(item.category) : escapeHtml(item.category)}</td>
         <td class="font-bold text-slate-100 max-w-xs truncate py-3 px-3" title="${item.description}">${item.description || '-'}</td>
         <td class="font-semibold py-3 px-3">${item.method || '-'}</td>
         <td class="text-right font-mono font-bold text-emerald-400 py-3 px-3">${item.debit > 0 ? Number(item.debit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
