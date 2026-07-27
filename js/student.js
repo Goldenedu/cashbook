@@ -176,7 +176,7 @@ function changePageStudent(dir) {
   }
 }
 
-let searchTimeoutStudent;
+var searchTimeoutStudent;
 function onSearchInputStudent() {
   clearTimeout(searchTimeoutStudent);
   searchTimeoutStudent = setTimeout(() => {
