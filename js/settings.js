@@ -121,3 +121,127 @@ async function triggerManualBackup() {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
+
+/**
+ * 💡 3. Start Google Drive Backup & Safe Reset Workflow
+ */
+async function startDriveBackupAndResetWorkflow() {
+  if (!confirm("Google Drive ထဲသို့ နှစ်အလိုက် ဖိုဒါဖြင့် Backup ဖိုင် ပွားယူ သိမ်းဆည်းရန် သေချာပါသလား။\n(Backup အောင်မြင်မှသာ ဖျက်လိုသော Sheet များကို ရွေးချယ်နိုင်ပါမည်)")) {
+    return;
+  }
+
+  try {
+    if (typeof toggleLoading === 'function') {
+      toggleLoading(true, "Google Drive တွင် Backup Copy ကူးယူနေပါသည်။ ကျေးဇူးပြု၍ ခဏစောင့်ပါ...");
+    }
+
+    const res = await callApi('createDriveBackup', {});
+
+    if (res && res.success) {
+      if (typeof showToast === 'function') {
+        showToast("SUCCESS", res.message || "Google Drive Backup အောင်မြင်ပါသည်။");
+      }
+
+      // Update backup status text inside modal
+      const statusMsg = document.getElementById('drive-backup-status-msg');
+      if (statusMsg) {
+        statusMsg.innerHTML = `<strong>ဖိုင်အမည်:</strong> ${escapeHtml(res.backupFileName)}<br><strong>ဖိုဒါအမည်:</strong> ${escapeHtml(res.fyFolderName)}`;
+      }
+
+      // Open Sheet Reset Selection Modal
+      openDriveResetModal();
+    } else {
+      throw new Error(res?.message || "Google Drive Backup ကူးယူခြင်း မအောင်မြင်ပါ။");
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') {
+      showToast("ERROR", err.message);
+    } else {
+      alert("အမှားအယွင်း: " + err.message);
+    }
+  } finally {
+    if (typeof toggleLoading === 'function') toggleLoading(false);
+  }
+}
+
+/**
+ * 💡 Modal Controls for Drive Reset Workflow
+ */
+function openDriveResetModal() {
+  const modal = document.getElementById('drive-reset-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    // Check all checkboxes by default
+    toggleGroupCheckboxes('main', true);
+    toggleGroupCheckboxes('cashier', true);
+  }
+}
+
+function closeDriveResetModal() {
+  const modal = document.getElementById('drive-reset-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function toggleGroupCheckboxes(groupType, isChecked) {
+  const selector = groupType === 'main' ? '.cb-main' : '.cb-cashier';
+  document.querySelectorAll(selector).forEach(cb => {
+    cb.checked = isChecked;
+  });
+}
+
+/**
+ * 💡 Confirm and Execute Sheet Reset (Clear Rows 6+)
+ */
+async function confirmAndExecuteSheetReset() {
+  const selectedCbs = document.querySelectorAll('.sheet-reset-cb:checked');
+  const selectedSheets = Array.from(selectedCbs).map(cb => cb.value);
+
+  if (selectedSheets.length === 0) {
+    alert("ကျေးဇူးပြု၍ ဒေတာ ရှင်းလင်းရန် အနည်းဆုံး Sheet တစ်ခု ရွေးချယ်ပေးပါ (Main Cash Book သို့မဟုတ် Cashier Cash Book)။");
+    return;
+  }
+
+  const confirmMsg = `သေချာပါသလား။ ရွေးချယ်ထားသော Sheet (${selectedSheets.join(', ')}) များ၏ Row 6 အောက်ပိုင်း ဒေတာများကို ရှင်းလင်းပစ်ပါမည်။\n\n* (Google Drive ထဲတွင် Backup ကူးယူပြီးပါပြီ။ Row 1-5 ၏ Formula များ လုံးဝ ထိခိုက်မည်မဟုတ်ပါ)`;
+
+  if (!confirm(confirmMsg)) {
+    return;
+  }
+
+  try {
+    if (typeof toggleLoading === 'function') {
+      toggleLoading(true, "ရွေးချယ်ထားသော Sheet ဒေတာများကို Row 6 မှ စတင် ရှင်းလင်းနေပါသည်...");
+    }
+
+    const res = await callApi('executeSafeSheetReset', { sheetsToClear: selectedSheets });
+
+    if (res && res.success) {
+      closeDriveResetModal();
+
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'success',
+          title: 'ဒေတာ ရှင်းလင်းခြင်း အောင်မြင်ပါသည်',
+          text: res.message || 'ရွေးချယ်ထားသော Sheet များ၏ ဒေတာများကို Row 6 မှ စ၍ အောင်မြင်စွာ ရှင်းလင်းပြီးပါပြီ။',
+          confirmButtonColor: '#7e22ce'
+        });
+      } else if (typeof showToast === 'function') {
+        showToast("SUCCESS", res.message || "Sheet ဒေတာများ အောင်မြင်စွာ ရှင်းလင်းပြီးပါပြီ။");
+      } else {
+        alert(res.message || "Sheet ဒေတာများ အောင်မြင်စွာ ရှင်းလင်းပြီးပါပြီ။");
+      }
+
+      // Reload settings balances
+      loadSettingsData(true);
+    } else {
+      throw new Error(res?.message || "Sheet ဒေတာ ရှင်းလင်းခြင်း မအောင်မြင်ပါ။");
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') {
+      showToast("ERROR", err.message);
+    } else {
+      alert("အမှားအယွင်း: " + err.message);
+    }
+  } finally {
+    if (typeof toggleLoading === 'function') toggleLoading(false);
+  }
+}
