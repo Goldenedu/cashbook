@@ -1,415 +1,551 @@
 /**
- * GOLDEN ERP SYSTEM - BANK & CASH BOOK CONTROLLER
- * File: js/bank-cash-kit.js
- * 💡 Main Bank & Cash Books Controller with Strict Search Criteria & Transfer Auto-Description Engine
+ * GOLDEN ERP SYSTEM - CASHIER CASH BOOK MODULE
+ * File: js/cashier.js
+ * 💡 SECURED: Uses callApi(), 19-Column Income Match, RESPONSIBILITY PERSON, Strict Search, 2-Decimal Formatting & Invoice Print Engine
  */
 
-var bckPage = 1;
-var bckLimit = 30;
-var bckTotalRows = 0;
-var bckActiveData = [];
-var currentSubBook = 'bank'; // 'bank' or 'cash'
+let currentCashierSubBook = 'CACash'; // 'CACash' | 'CABank' | 'CAOffice' | 'CAKitchen' | 'CAPayroll' | 'todayIncome'
+let allCashierData = [];
+let filteredCashierData = [];
+let currentCashierPage = 1;
+const CASHIER_PAGE_SIZE = 15;
 
 /**
- * 💡 Strict Search Filter Function for Main Bank & Cash Books
- * Searches strictly by: Description, Category, Debit Amount, Credit Amount.
- * Excluded: Method, VR No, MY, FY, UniqueID.
+ * 💡 Initialize View
+ * @param {string} bookName 
+ * @param {boolean} useCache 
  */
-function filterBankCashKitData(list = [], searchVal = '', fromDate = '', toDate = '') {
+function initCashierView(bookName = 'CACash', useCache = true) {
+  switchCashierSubTab(bookName, useCache);
+}
+
+/**
+ * 💡 Switch Cashier Sub-Tabs (CACash, CABank, CAOffice, CAKitchen, CAPayroll, todayIncome)
+ * @param {string} subTab 
+ * @param {boolean} useCache 
+ */
+function switchCashierSubTab(subTab = 'CACash', useCache = true) {
+  currentCashierSubBook = subTab;
+  currentCashierPage = 1;
+
+  // Tab thematic color map (Active vs Inactive)
+  const tabThemes = {
+    'CACash':      { active: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 ring-2 ring-emerald-500/30 opacity-100 shadow-emerald-950/40', inactive: 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400/60 opacity-60 hover:opacity-100' },
+    'CABank':      { active: 'bg-amber-500/25 text-amber-300 border-amber-400/60 ring-2 ring-amber-500/30 opacity-100 shadow-amber-950/40', inactive: 'bg-amber-950/20 border-amber-500/20 text-amber-400/60 opacity-60 hover:opacity-100' },
+    'CAOffice':    { active: 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 ring-2 ring-cyan-500/30 opacity-100 shadow-cyan-950/40', inactive: 'bg-cyan-950/20 border-cyan-500/20 text-cyan-400/60 opacity-60 hover:opacity-100' },
+    'CAKitchen':   { active: 'bg-rose-500/25 text-rose-300 border-rose-400/60 ring-2 ring-rose-500/30 opacity-100 shadow-rose-950/40', inactive: 'bg-rose-950/20 border-rose-500/20 text-rose-400/60 opacity-60 hover:opacity-100' },
+    'CAPayroll':   { active: 'bg-purple-500/25 text-purple-300 border-purple-400/60 ring-2 ring-purple-500/30 opacity-100 shadow-purple-950/40', inactive: 'bg-purple-950/20 border-purple-500/20 text-purple-400/60 opacity-60 hover:opacity-100' },
+    'todayIncome': { active: 'bg-sky-500/25 text-sky-300 border-sky-400/60 ring-2 ring-sky-500/30 opacity-100 shadow-sky-950/40', inactive: 'bg-sky-950/20 border-sky-500/20 text-sky-400/60 opacity-60 hover:opacity-100' }
+  };
+
+  // Reset All Sub-Tab Buttons
+  Object.keys(tabThemes).forEach(key => {
+    const btn = document.getElementById(`ca-tab-${key}`);
+    if (btn) {
+      const theme = tabThemes[key];
+      btn.className = `ca-sub-tab-btn px-3.5 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 border ${subTab === key ? theme.active : theme.inactive}`;
+    }
+  });
+
+  // Toggle "Add New Entry" button visibility (Hidden for Read-Only 'todayIncome' tab)
+  const btnAdd = document.getElementById('ca-btn-add');
+  if (btnAdd) {
+    if (subTab === 'todayIncome') {
+      btnAdd.classList.add('hidden');
+    } else {
+      btnAdd.classList.remove('hidden');
+    }
+  }
+
+  loadCashierData(useCache);
+}
+
+/**
+ * 💡 Load Cashier Data
+ * @param {boolean} useCache 
+ */
+async function loadCashierData(useCache = true) {
+  try {
+    if (currentCashierSubBook === 'todayIncome') {
+      await loadTodayIncomeForCashier(useCache);
+      return;
+    }
+
+    const cacheKey = `getCashierData_${JSON.stringify({ bookName: currentCashierSubBook })}`;
+    const hasCache = useCache && !!window.getApiCache(cacheKey);
+
+    if (!hasCache && typeof toggleLoading === 'function') {
+      toggleLoading(true);
+    }
+
+    const response = await callApi('getCashierData', {
+      bookName: currentCashierSubBook,
+      forceRefresh: !useCache
+    });
+
+    if (response && response.success) {
+      allCashierData = response.data || [];
+      renderStatsCashier(response.stats || { totalIncome: 0, totalExpense: 0, balance: 0 });
+      applyCashierSearchAndRender();
+    }
+  } catch (error) {
+    console.error('Failed to load Cashier data:', error);
+    if (typeof showToast === 'function') showToast("ERROR", "Cashier စာရင်းများ ဖတ်ယူ၍ မရပါ: " + error.message);
+  } finally {
+    if (typeof toggleLoading === 'function') toggleLoading(false);
+  }
+}
+
+/**
+ * 💡 Load Today's Student Income Entries directly for Invoice Printing
+ * @param {boolean} useCache 
+ */
+async function loadTodayIncomeForCashier(useCache = true) {
+  try {
+    if (typeof toggleLoading === 'function') toggleLoading(true);
+
+    const response = await callApi('getTodayIncomeForCashier', {
+      forceRefresh: !useCache
+    });
+
+    if (response && response.success) {
+      allCashierData = response.data || [];
+      
+      let totalInc = 0, totalExp = 0;
+      allCashierData.forEach(r => {
+        totalInc += Number(r.credit || 0);
+        totalExp += Number(r.debit || 0);
+      });
+
+      renderStatsCashier({ totalIncome: totalInc, totalExpense: totalExp, balance: totalInc - totalExp });
+      applyCashierSearchAndRender();
+    }
+  } catch (error) {
+    console.error("Failed to load Today Income for Cashier:", error);
+    if (typeof showToast === 'function') showToast("ERROR", "ယနေ့ ဝင်ငွေစာရင်းများ ဖတ်ယူ၍ မရပါ: " + error.message);
+  } finally {
+    if (typeof toggleLoading === 'function') toggleLoading(false);
+  }
+}
+
+/**
+ * 💡 Render KPI Header Stats Cards with 2 Decimal Places Format
+ */
+function renderStatsCashier(stats) {
+  const elInc = document.getElementById('ca-total-income');
+  const elExp = document.getElementById('ca-total-expense');
+  const elBal = document.getElementById('ca-balance');
+  const elCount = document.getElementById('ca-entries-count');
+
+  if (elInc) elInc.textContent = `${Number(stats.totalIncome || 0).toLocaleString('en-US')} MMK`;
+  if (elExp) elExp.textContent = `${Number(stats.totalExpense || 0).toLocaleString('en-US')} MMK`;
+  if (elBal) elBal.textContent = `${Number(stats.balance || 0).toLocaleString('en-US')} MMK`;
+  if (elCount) elCount.textContent = allCashierData.length.toLocaleString('en-US');
+}
+
+/**
+ * 💡 Strict Search Criteria Filter
+ */
+function filterCashierData(list = [], searchVal = '', fromDate = '', toDate = '') {
   return list.filter(row => {
     // 1. Date Range Check
     if (typeof window.isDateInRange === 'function') {
-      if (!window.isDateInRange(row.date, fromDate, toDate)) return false;
+      if (!window.isDateInRange(row.date || row.effDate, fromDate, toDate)) return false;
     }
 
     // 2. Text Search Check
     if (!searchVal || !searchVal.trim()) return true;
     const q = searchVal.trim().toLowerCase();
+
+    if (currentCashierSubBook === 'todayIncome') {
+      const nameMatch = String(row.fyidName || row.name || '').toLowerCase().includes(q);
+      const fyidMatch = String(row.fyid || '').toLowerCase().includes(q);
+      const idMatch = String(row.id || '').toLowerCase().includes(q);
+      return nameMatch || fyidMatch || idMatch;
+    }
+
     const descMatch = String(row.description || '').toLowerCase().includes(q);
     const catMatch = String(row.category || '').toLowerCase().includes(q);
+    const respMatch = String(row.respPerson || '').toLowerCase().includes(q);
     const debitMatch = String(row.debit || '').includes(q);
     const creditMatch = String(row.credit || '').includes(q);
 
-    return descMatch || catMatch || debitMatch || creditMatch;
+    return descMatch || catMatch || respMatch || debitMatch || creditMatch;
   });
 }
 
-function clearDateFilterBCK() {
-  const fromEl = document.getElementById('bck-date-from');
-  const toEl = document.getElementById('bck-date-to');
+function clearDateFilterCashier() {
+  const fromEl = document.getElementById('ca-date-from');
+  const toEl = document.getElementById('ca-date-to');
   if (fromEl) fromEl.value = '';
   if (toEl) toEl.value = '';
-  renderTableBankCashKit();
-}
-
-function onSearchInputBankCashKit() {
-  renderTableBankCashKit();
+  applyCashierSearchAndRender();
 }
 
 /**
- * 💡 Switch between Bank Book and Cash Book
+ * 💡 Apply Search & Render Table
  */
-function switchSubBook(bookType) {
-  currentSubBook = bookType.toLowerCase();
-  bckPage = 1;
+function applyCashierSearchAndRender() {
+  const searchInput = document.getElementById('cashier-search');
+  const query = searchInput ? searchInput.value.trim() : '';
 
-  const titleEl = document.getElementById('page-title');
-  if (titleEl) {
-    titleEl.textContent = currentSubBook === 'bank' ? 'Main Bank Book' : 'Main Cash Book';
-  }
-
-  updateSidebarHighlight(currentSubBook);
-  loadBankCashKitData(false, false);
-}
-
-/**
- * 💡 Load Bank or Cash Ledger Data
- */
-async function loadBankCashKitData(isSilent = false, forceRefresh = false) {
-  const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
-  if (!token) return;
-
-  try {
-    const searchInput = document.getElementById('bck-search');
-    const searchVal = searchInput ? searchInput.value.trim() : '';
-    const bookName = currentSubBook === 'bank' ? 'Main Bank Book' : 'Main Cash Book';
-
-    const cacheKey = `getBankCashData_${JSON.stringify({ bookName: bookName, page: bckPage, limit: bckLimit, searchVal: searchVal })}`;
-    const hasCache = !forceRefresh && !!window.getApiCache(cacheKey);
-
-    if (!isSilent && !hasCache && typeof toggleLoading === 'function') {
-      toggleLoading(true);
-    }
-
-    const res = await callApi('getBankCashData', {
-      bookName: bookName,
-      page: bckPage,
-      limit: bckLimit,
-      searchVal: searchVal,
-      forceRefresh: forceRefresh
-    });
-
-    if (!res || !res.success) {
-      throw new Error(res?.message || "စာရင်း အချက်အလက်များ ခေါ်ယူခြင်း မအောင်မြင်ပါ။");
-    }
-
-    bckActiveData = res.data || [];
-    bckTotalRows = res.totalRows || bckActiveData.length || 0;
-
-    renderStatsBankCashKit(res.stats || { totalIncome: 0, totalExpense: 0, balance: 0 });
-    renderTableBankCashKit();
-    updatePaginationUIBankCashKit();
-
-  } catch (err) {
-    console.error("Bank/Cash Load Error:", err);
-    if (!isSilent && typeof showToast === 'function') {
-      showToast("ERROR", "စာရင်း အချက်အလက်များ ရယူ၍ မရပါ: " + err.message);
-    }
-  } finally {
-    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(false);
-  }
-}
-
-function renderStatsBankCashKit(stats) {
-  const incTotal = document.getElementById('bck-total-income');
-  const expTotal = document.getElementById('bck-total-expense');
-  const balTotal = document.getElementById('bck-balance');
-  const countTotal = document.getElementById('bck-entries-count');
-
-  if (incTotal) incTotal.textContent = Number(stats.totalIncome || 0).toLocaleString('en-US') + ' MMK';
-  if (expTotal) expTotal.textContent = Number(stats.totalExpense || 0).toLocaleString('en-US') + ' MMK';
-  if (balTotal) balTotal.textContent = Number(stats.balance || 0).toLocaleString('en-US') + ' MMK';
-  if (countTotal) countTotal.textContent = Number(bckTotalRows || 0).toLocaleString('en-US');
-}
-
-/**
- * 💡 Render Table Grid Rows with Precise Search Filtering
- * 🎯 Criteria: Search ONLY by Description, Category, Debit, Credit
- */
-function renderTableBankCashKit() {
-  const tbody = document.getElementById('bck-table-body');
-  if (!tbody) return;
-
-  const searchInput = document.getElementById('bck-search');
-  const searchVal = searchInput ? searchInput.value.trim() : '';
-
-  const fromEl = document.getElementById('bck-date-from');
-  const toEl = document.getElementById('bck-date-to');
+  const fromEl = document.getElementById('ca-date-from');
+  const toEl = document.getElementById('ca-date-to');
   const fromDate = fromEl ? fromEl.value : '';
   const toDate = toEl ? toEl.value : '';
 
-  const filteredRows = filterBankCashKitData(bckActiveData, searchVal, fromDate, toDate);
+  filteredCashierData = filterCashierData(allCashierData, query, fromDate, toDate);
+  currentCashierPage = 1;
+  renderCashierTable();
+}
 
-  if (!filteredRows || filteredRows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="13" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော စာရင်း မရှိပါ။</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = filteredRows.map((row) => {
-    const isViewer = (window.AppState ? window.AppState.currentUserRole : '') === "Viewer";
-    const lockClass = (row.isLocked || isViewer) ? "opacity-30 cursor-not-allowed pointer-events-none" : "hover:text-white";
-    const lockTitle = row.isLocked ? "Locked (Must be edited from Source Book)" : "";
-
-    return `
-      <tr class="hover:bg-slate-800/30 text-slate-300">
-        <td class="text-center font-semibold text-slate-500">${row.no || '-'}</td>
-        <td class="font-mono text-xs">${escapeHtml(row.date) || '-'}</td>
-        <td>${typeof window.formatCategoryBadgeHtml === 'function' ? window.formatCategoryBadgeHtml(row.category) : escapeHtml(row.category)}</td>
-        <td class="font-bold text-slate-100 max-w-sm truncate" title="${escapeHtml(row.description)}">${escapeHtml(row.description) || '-'}</td>
-        <td class="font-bold text-slate-400">${escapeHtml(row.method) || '-'}</td>
-        <td class="text-right text-emerald-400 font-mono font-bold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
-<td class="text-right text-rose-400 font-mono font-bold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
-<td class="text-right text-slate-200 font-mono font-bold">${Number(row.balances || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-        <td class="text-xs text-indigo-400">${escapeHtml(row.transfer) || '-'}</td>
-        <td class="font-mono text-xs text-slate-400">${escapeHtml(row.vrNo) || '-'}</td>
-        <td class="font-mono text-xs">${escapeHtml(row.my) || '-'}</td>
-        <td class="font-mono text-xs">${escapeHtml(row.fy) || '-'}</td>
-        <td class="right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg text-center">
-          <div class="flex items-center justify-center gap-3">
-            <button onclick="editBankCashKitEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition ${lockClass}" title="Edit ${lockTitle}" ${row.isLocked || isViewer ? 'disabled' : ''}>
-              <i class="fa-solid fa-pen-to-square"></i>
-            </button>
-            <button onclick="deleteBankCashKitEntry('${row.uniqueId}')" class="text-rose-400 hover:text-rose-300 transition ${lockClass}" title="Delete ${lockTitle}" ${row.isLocked || isViewer ? 'disabled' : ''}>
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
+function onSearchInputCashier() {
+  applyCashierSearchAndRender();
 }
 
 /**
- * 💡 Open Modal for New Entry
+ * 💡 Dynamic Table Header Renderer
  */
-function openAddModalBankCashKit() {
-  const form = document.getElementById('bck-form');
-  if (form) form.reset();
+function renderCashierTableHead() {
+  const thead = document.getElementById('cashier-table-head');
+  if (!thead) return;
 
-  document.getElementById('bck-uniqueId').value = "";
-  document.getElementById('bck-date').value = new Date().toISOString().slice(0, 10);
-  document.getElementById('bck-debit').value = 0;
-  document.getElementById('bck-credit').value = 0;
+  const isTodayIncomeTab = (currentCashierSubBook === 'todayIncome');
 
-  populateDropdownsBCK();
-
-  document.getElementById('bck-form-title').innerText = currentSubBook === 'bank' ? "Add Bank Entry" : "Add Cash Entry";
-  document.getElementById('bck-modal').classList.remove('hidden');
+  if (isTodayIncomeTab) {
+    // 💡 MAIN INCOME BOOK 19-COLUMN HEADER SCHEMA
+    thead.innerHTML = `
+      <tr class="bg-[#0e172a]">
+        <th scope="col" class="w-12 text-center text-slate-400 text-xs py-3">NO</th>
+        <th scope="col" class="w-28 text-slate-400 text-xs py-3">EFFECT DATE</th>
+        <th scope="col" class="w-28 text-slate-400 text-xs py-3">DATE</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">FY</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">ID</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">FYID</th>
+        <th scope="col" class="min-w-[200px] text-slate-400 text-xs py-3">FYID NAME</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">CLASS</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">CATEGORY</th>
+        <th scope="col" class="w-36 text-slate-400 text-xs py-3">ACCOUNT NAME</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">METHOD</th>
+        <th scope="col" class="w-32 text-right text-rose-400 text-xs py-3">DEBIT (ပြန်အမ်း)</th>
+        <th scope="col" class="w-32 text-right text-emerald-400 text-xs py-3">CREDIT (ဝင်ငွေ)</th>
+        <th scope="col" class="w-32 text-right text-indigo-400 text-xs py-3">AUT AMOUNT</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">PROMO</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">MY</th>
+        <th scope="col" class="w-36 text-slate-400 text-xs py-3">VR NO</th>
+        <th scope="col" class="min-w-[150px] text-slate-400 text-xs py-3">REMARK</th>
+        <th scope="col" class="w-28 text-center text-slate-400 text-xs py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">ACTION</th>
+      </tr>
+    `;
+  } else {
+    // 💡 STANDARD CASHIER SUB-LEDGER 17-COLUMN HEADER SCHEMA
+    thead.innerHTML = `
+      <tr class="bg-[#0e172a]">
+        <th scope="col" class="w-12 text-center text-slate-400 text-xs py-3">NO</th>
+        <th scope="col" class="w-28 text-slate-400 text-xs py-3">DATE</th>
+        <th scope="col" class="w-36 text-amber-300 text-xs py-3">RESPONSIBILITY PERSON</th>
+        <th scope="col" class="w-36 text-slate-400 text-xs py-3">CATEGORY</th>
+        <th scope="col" class="min-w-[280px] text-slate-400 text-xs py-3">DESCRIPTION</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">METHOD</th>
+        <th scope="col" class="w-32 text-right text-emerald-400 text-xs py-3">DEBIT</th>
+        <th scope="col" class="w-32 text-right text-rose-400 text-xs py-3">CREDIT</th>
+        <th scope="col" class="w-36 text-right text-slate-400 text-xs py-3">BALANCES</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">TRANSFER</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">VR NO</th>
+        <th scope="col" class="w-24 text-slate-400 text-xs py-3">MY</th>
+        <th scope="col" class="w-28 text-slate-400 text-xs py-3">FY</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">BOOK NAME</th>
+        <th scope="col" class="w-28 text-slate-400 text-xs py-3">CREATED BY</th>
+        <th scope="col" class="w-32 text-slate-400 text-xs py-3">CREATED AT</th>
+        <th scope="col" class="w-28 text-center text-slate-400 text-xs py-3 right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg">ACTION</th>
+      </tr>
+    `;
+  }
 }
 
-function closeBankCashKitModal() {
-  const modal = document.getElementById('bck-modal');
+/**
+ * 💡 Render Table Grid Rows with 2 Decimal Places Format
+ */
+function renderCashierTable() {
+  renderCashierTableHead();
+
+  const tbody = document.getElementById('cashier-table-body');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+
+  const totalEntries = filteredCashierData.length;
+  const totalPages = Math.ceil(totalEntries / CASHIER_PAGE_SIZE) || 1;
+  if (currentCashierPage > totalPages) currentCashierPage = totalPages;
+
+  const startIndex = (currentCashierPage - 1) * CASHIER_PAGE_SIZE;
+  const endIndex = Math.min(startIndex + CASHIER_PAGE_SIZE, totalEntries);
+  const pageItems = filteredCashierData.slice(startIndex, endIndex);
+
+  const isTodayIncomeTab = (currentCashierSubBook === 'todayIncome');
+
+  if (pageItems.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${isTodayIncomeTab ? '19' : '17'}" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော စာရင်း မရှိပါ။</td></tr>`;
+    updateCashierPaginationInfo(0, 0, 0);
+    return;
+  }
+
+  pageItems.forEach((item, index) => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-800/30 transition-all border-b border-slate-800/40 text-xs';
+
+    const srNo = startIndex + index + 1;
+
+    if (isTodayIncomeTab) {
+      // 💡 READ-ONLY TODAY INCOME 19-COLUMN ROW WITH PRINT INVOICE BUTTON
+      tr.innerHTML = `
+        <td class="text-center font-mono text-slate-400 py-3 px-3">${srNo}</td>
+        <td class="font-mono py-3 px-3">${escapeHtml(item.effDate) || '-'}</td>
+        <td class="font-mono py-3 px-3">${escapeHtml(item.date) || '-'}</td>
+        <td class="font-mono font-bold text-indigo-400 py-3 px-3">${escapeHtml(item.fy) || '-'}</td>
+        <td class="font-mono font-bold py-3 px-3">${escapeHtml(item.id) || '-'}</td>
+        <td class="font-mono font-bold text-indigo-300 py-3 px-3">${escapeHtml(item.fyid) || '-'}</td>
+        <td class="font-bold text-slate-100 py-3 px-3">${escapeHtml(item.fyidName) || '-'}</td>
+        <td class="py-3 px-3">${escapeHtml(item.class) || '-'}</td>
+        <td class="py-3 px-3">${typeof window.formatCategoryBadgeHtml === 'function' ? window.formatCategoryBadgeHtml(item.category) : escapeHtml(item.category)}</td>
+        <td class="font-semibold text-slate-200 py-3 px-3">${escapeHtml(item.accountName) || '-'}</td>
+        <td class="font-bold text-slate-400 py-3 px-3">${escapeHtml(item.method) || '-'}</td>
+        <td class="text-right font-mono font-bold text-rose-400 py-3 px-3">${item.debit > 0 ? Number(item.debit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+        <td class="text-right font-mono font-bold text-emerald-400 py-3 px-3">${item.credit > 0 ? Number(item.credit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+        <td class="text-right font-mono font-bold text-indigo-400 py-3 px-3">${item.autAmount > 0 ? Number(item.autAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+        <td class="text-xs py-3 px-3">${escapeHtml(item.promo) || '-'}</td>
+        <td class="font-mono text-xs py-3 px-3">${escapeHtml(item.my) || '-'}</td>
+        <td class="font-mono text-xs text-slate-400 py-3 px-3">${escapeHtml(item.vrNo) || '-'}</td>
+        <td class="max-w-xs truncate text-xs text-slate-400 py-3 px-3" title="${escapeHtml(item.remark || '')}">${escapeHtml(item.remark) || '-'}</td>
+        <td class="text-center right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg py-3 px-3">
+          <button onclick="printInvoice('${item.uniqueId}')" class="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition font-bold" title="Print Invoice">
+            <i class="fa-solid fa-print mr-1"></i> Print
+          </button>
+        </td>
+      `;
+    } else {
+      // 💡 STANDARD CASHIER SUB-LEDGER 17-COLUMN ROW WITH 2 DECIMAL FORMATTING
+      tr.innerHTML = `
+        <td class="text-center font-mono text-slate-400 py-3 px-3">${srNo}</td>
+        <td class="font-mono py-3 px-3">${item.date || '-'}</td>
+        <td class="font-bold text-amber-300 py-3 px-3">${item.respPerson || '-'}</td>
+        <td class="py-3 px-3">${typeof window.formatCategoryBadgeHtml === 'function' ? window.formatCategoryBadgeHtml(item.category) : escapeHtml(item.category)}</td>
+        <td class="font-bold text-slate-100 max-w-xs truncate py-3 px-3" title="${item.description}">${item.description || '-'}</td>
+        <td class="font-semibold py-3 px-3">${item.method || '-'}</td>
+        <td class="text-right font-mono font-bold text-emerald-400 py-3 px-3">${item.debit > 0 ? Number(item.debit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+        <td class="text-right font-mono font-bold text-rose-400 py-3 px-3">${item.credit > 0 ? Number(item.credit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+        <td class="text-right font-mono font-bold text-indigo-400 py-3 px-3">${Number(item.balances || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td class="py-3 px-3 text-slate-300">${item.transfer || '-'}</td>
+        <td class="font-mono text-slate-400 py-3 px-3">${item.vrNo || '-'}</td>
+        <td class="font-mono py-3 px-3">${item.my || '-'}</td>
+        <td class="font-mono font-bold text-indigo-400 py-3 px-3">${item.fy || '-'}</td>
+        <td class="py-3 px-3">${item.bookName || '-'}</td>
+        <td class="py-3 px-3">${item.createdBy || 'System'}</td>
+        <td class="font-mono text-slate-500 py-3 px-3">${item.createdAt ? item.createdAt.slice(0,10) : '-'}</td>
+        <td class="text-center right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg py-3 px-3">
+          <div class="flex items-center justify-center gap-2">
+            <button onclick="editCashierEntry('${item.uniqueId}')" class="p-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg transition" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+            <button onclick="deleteCashierEntry('${item.uniqueId}')" class="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition btn-delete" title="Delete"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </td>
+      `;
+    }
+
+    tbody.appendChild(tr);
+  });
+
+  updateCashierPaginationInfo(startIndex + 1, endIndex, totalEntries);
+}
+
+function updateCashierPaginationInfo(start, end, total) {
+  const info = document.getElementById('ca-pagination-info');
+  if (info) info.textContent = `Showing ${start} to ${end} of ${total} entries`;
+
+  const btnPrev = document.getElementById('ca-btn-prev');
+  const btnNext = document.getElementById('ca-btn-next');
+
+  if (btnPrev) btnPrev.disabled = (currentCashierPage <= 1);
+  if (btnNext) btnNext.disabled = (end >= total);
+}
+
+function changePageCashier(delta) {
+  currentCashierPage += delta;
+  renderCashierTable();
+}
+
+/**
+ * 💡 Populate Dropdowns from config.js
+ */
+function populateDropdownsCashier() {
+  const def = (window.DROPDOWNS && window.DROPDOWNS[`${currentCashierSubBook}Book`]) || window.DROPDOWNS?.cashBook || {};
+
+  const catSelect = document.getElementById('ca-category');
+  if (catSelect && def.category) {
+    catSelect.innerHTML = def.category.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+
+  const methodSelect = document.getElementById('ca-method');
+  if (methodSelect) {
+    const isBank = currentCashierSubBook === 'CABank';
+    methodSelect.innerHTML = `
+      <option value="Cash" ${!isBank ? 'selected' : ''}>Cash</option>
+      <option value="Bank" ${isBank ? 'selected' : ''}>Bank</option>
+    `;
+  }
+
+  const transSelect = document.getElementById('ca-transfer');
+  if (transSelect) {
+    const options = ["CABank", "CACash", "CAOffice", "CAKitchen", "CAPayroll"].filter(b => b !== currentCashierSubBook);
+    transSelect.innerHTML = `<option value="">-- No Transfer --</option>` +
+      options.map(t => `<option value="${t}">${t}</option>`).join('');
+  }
+}
+
+function onCategoryChangeCashier() {
+  autoFillTransferDescriptionCashier();
+}
+
+function onTransferTargetChangeCashier() {
+  autoFillTransferDescriptionCashier();
+}
+
+/**
+ * 💡 Auto Fill Transfer Description
+ */
+function autoFillTransferDescriptionCashier() {
+  const cat = document.getElementById('ca-category')?.value;
+  const transferTo = document.getElementById('ca-transfer')?.value;
+  const descEl = document.getElementById('ca-description');
+
+  if (cat === "Transfer" && transferTo && descEl) {
+    descEl.value = `[${currentCashierSubBook} Transfer to ${transferTo}] `;
+  }
+}
+
+/**
+ * 💡 Open Add Modal
+ */
+function openAddModalCashier() {
+  const form = document.getElementById('cashier-form');
+  if (form) form.reset();
+
+  document.getElementById('ca-uniqueId').value = '';
+  document.getElementById('ca-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('ca-debit').value = 0;
+  document.getElementById('ca-credit').value = 0;
+
+  populateDropdownsCashier();
+
+  document.getElementById('ca-form-title').textContent = `Add Entry (${currentCashierSubBook})`;
+  document.getElementById('cashier-modal').classList.remove('hidden');
+}
+
+function closeCashierModal() {
+  const modal = document.getElementById('cashier-modal');
   if (modal) modal.classList.add('hidden');
 }
 
 /**
- * 💡 Dropdown Options များကို စာအုပ်အမျိုးအစားအလိုက် စနစ်တကျ Filter ပြုလုပ်၍ ဖြည့်ပေးခြင်း
+ * 💡 Save Form Handler
  */
-function populateDropdownsBCK() {
-  const catSelect = document.getElementById('bck-category');
-  const methodSelect = document.getElementById('bck-method');
-  const transferSelect = document.getElementById('bck-transfer');
-
-  if (catSelect) {
-    catSelect.innerHTML = `
-      <option value="Opening">Opening</option>
-      <option value="Income">Income</option>
-      <option value="Expense">Expense</option>
-      <option value="Bank Loan">Bank Loan</option>
-      <option value="Cash Loan">Cash Loan</option>
-      <option value="Transfer">Transfer</option>
-    `;
-  }
-
-  if (methodSelect) {
-    methodSelect.innerHTML = `
-      <option value="Bank" ${currentSubBook === 'bank' ? 'selected' : ''}>Bank</option>
-      <option value="Cash" ${currentSubBook === 'cash' ? 'selected' : ''}>Cash</option>
-    `;
-  }
-
-  // 💡 SELF-TRANSFER PREVENT: Filter out current active book from transfer options
-  if (transferSelect) {
-    const allBooks = [
-      { name: "Main Bank Book", key: "bank" },
-      { name: "Main Cash Book", key: "cash" },
-      { name: "Office Exp Book", key: "office" },
-      { name: "Kitchen Exp Book", key: "kitchen" },
-      { name: "HR Payroll Exp Book", key: "payroll" }
-    ];
-
-    // Filter out current active sub-book
-    const availableBooks = allBooks.filter(b => b.key !== currentSubBook);
-
-    transferSelect.innerHTML = `<option value="">-- No Transfer --</option>` +
-      availableBooks.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
-  }
-}
-
-/**
- * 💡 TRANSFER AUTO-DESCRIPTION ENGINE
- */
-function onCategoryChangeBCK() {
-  autoFillTransferDescriptionBCK();
-}
-
-function onTransferTargetChangeBCK() {
-  autoFillTransferDescriptionBCK();
-}
-
-function autoFillTransferDescriptionBCK() {
-  const cat = document.getElementById('bck-category')?.value;
-  const transferTo = document.getElementById('bck-transfer')?.value;
-  const descEl = document.getElementById('bck-description');
-  const currentBook = currentSubBook === 'bank' ? 'Main Bank Book' : 'Main Cash Book';
-
-  if (cat === "Transfer" && transferTo && descEl) {
-    descEl.value = `${currentBook} Transfer to ${transferTo}`;
-  }
-}
-
-/**
- * 💡 Save / Submit Entry (Add or Update)
- */
-async function saveBankCashKitForm(e) {
+async function saveCashierForm(e) {
   e.preventDefault();
 
-  const bookName = currentSubBook === 'bank' ? 'Main Bank Book' : 'Main Cash Book';
-  const uniqueId = document.getElementById('bck-uniqueId')?.value || "";
-
+  const uniqueId = document.getElementById('ca-uniqueId').value;
   const payload = {
-    bookName: bookName,
-    date: document.getElementById('bck-date')?.value || "",
-    category: document.getElementById('bck-category')?.value || "Income",
-    method: document.getElementById('bck-method')?.value || (currentSubBook === 'bank' ? 'Bank' : 'Cash'),
-    transfer: document.getElementById('bck-transfer')?.value || "",
-    debit: parseFloat(document.getElementById('bck-debit')?.value) || 0,
-    credit: parseFloat(document.getElementById('bck-credit')?.value) || 0,
-    description: document.getElementById('bck-description')?.value || "",
-    uniqueId: uniqueId
+    uniqueId,
+    bookName: currentCashierSubBook,
+    date: document.getElementById('ca-date').value,
+    respPerson: document.getElementById('ca-resp-person').value,
+    category: document.getElementById('ca-category').value,
+    method: document.getElementById('ca-method').value,
+    transfer: document.getElementById('ca-transfer').value,
+    debit: Number(document.getElementById('ca-debit').value || 0),
+    credit: Number(document.getElementById('ca-credit').value || 0),
+    description: document.getElementById('ca-description').value,
+    createdBy: (window.AppState ? window.AppState.currentUser : '') || "System"
   };
 
   try {
-    closeBankCashKitModal();
-    if (typeof toggleLoading === 'function') toggleLoading(true);
+    closeCashierModal();
+    const actionName = uniqueId ? 'updateCashierEntry' : 'saveCashierEntry';
 
-    const actionName = uniqueId ? 'updateBankCashEntry' : 'saveBankCashEntry';
-    const res = await callApi(actionName, payload);
+    const response = await callApi(actionName, payload);
 
-    if (res && res.success) {
-      if (typeof showToast === 'function') showToast("SUCCESS", "စာရင်း သိမ်းဆည်းမှု အောင်မြင်ပါသည်။");
-      await loadBankCashKitData(true, true);
-    } else {
-      throw new Error(res?.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ။");
+    if (response && response.success) {
+      showToast('SUCCESS', 'Cashier စာရင်း အချက်အလက်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။');
+      if (typeof clearAllApiCache === 'function') clearAllApiCache();
+      loadCashierData(false);
     }
-  } catch (err) {
-    if (typeof showToast === 'function') showToast("ERROR", "မအောင်မြင်ပါ: " + err.message);
-  } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
+  } catch (error) {
+    showToast('ERROR', `အမှားအယွင်း ဖြစ်ပေါ်ခဲ့သည်: ${error.message}`);
   }
 }
 
 /**
  * 💡 Edit Entry
  */
-function editBankCashKitEntry(uniqueId) {
-  const row = bckActiveData.find(item => item.uniqueId === uniqueId);
+function editCashierEntry(uniqueId) {
+  const row = allCashierData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    if (typeof showToast === 'function') showToast("ERROR", "မူရင်း အချက်အလက် ရှာမတွေ့ပါ။");
+    showToast("ERROR", "မူရင်း အချက်အလက် ရှာမတွေ့ပါ။");
     return;
   }
 
-  openAddModalBankCashKit();
+  openAddModalCashier();
 
-  document.getElementById('bck-uniqueId').value = row.uniqueId || "";
-  document.getElementById('bck-date').value = row.date || "";
-  document.getElementById('bck-category').value = row.category || "Income";
-  document.getElementById('bck-method').value = row.method || (currentSubBook === 'bank' ? 'Bank' : 'Cash');
-  
-  // Repopulate with filter before setting value
-  populateDropdownsBCK();
-  document.getElementById('bck-transfer').value = row.transfer || "";
-  
-  document.getElementById('bck-debit').value = row.debit || 0;
-  document.getElementById('bck-credit').value = row.credit || 0;
-  document.getElementById('bck-description').value = row.description || "";
+  document.getElementById('ca-uniqueId').value = row.uniqueId || '';
+  document.getElementById('ca-date').value = row.date || '';
+  document.getElementById('ca-resp-person').value = row.respPerson || '';
+  document.getElementById('ca-category').value = row.category || 'Income';
+  document.getElementById('ca-method').value = row.method || 'Cash';
+  document.getElementById('ca-transfer').value = row.transfer || '';
+  document.getElementById('ca-debit').value = row.debit || 0;
+  document.getElementById('ca-credit').value = row.credit || 0;
+  document.getElementById('ca-description').value = row.description || '';
 
-  document.getElementById('bck-form-title').innerText = "Edit Entry";
+  document.getElementById('ca-form-title').textContent = `Edit Entry (${currentCashierSubBook})`;
 }
 
 /**
  * 💡 Delete Entry
  */
-async function deleteBankCashKitEntry(uniqueId) {
-  if (!confirm("ဤ စာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) {
-    return;
-  }
+async function deleteCashierEntry(uniqueId) {
+  if (!confirm("ဤ စာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) return;
 
   try {
-    if (typeof toggleLoading === 'function') toggleLoading(true);
-    const res = await callApi('deleteBankCashEntry', { uniqueId: uniqueId });
+    const response = await callApi('deleteCashierEntry', { uniqueId, bookName: currentCashierSubBook });
 
-    if (res && res.success) {
-      if (typeof showToast === 'function') showToast("SUCCESS", "စာရင်း ဖျက်သိမ်းခြင်း အောင်မြင်ပါသည်။");
-      await loadBankCashKitData(true, true);
-    } else {
-      throw new Error(res?.message || "ဖျက်သိမ်းမှု မအောင်မြင်ပါ။");
+    if (response && response.success) {
+      showToast('SUCCESS', 'Cashier စာရင်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။');
+      if (typeof clearAllApiCache === 'function') clearAllApiCache();
+      loadCashierData(false);
     }
-  } catch (err) {
-    if (typeof showToast === 'function') showToast("ERROR", "ဖျက်သိမ်းမှု အမှား: " + err.message);
-  } finally {
-    if (typeof toggleLoading === 'function') toggleLoading(false);
+  } catch (error) {
+    showToast('ERROR', `ဖျက်သိမ်းမှု အမှား: ${error.message}`);
   }
 }
 
-function changePageBankCashKit(dir) {
-  if (dir === -1 && bckPage > 1) {
-    bckPage--;
-    loadBankCashKitData(false);
-  } else if (dir === 1 && (bckPage * bckLimit) < bckTotalRows) {
-    bckPage++;
-    loadBankCashKitData(false);
-  }
-}
-
-function updatePaginationUIBankCashKit() {
-  const info = document.getElementById('bck-pagination-info');
-  if (info) {
-    const start = bckTotalRows === 0 ? 0 : (bckPage - 1) * bckLimit + 1;
-    const end = Math.min(bckPage * bckLimit, bckTotalRows);
-    info.innerHTML = `Showing <span class="text-indigo-400 font-extrabold">${start}</span> to <span class="text-indigo-400 font-extrabold">${end}</span> of <span class="text-indigo-400 font-extrabold">${bckTotalRows}</span> entries`;
-  }
-
-  const prevBtn = document.getElementById('bck-btn-prev');
-  if (prevBtn) prevBtn.disabled = (bckPage === 1);
-
-  const nextBtn = document.getElementById('bck-btn-next');
-  if (nextBtn) nextBtn.disabled = (bckPage * bckLimit >= bckTotalRows);
-}
-
-function onSearchInputBankCashKit() {
-  if (window.searchTimeoutBck) clearTimeout(window.searchTimeoutBck);
-  window.searchTimeoutBck = setTimeout(() => {
-    renderTableBankCashKit();
-  }, 100);
-}
-
-function exportToCSVBankCashKit() {
-  if (!bckActiveData || bckActiveData.length === 0) {
-    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့် စာရင်းမျှ မရှိပါ။");
+/**
+ * 💡 CSV Export Engine with UTF-8 BOM
+ */
+function exportToCSVCashier() {
+  if (!allCashierData || allCashierData.length === 0) {
+    showToast("ERROR", "ထုတ်ယူရန် မည်သည့် စာရင်းမျှ မရှိပါ။");
     return;
   }
 
-  let csv = "NO,DATE,CATEGORY,DESCRIPTION,METHOD,DEBIT,CREDIT,BALANCES,TRANSFER,VR NO,MY,FY,UNIQUEID\n";
-  bckActiveData.forEach(r => {
-    let desc = `"${r.description || ''}"`;
-    csv += `${r.no},${r.date},${r.category},${desc},${r.method},${r.debit},${r.credit},${r.balances},${r.transfer || ''},${r.vrNo},${r.my || ''},${r.fy || ''},${r.uniqueId}\n`;
+  let csv = "NO,DATE,RESPONSIBILITY PERSON,CATEGORY,DESCRIPTION,METHOD,DEBIT,CREDIT,BALANCES,TRANSFER,VR NO,MY,FY,BOOK NAME,CREATED BY,CREATED AT,UNIQUEID\n";
+  allCashierData.forEach(r => {
+    let desc = `"${(r.description || '').replace(/"/g, '""')}"`;
+    let resp = `"${(r.respPerson || '').replace(/"/g, '""')}"`;
+    csv += `${r.no},${r.date},${resp},${r.category},${desc},${r.method},${r.debit || 0},${r.credit || 0},${r.balances || 0},${r.transfer || ''},${r.vrNo || ''},${r.my || ''},${r.fy || ''},${r.bookName || ''},${r.createdBy || ''},${r.createdAt || ''},${r.uniqueId}\n`;
   });
 
   const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = `${currentSubBook}_ledger_${new Date().toISOString().slice(0, 10)}.csv`;
+  link.download = `${currentCashierSubBook}_export_${new Date().toISOString().slice(0, 10)}.csv`;
   link.style.display = 'none';
   document.body.appendChild(link);
   link.click();
