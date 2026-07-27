@@ -27,10 +27,10 @@
     html.not-authed #erp-workspace { display: none; }
   </style>
   
-  <!-- Production Tailwind CSS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
-  <!-- Font Awesome Icons CDN -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Production Tailwind CSS (Local Offline) -->
+  <link rel="stylesheet" href="css/tailwind.min.css">
+  <!-- Font Awesome Icons (Local Offline) -->
+  <link rel="stylesheet" href="css/fontawesome.min.css">
   <!-- Custom ERP Theme & Print Engine -->
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -51,18 +51,19 @@
       <form id="login-form" onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs">
         <div>
           <label class="block font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Username</label>
-          <!-- 💡 DROPDOWN MATCHING USERS SHEET ROLES -->
-          <select id="login-username" required class="w-full p-2.5 bg-[#0f172a] border border-slate-800 rounded-lg text-xs text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500">
-            <option value="">Select user account...</option>
-            <option value="Owner">Owner</option>
-            <option value="Admin">Admin</option>
-            <option value="Finance">Finance</option>
-            <option value="HR Staff">HR Staff</option>
-            <option value="Accountant">Accountant</option>
-            <option value="Cashier">Cashier</option>
-            <option value="Staff">Staff</option>
-            <option value="Viewer">Viewer</option>
-          </select>
+          <!-- 💡 FLEXIBLE USERNAME INPUT WITH ROLE SUGGESTIONS -->
+          <input type="text" id="login-username" list="username-list" required placeholder="Type username or select account..." class="w-full p-2.5 bg-[#0f172a] border border-slate-800 rounded-lg text-xs text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500">
+          <datalist id="username-list">
+            <option value="Owner"></option>
+            <option value="Admin"></option>
+            <option value="Finance"></option>
+            <option value="HR Staff"></option>
+            <option value="Accountant"></option>
+            <option value="Cashier"></option>
+            <option value="Main Cashier"></option>
+            <option value="Staff"></option>
+            <option value="Viewer"></option>
+          </datalist>
         </div>
 
         <div>
