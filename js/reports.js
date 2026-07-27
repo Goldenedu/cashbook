@@ -4,11 +4,11 @@
  * 💡 Full Unabridged Financial & Demographic Analytics Engine with Full CSV Export & Real-time Search
  */
 
-let gStudentReportRawData = null;
-let gIncomeDetailRawData = null;
-let gFinancialReportRawData = null;
-let gMonthlyIncomeRawData = null;
-let gStaffFundRawData = null;
+var gStudentReportRawData = null;
+var gIncomeDetailRawData = null;
+var gFinancialReportRawData = null;
+var gMonthlyIncomeRawData = null;
+var gStaffFundRawData = null;
 
 // 💡 SAFE LOADING & TOAST WRAPPERS
 function safeShowLoading(show) {
