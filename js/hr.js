@@ -46,35 +46,38 @@ function clearDateFilterHrPayroll() {
  * 💡 Switch HR Sub-Tabs (Default 'payroll')
  */
 function switchHrSubTab(tabName = 'payroll') {
+  currentHrSubTab = tabName;
+
   const payrollSec = document.getElementById('hr-payroll-section');
   const staffSec = document.getElementById('hr-staff-section');
 
-  const btnPay = document.getElementById('hr-tab-payroll');
-  const btnFt = document.getElementById('hr-tab-fulltime');
-  const btnPt = document.getElementById('hr-tab-parttime');
+  const hrThemes = {
+    'payroll':  { btnId: 'hr-tab-payroll', active: 'bg-teal-500/25 text-teal-300 border-teal-400/60 ring-2 ring-teal-500/30 opacity-100 shadow-teal-950/40', inactive: 'bg-teal-950/20 border-teal-500/20 text-teal-400/60 opacity-60 hover:opacity-100' },
+    'fulltime': { btnId: 'hr-tab-fulltime', active: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 ring-2 ring-emerald-500/30 opacity-100 shadow-emerald-950/40', inactive: 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400/60 opacity-60 hover:opacity-100' },
+    'parttime': { btnId: 'hr-tab-parttime', active: 'bg-purple-500/25 text-purple-300 border-purple-400/60 ring-2 ring-purple-500/30 opacity-100 shadow-purple-950/40', inactive: 'bg-purple-950/20 border-purple-500/20 text-purple-400/60 opacity-60 hover:opacity-100' }
+  };
 
-  [btnPay, btnFt, btnPt].forEach(btn => {
+  Object.keys(hrThemes).forEach(key => {
+    const theme = hrThemes[key];
+    const btn = document.getElementById(theme.btnId);
     if (btn) {
-      btn.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2";
+      btn.className = `hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 border ${tabName === key ? theme.active : theme.inactive}`;
     }
   });
 
   if (tabName === 'payroll') {
     if (payrollSec) payrollSec.classList.remove('hidden');
     if (staffSec) staffSec.classList.add('hidden');
-    if (btnPay) btnPay.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-teal-600 text-white flex items-center gap-2 shadow-lg shadow-teal-600/10";
     loadHrPayrollData(false);
 
   } else if (tabName === 'fulltime') {
     if (payrollSec) payrollSec.classList.add('hidden');
     if (staffSec) staffSec.classList.remove('hidden');
-    if (btnFt) btnFt.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white flex items-center gap-2 shadow-lg shadow-indigo-600/10";
     if (typeof switchStaffCategory === 'function') switchStaffCategory('Full Time');
 
   } else if (tabName === 'parttime') {
     if (payrollSec) payrollSec.classList.add('hidden');
     if (staffSec) staffSec.classList.remove('hidden');
-    if (btnPt) btnPt.className = "hr-sub-tab-btn px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white flex items-center gap-2 shadow-lg shadow-indigo-600/10";
     if (typeof switchStaffCategory === 'function') switchStaffCategory('Part Time');
   }
 }
@@ -166,7 +169,7 @@ function renderTableHrPayroll() {
       <tr class="hover:bg-slate-800/30 text-slate-300">
         <td class="text-center font-semibold text-slate-500">${row.no || '-'}</td>
         <td class="font-mono text-xs">${escapeHtml(row.date) || '-'}</td>
-        <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">${escapeHtml(row.category) || '-'}</span></td>
+        <td>${typeof window.formatCategoryBadgeHtml === 'function' ? window.formatCategoryBadgeHtml(row.category) : escapeHtml(row.category)}</td>
         <td class="font-bold text-slate-100 max-w-sm truncate" title="${escapeHtml(row.description)}">${escapeHtml(row.description) || '-'}</td>
         <td class="font-bold text-slate-400">${escapeHtml(row.method) || '-'}</td>
         <td class="text-right text-emerald-400 font-mono font-bold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
