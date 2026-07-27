@@ -325,7 +325,7 @@ function renderOfficeTable() {
       <tr class="hover:bg-slate-800/20 text-slate-300">
         <td class="text-center font-semibold text-slate-500">${row.no}</td>
         <td>${escapeHtml(displayDate)}</td>
-        <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">${escapeHtml(row.category)}</span></td>
+        <td>${typeof window.formatCategoryBadgeHtml === 'function' ? window.formatCategoryBadgeHtml(row.category) : escapeHtml(row.category)}</td>
         <td class="min-w-[280px] max-w-md truncate" title="${escapeHtml(row.description)}">${escapeHtml(row.description)}</td>
         <td class="text-right">${row.unit || '0'}</td>
         <td class="text-right">${Number(row.unitPrice || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
