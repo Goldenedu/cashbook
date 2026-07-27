@@ -15,11 +15,16 @@ var currentSubBook = 'bank'; // 'bank' or 'cash'
  * Searches strictly by: Description, Category, Debit Amount, Credit Amount.
  * Excluded: Method, VR No, MY, FY, UniqueID.
  */
-function filterBankCashKitData(list = [], searchVal = '') {
-  if (!searchVal || !searchVal.trim()) return list;
-  const q = searchVal.trim().toLowerCase();
-
+function filterBankCashKitData(list = [], searchVal = '', fromDate = '', toDate = '') {
   return list.filter(row => {
+    // 1. Date Range Check
+    if (typeof window.isDateInRange === 'function') {
+      if (!window.isDateInRange(row.date, fromDate, toDate)) return false;
+    }
+
+    // 2. Text Search Check
+    if (!searchVal || !searchVal.trim()) return true;
+    const q = searchVal.trim().toLowerCase();
     const descMatch = String(row.description || '').toLowerCase().includes(q);
     const catMatch = String(row.category || '').toLowerCase().includes(q);
     const debitMatch = String(row.debit || '').includes(q);
@@ -27,6 +32,18 @@ function filterBankCashKitData(list = [], searchVal = '') {
 
     return descMatch || catMatch || debitMatch || creditMatch;
   });
+}
+
+function clearDateFilterBCK() {
+  const fromEl = document.getElementById('bck-date-from');
+  const toEl = document.getElementById('bck-date-to');
+  if (fromEl) fromEl.value = '';
+  if (toEl) toEl.value = '';
+  renderTableBankCashKit();
+}
+
+function onSearchInputBankCashKit() {
+  renderTableBankCashKit();
 }
 
 /**
@@ -42,7 +59,7 @@ function switchSubBook(bookType) {
   }
 
   updateSidebarHighlight(currentSubBook);
-  loadBankCashKitData(false, true);
+  loadBankCashKitData(false, false);
 }
 
 /**
@@ -53,11 +70,16 @@ async function loadBankCashKitData(isSilent = false, forceRefresh = false) {
   if (!token) return;
 
   try {
-    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
-
     const searchInput = document.getElementById('bck-search');
     const searchVal = searchInput ? searchInput.value.trim() : '';
     const bookName = currentSubBook === 'bank' ? 'Main Bank Book' : 'Main Cash Book';
+
+    const cacheKey = `getBankCashData_${JSON.stringify({ bookName: bookName, page: bckPage, limit: bckLimit, searchVal: searchVal })}`;
+    const hasCache = !forceRefresh && !!window.getApiCache(cacheKey);
+
+    if (!isSilent && !hasCache && typeof toggleLoading === 'function') {
+      toggleLoading(true);
+    }
 
     const res = await callApi('getBankCashData', {
       bookName: bookName,
@@ -111,7 +133,12 @@ function renderTableBankCashKit() {
   const searchInput = document.getElementById('bck-search');
   const searchVal = searchInput ? searchInput.value.trim() : '';
 
-  const filteredRows = filterBankCashKitData(bckActiveData, searchVal);
+  const fromEl = document.getElementById('bck-date-from');
+  const toEl = document.getElementById('bck-date-to');
+  const fromDate = fromEl ? fromEl.value : '';
+  const toDate = toEl ? toEl.value : '';
+
+  const filteredRows = filterBankCashKitData(bckActiveData, searchVal, fromDate, toDate);
 
   if (!filteredRows || filteredRows.length === 0) {
     tbody.innerHTML = `<tr><td colspan="13" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော စာရင်း မရှိပါ။</td></tr>`;

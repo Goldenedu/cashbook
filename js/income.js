@@ -16,11 +16,17 @@ var promoMatrixCache = null;
  * Searches strictly by: Student Name (fyidName / name), FYID, Student ID.
  * Excluded: Remark, Phone, Method, VR No, Account Name.
  */
-function filterIncomeData(list = [], searchVal = '') {
-  if (!searchVal || !searchVal.trim()) return list;
-  const q = searchVal.trim().toLowerCase();
-
+function filterIncomeData(list = [], searchVal = '', fromDate = '', toDate = '') {
   return list.filter(row => {
+    // 1. Date Range Check
+    if (typeof window.isDateInRange === 'function') {
+      if (!window.isDateInRange(row.date || row.effDate, fromDate, toDate)) return false;
+    }
+
+    // 2. Text Search Check
+    if (!searchVal || !searchVal.trim()) return true;
+    const q = searchVal.trim().toLowerCase();
+
     const nameMatch = String(row.fyidName || row.name || '').toLowerCase().includes(q);
     const fyidMatch = String(row.fyid || '').toLowerCase().includes(q);
     const idMatch = String(row.id || '').toLowerCase().includes(q);
@@ -29,23 +35,41 @@ function filterIncomeData(list = [], searchVal = '') {
   });
 }
 
+function clearDateFilterIncome() {
+  const fromEl = document.getElementById('income-date-from');
+  const toEl = document.getElementById('income-date-to');
+  if (fromEl) fromEl.value = '';
+  if (toEl) toEl.value = '';
+  renderTableIncome();
+}
+
+function onSearchInputIncome() {
+  renderTableIncome();
+}
+
 /**
  * 💡 Load Main Income Book Data
  */
-async function loadIncomeData(isSilent = false) {
+async function loadIncomeData(isSilent = false, forceRefresh = false) {
   const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
   if (!token) return;
 
   try {
-    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
-
     const searchInput = document.getElementById('income-search');
     const searchVal = searchInput ? searchInput.value.trim() : '';
+
+    const cacheKey = `getIncomeData_${JSON.stringify({ page: incomePage, limit: incomeLimit, searchVal: searchVal })}`;
+    const hasCache = !forceRefresh && !!window.getApiCache(cacheKey);
+
+    if (!isSilent && !hasCache && typeof toggleLoading === 'function') {
+      toggleLoading(true);
+    }
 
     const res = await callApi('getIncomeData', {
       page: incomePage,
       limit: incomeLimit,
-      searchVal: searchVal
+      searchVal: searchVal,
+      forceRefresh: forceRefresh
     });
 
     if (!res || !res.success) {
@@ -95,8 +119,13 @@ function renderTableIncome() {
   const searchInput = document.getElementById('income-search');
   const searchVal = searchInput ? searchInput.value.trim() : '';
 
-  // 💡 Client-side Strict Multi-Column Filter (NAME, FYIDNAME, FYID, ID Only)
-  const filteredRows = filterIncomeData(incomeActiveData, searchVal);
+  const fromEl = document.getElementById('income-date-from');
+  const toEl = document.getElementById('income-date-to');
+  const fromDate = fromEl ? fromEl.value : '';
+  const toDate = toEl ? toEl.value : '';
+
+  // 💡 Client-side Strict Multi-Column Filter (NAME, FYIDNAME, FYID, ID Only + Date Range)
+  const filteredRows = filterIncomeData(incomeActiveData, searchVal, fromDate, toDate);
 
   if (!filteredRows || filteredRows.length === 0) {
     tbody.innerHTML = `<tr><td colspan="19" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော ဝင်ငွေစာရင်း မရှိပါ။</td></tr>`;

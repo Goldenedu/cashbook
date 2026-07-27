@@ -73,7 +73,10 @@ function showReportPanel(panelId) {
 
 async function loadReportFinancialData(forceRefresh = false) {
   try {
-    safeShowLoading(true);
+    const cacheKey = `getFinancialReportData_{}`;
+    const hasCache = !forceRefresh && !!window.getApiCache(cacheKey);
+    if (!hasCache) safeShowLoading(true);
+
     const res = await callApi('getFinancialReportData', { forceRefresh });
     if (res && res.success && res.data) {
       gFinancialReportRawData = res.data;
@@ -525,7 +528,10 @@ function exportToCSVReportStudent() {
 
 async function loadReportStaffFundData(forceRefresh = false) {
   try {
-    safeShowLoading(true);
+    const cacheKey = `getFundReportData_{}`;
+    const hasCache = !forceRefresh && !!window.getApiCache(cacheKey);
+    if (!hasCache) safeShowLoading(true);
+
     const res = await callApi('getFundReportData', { forceRefresh });
     if (res && res.success && Array.isArray(res.data)) {
       gStaffFundRawData = res.data;

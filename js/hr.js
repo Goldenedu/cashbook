@@ -15,17 +15,31 @@ var hrPaySearchVal = '';
  * Searches strictly by: Staff Name (contained in Description), Staff ID (FID/PID), Position.
  * Excluded: Phone, NRC, Email, Method, VR No.
  */
-function filterHrPayrollData(list = [], searchVal = '') {
-  if (!searchVal || !searchVal.trim()) return list;
-  const q = searchVal.trim().toLowerCase();
-
+function filterHrPayrollData(list = [], searchVal = '', fromDate = '', toDate = '') {
   return list.filter(row => {
+    // 1. Date Range Check
+    if (typeof window.isDateInRange === 'function') {
+      if (!window.isDateInRange(row.date, fromDate, toDate)) return false;
+    }
+
+    // 2. Text Search Check
+    if (!searchVal || !searchVal.trim()) return true;
+    const q = searchVal.trim().toLowerCase();
+
     const desc = String(row.description || row.staffName || '').toLowerCase();
     const staffId = String(row.staffId || row.id || '').toLowerCase();
     const position = String(row.position || '').toLowerCase();
 
     return desc.includes(q) || staffId.includes(q) || position.includes(q);
   });
+}
+
+function clearDateFilterHrPayroll() {
+  const fromEl = document.getElementById('hr-date-from');
+  const toEl = document.getElementById('hr-date-to');
+  if (fromEl) fromEl.value = '';
+  if (toEl) toEl.value = '';
+  onSearchInputHrPayroll();
 }
 
 /**
@@ -68,21 +82,27 @@ function switchHrSubTab(tabName = 'payroll') {
 /**
  * 💡 Load HR Payroll Data
  */
-async function loadHrPayrollData(isSilent = false) {
+async function loadHrPayrollData(isSilent = false, forceRefresh = false) {
   const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
   if (!token) return;
 
   try {
-    if (!isSilent) toggleLoading(true);
-
     const searchInput = document.getElementById('hr-payroll-search');
     hrPaySearchVal = searchInput ? searchInput.value.trim() : '';
+
+    const cacheKey = `getExpenseData_${JSON.stringify({ bookName: 'HR Payroll Exp Book', page: hrPayPage, limit: hrPayLimit, searchVal: hrPaySearchVal })}`;
+    const hasCache = !forceRefresh && !!window.getApiCache(cacheKey);
+
+    if (!isSilent && !hasCache && typeof toggleLoading === 'function') {
+      toggleLoading(true);
+    }
 
     const res = await callApi('getExpenseData', {
       bookName: 'HR Payroll Exp Book',
       page: hrPayPage,
       limit: hrPayLimit,
-      searchVal: hrPaySearchVal
+      searchVal: hrPaySearchVal,
+      forceRefresh: forceRefresh
     });
 
     if (!res || !res.success) {
@@ -123,8 +143,13 @@ function renderTableHrPayroll() {
   const tbody = document.getElementById('hr-payroll-table-body');
   if (!tbody) return;
 
-  // Apply Strict Filtering Criteria (Staff Name, Staff ID, Position)
-  const displayData = filterHrPayrollData(hrPayActiveData, hrPaySearchVal);
+  const fromEl = document.getElementById('hr-date-from');
+  const toEl = document.getElementById('hr-date-to');
+  const fromDate = fromEl ? fromEl.value : '';
+  const toDate = toEl ? toEl.value : '';
+
+  // Apply Strict Filtering Criteria (Staff Name, Staff ID, Position + Date Range)
+  const displayData = filterHrPayrollData(hrPayActiveData, hrPaySearchVal, fromDate, toDate);
 
   if (!displayData || displayData.length === 0) {
     tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော HR Payroll စာရင်း မရှိပါ။</td></tr>`;

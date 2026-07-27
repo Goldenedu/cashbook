@@ -65,7 +65,12 @@ async function loadCashierData(useCache = true) {
       return;
     }
 
-    if (typeof toggleLoading === 'function') toggleLoading(true);
+    const cacheKey = `getCashierData_${JSON.stringify({ bookName: currentCashierSubBook })}`;
+    const hasCache = useCache && !!window.getApiCache(cacheKey);
+
+    if (!hasCache && typeof toggleLoading === 'function') {
+      toggleLoading(true);
+    }
 
     const response = await callApi('getCashierData', {
       bookName: currentCashierSubBook,
@@ -135,20 +140,24 @@ function renderStatsCashier(stats) {
 /**
  * 💡 Strict Search Criteria Filter
  */
-function filterCashierData(list = [], searchVal = '') {
-  if (!searchVal || !searchVal.trim()) return list;
-  const q = searchVal.trim().toLowerCase();
+function filterCashierData(list = [], searchVal = '', fromDate = '', toDate = '') {
+  return list.filter(row => {
+    // 1. Date Range Check
+    if (typeof window.isDateInRange === 'function') {
+      if (!window.isDateInRange(row.date || row.effDate, fromDate, toDate)) return false;
+    }
 
-  if (currentCashierSubBook === 'todayIncome') {
-    return list.filter(row => {
+    // 2. Text Search Check
+    if (!searchVal || !searchVal.trim()) return true;
+    const q = searchVal.trim().toLowerCase();
+
+    if (currentCashierSubBook === 'todayIncome') {
       const nameMatch = String(row.fyidName || row.name || '').toLowerCase().includes(q);
       const fyidMatch = String(row.fyid || '').toLowerCase().includes(q);
       const idMatch = String(row.id || '').toLowerCase().includes(q);
       return nameMatch || fyidMatch || idMatch;
-    });
-  }
+    }
 
-  return list.filter(row => {
     const descMatch = String(row.description || '').toLowerCase().includes(q);
     const catMatch = String(row.category || '').toLowerCase().includes(q);
     const respMatch = String(row.respPerson || '').toLowerCase().includes(q);
@@ -159,6 +168,14 @@ function filterCashierData(list = [], searchVal = '') {
   });
 }
 
+function clearDateFilterCashier() {
+  const fromEl = document.getElementById('ca-date-from');
+  const toEl = document.getElementById('ca-date-to');
+  if (fromEl) fromEl.value = '';
+  if (toEl) toEl.value = '';
+  applyCashierSearchAndRender();
+}
+
 /**
  * 💡 Apply Search & Render Table
  */
@@ -166,7 +183,12 @@ function applyCashierSearchAndRender() {
   const searchInput = document.getElementById('cashier-search');
   const query = searchInput ? searchInput.value.trim() : '';
 
-  filteredCashierData = filterCashierData(allCashierData, query);
+  const fromEl = document.getElementById('ca-date-from');
+  const toEl = document.getElementById('ca-date-to');
+  const fromDate = fromEl ? fromEl.value : '';
+  const toDate = toEl ? toEl.value : '';
+
+  filteredCashierData = filterCashierData(allCashierData, query, fromDate, toDate);
   currentCashierPage = 1;
   renderCashierTable();
 }

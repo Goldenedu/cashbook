@@ -28,11 +28,16 @@ function parseCleanNum(val) {
 /**
  * 💡 Strict Filter Function for Office Expenses
  */
-function filterOfficeData(list = [], searchVal = '') {
-  if (!searchVal || !searchVal.trim()) return list;
-  const q = searchVal.trim().toLowerCase();
-
+function filterOfficeData(list = [], searchVal = '', fromDate = '', toDate = '') {
   return list.filter(row => {
+    // 1. Date Range Check
+    if (typeof window.isDateInRange === 'function') {
+      if (!window.isDateInRange(row.date, fromDate, toDate)) return false;
+    }
+
+    // 2. Text Search Check
+    if (!searchVal || !searchVal.trim()) return true;
+    const q = searchVal.trim().toLowerCase();
     const desc = String(row.description || '').toLowerCase();
     const cat = String(row.category || '').toLowerCase();
     const debit = String(row.debit || '');
@@ -40,6 +45,14 @@ function filterOfficeData(list = [], searchVal = '') {
 
     return desc.includes(q) || cat.includes(q) || debit.includes(q) || credit.includes(q);
   });
+}
+
+function clearDateFilterOffice() {
+  const fromEl = document.getElementById('office-date-from');
+  const toEl = document.getElementById('office-date-to');
+  if (fromEl) fromEl.value = '';
+  if (toEl) toEl.value = '';
+  onSearchInputOffice();
 }
 
 /**
@@ -225,24 +238,25 @@ async function fetchUniformProductsListOffice() {
   }
 }
 
-/**
- * 💡 Load Office Expense Data
- */
-async function loadOfficeData(isSilent = false) {
-  if (!isSilent) toggleLoading(true);
-
+async function loadOfficeData(isSilent = false, forceRefresh = false) {
   const state = window.OfficeState;
+  const bookName = (window.currentExpenseBook === 'kitchen' || window.AppState?.currentModule === 'kitchen') ? 'Kitchen Exp Book' : 'Office Exp Book';
 
   try {
+    const cacheKey = `getExpenseData_${JSON.stringify({ bookName, page: state.page, limit: state.limit, searchVal: state.searchVal })}`;
+    const hasCache = !forceRefresh && !!window.getApiCache(cacheKey);
+
+    if (!isSilent && !hasCache && typeof toggleLoading === 'function') {
+      toggleLoading(true);
+    }
+
     const response = await callApi('getExpenseData', {
-      bookName: 'Office Exp Book',
+      bookName: bookName,
       page: state.page,
       limit: state.limit,
       searchVal: state.searchVal,
-      role: window.AppState ? window.AppState.currentUserRole : 'Admin'
-    }, 'GET');
-
-    if (!isSilent) toggleLoading(false);
+      forceRefresh: forceRefresh
+    });
 
     if (response && response.data) {
       state.activeData = response.data;
@@ -254,8 +268,11 @@ async function loadOfficeData(isSilent = false) {
       updatePaginationOffice();
     }
   } catch (err) {
-    if (!isSilent) toggleLoading(false);
-    console.error("Error loading Office Exp data:", err);
+    console.error("Error loading Expense data:", err);
+  } finally {
+    if (!isSilent && typeof toggleLoading === 'function') {
+      toggleLoading(false);
+    }
   }
 }
 
@@ -279,7 +296,12 @@ function renderOfficeTable() {
   const rawData = window.OfficeState.activeData || [];
   const searchVal = window.OfficeState.searchVal || '';
 
-  const data = filterOfficeData(rawData, searchVal);
+  const fromEl = document.getElementById('office-date-from');
+  const toEl = document.getElementById('office-date-to');
+  const fromDate = fromEl ? fromEl.value : '';
+  const toDate = toEl ? toEl.value : '';
+
+  const data = filterOfficeData(rawData, searchVal, fromDate, toDate);
 
   if (!data || data.length === 0) {
     tableBody.innerHTML = `<tr><td colspan="16" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော စာရင်း မရှိပါ။</td></tr>`;

@@ -103,6 +103,9 @@ async function switchTab(tabId) {
     'uniform': 'uniform',
     'promotion': 'promotion',
     'report-financial': 'reports',
+    'report-in-detail': 'reports',
+    'report-in-rep': 'reports',
+    'report-student': 'reports',
     'report-staff-fund': 'reports-fund',
     'settings': 'settings'
   };
@@ -119,7 +122,10 @@ async function switchTab(tabId) {
     'student': 'Student Directory List',
     'uniform': 'Uniform Inventory Ledger',
     'promotion': 'Promotion Fee Rate Matrix',
-    'report-financial': 'Financial Reports & Statements',
+    'report-financial': 'Financial Statement Report',
+    'report-in-detail': 'Income Detail Report (InDetail)',
+    'report-in-rep': 'Monthly Income Report (InRep)',
+    'report-student': 'Student Demographics Report',
     'report-staff-fund': 'Staff Bonus & Fund Report',
     'settings': 'System Settings & Controls'
   };
@@ -249,6 +255,24 @@ async function triggerModuleInit(tabId) {
           showReportPanel('panel-report-financial');
         } else if (typeof loadReportFinancialData === 'function') {
           await loadReportFinancialData(false);
+        }
+        break;
+
+      case 'report-in-detail':
+        if (typeof showReportPanel === 'function') {
+          showReportPanel('panel-report-income-detail');
+        }
+        break;
+
+      case 'report-in-rep':
+        if (typeof showReportPanel === 'function') {
+          showReportPanel('panel-report-monthly-income');
+        }
+        break;
+
+      case 'report-student':
+        if (typeof showReportPanel === 'function') {
+          showReportPanel('panel-report-student');
         }
         break;
 

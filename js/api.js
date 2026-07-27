@@ -179,22 +179,47 @@ window.callApi = async function(action, payload = {}, method = 'POST') {
 };
 
 /**
- * 💡 Background Prefetching Engine
- * Login ပြီးသည်နှင့် မာစတာ စာအုပ်များနှင့် Cashier စာအုပ်များ၏ ဒေတာကို နောက်ကွယ်မှ ကြိုတင်ဆွဲယူမည်
+ * 💡 Enterprise Background Prefetching Engine (0ms Instant Navigation)
+ * Login ပြီးသည်နှင့် စာမျက်နှာ HTML Templates များနှင့် Modules အားလုံး၏ ဒေတာများကို နောက်ကွယ်မှ ကြိုတင်ဆွဲယူမည်
  */
 window.prefetchCoreModules = function() {
+  // 1. Prefetch View HTML Templates into window.viewCache
+  window.viewCache = window.viewCache || {};
+  const views = [
+    'dashboard', 'bank-cash-kit', 'income', 'office', 'hr',
+    'cashier', 'student', 'uniform', 'promotion', 'reports',
+    'reports-fund', 'settings'
+  ];
+
+  views.forEach(v => {
+    if (!window.viewCache[v]) {
+      fetch(`views/${v}.html`)
+        .then(r => r.ok ? r.text() : '')
+        .then(html => { if (html) window.viewCache[v] = html; })
+        .catch(() => {});
+    }
+  });
+
+  // 2. Prefetch API Datasets silently into window.gDataCache
   setTimeout(() => {
     window.callApi('getDashboardData', {}).catch(() => {});
-    window.callApi('getBankCashData', { bookName: 'Bank Book' }).catch(() => {});
-    window.callApi('getBankCashData', { bookName: 'Cash Book' }).catch(() => {});
-    window.callApi('getIncomeData', { page: 1, limit: 30 }).catch(() => {});
-    window.callApi('getStudentData', { page: 1, limit: 30 }).catch(() => {});
-
-    // 💡 CASHIER MODULE BACKGROUND PREFETCH (Instant 0ms Cashier Load)
+    window.callApi('getBankCashData', { bookName: 'Bank Book', page: 1, limit: 30, searchVal: '' }).catch(() => {});
+    window.callApi('getBankCashData', { bookName: 'Cash Book', page: 1, limit: 30, searchVal: '' }).catch(() => {});
+    window.callApi('getIncomeData', { page: 1, limit: 50, searchVal: '' }).catch(() => {});
+    window.callApi('getExpenseData', { bookName: 'Office Exp Book', page: 1, limit: 30, searchVal: '' }).catch(() => {});
+    window.callApi('getExpenseData', { bookName: 'Kitchen Exp Book', page: 1, limit: 30, searchVal: '' }).catch(() => {});
+    window.callApi('getExpenseData', { bookName: 'HR Payroll Exp Book', page: 1, limit: 30, searchVal: '' }).catch(() => {});
     window.callApi('getCashierData', { bookName: 'CACash' }).catch(() => {});
     window.callApi('getCashierData', { bookName: 'CABank' }).catch(() => {});
     window.callApi('getTodayIncomeForCashier', {}).catch(() => {});
-  }, 150);
+    window.callApi('getStudentData', { page: 1, limit: 50 }).catch(() => {});
+    window.callApi('getStaffData', { category: 'FullTime', page: 1, limit: 30, searchVal: '' }).catch(() => {});
+    window.callApi('getUniformData', { page: 1, limit: 1000 }).catch(() => {});
+    window.callApi('getPromotionData', {}).catch(() => {});
+    window.callApi('getFinancialReportData', {}).catch(() => {});
+    window.callApi('getFundReportData', {}).catch(() => {});
+    window.callApi('getSettingsData', {}).catch(() => {});
+  }, 100);
 };
 
 /**
@@ -245,4 +270,37 @@ window.cleanNumber = function(val) {
   var num = parseFloat(cleaned);
   if (isNaN(num)) return 0;
   return isNegative ? -num : num;
+};
+
+window.parseIsoDate = function(dStr) {
+  if (!dStr) return null;
+  var str = String(dStr).trim();
+  if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(str)) {
+    var parts = str.split(/[-/]/);
+    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  }
+  if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}/.test(str)) {
+    var parts2 = str.split(/[-/]/);
+    return new Date(parseInt(parts2[2], 10), parseInt(parts2[1], 10) - 1, parseInt(parts2[0], 10));
+  }
+  var d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+window.isDateInRange = function(rowDateStr, fromDateStr, toDateStr) {
+  if (!fromDateStr && !toDateStr) return true;
+  if (!rowDateStr) return false;
+
+  var rowDate = window.parseIsoDate(rowDateStr);
+  if (!rowDate) return true;
+
+  if (fromDateStr) {
+    var fromDate = new Date(fromDateStr + 'T00:00:00');
+    if (rowDate < fromDate) return false;
+  }
+  if (toDateStr) {
+    var toDate = new Date(toDateStr + 'T23:59:59');
+    if (rowDate > toDate) return false;
+  }
+  return true;
 };
