@@ -621,3 +621,8 @@ function exportToCSVReportStaffFund() {
   link.click();
   document.body.removeChild(link);
 }
+
+// 💡 Export functions to global window object for app.js integration
+window.showReportPanel = showReportPanel;
+window.loadReportFinancialData = loadReportFinancialData;
+window.loadReportStaffFundData = loadReportStaffFundData;
