@@ -256,19 +256,12 @@ async function onStaffIdChangePayroll() {
     await preloadStaffCacheForPayroll();
   }
 
-  const isPartTime = category.startsWith("Part Time");
-
-const staffPool = allStaff.filter(s => {
-  const c = String(s.category || "").trim();
-
-  return isPartTime
-    ? c === "Part Time"
-    : c === "Full Time";
-});
+  // Also check window.gStaffData from js/staff.js
+  const allStaff = [...gHrStaffCache, ...(window.gStaffData || [])];
 
   // 2. Find Staff by ID matching (1, "001", "FID 001", etc.)
   const targetIdNum = parseInt(rawStaffId, 10);
-  const matchedStaff = staffPool.find(s => {
+  const matchedStaff = allStaff.find(s => {
     const sId = parseInt(s.staffId || s.id || s.fid || s.pid || 0, 10);
     const sName = String(s.staffIdName || s.name || '').toLowerCase();
     const searchPad = `00${targetIdNum}`.slice(-3);
