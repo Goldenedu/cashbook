@@ -336,3 +336,6 @@ async function confirmAndExecuteSheetReset() {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
+
+// 💡 Export functions to global window object for app.js integration
+window.loadSettingsData = loadSettingsData;
