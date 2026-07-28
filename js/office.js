@@ -14,7 +14,17 @@ window.OfficeState = {
   uniformProducts: []
 };
 
+window.currentExpenseBook = 'office';
+
 var searchTimeoutOffice = null;
+
+/**
+ * 💡 Switch between Office and Kitchen Expense Books
+ */
+function switchExpenseBook(bookType) {
+  window.currentExpenseBook = bookType.toLowerCase();
+  loadOfficeData(false);
+}
 
 /**
  * 💡 Safe Comma String Number Parser (Fixes "25,000" -> 25000 Parsing Issue)
@@ -664,3 +674,4 @@ window.calculateDebitOffice = calculateDebitOffice;
 window.onSearchInputOffice = onSearchInputOffice;
 window.clearDateFilterOffice = clearDateFilterOffice;
 window.changePageOffice = changePageOffice;
+window.switchExpenseBook = switchExpenseBook;
