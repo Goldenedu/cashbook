@@ -14,6 +14,8 @@ window.OfficeState = {
   uniformProducts: []
 };
 
+var searchTimeoutOffice = null;
+
 /**
  * 💡 Safe Comma String Number Parser (Fixes "25,000" -> 25000 Parsing Issue)
  */
@@ -315,7 +317,7 @@ function updateStatsOffice() {
 }
 
 /**
- * 💡 Render Office Table
+ * 💡 Render Office Table Grid Rows
  */
 function renderOfficeTable() {
   const tableBody = document.getElementById('office-table-body');
@@ -351,21 +353,21 @@ function renderOfficeTable() {
 
     return `
       <tr class="hover:bg-slate-800/20 text-slate-300">
-        <td class="text-center font-semibold text-slate-500">${row.no}</td>
-        <td>${escapeHtml(displayDate)}</td>
+        <td class="text-center font-mono font-semibold text-slate-500">${row.no || '-'}</td>
+        <td class="font-mono text-xs">${escapeHtml(displayDate)}</td>
         <td>${typeof window.formatCategoryBadgeHtml === 'function' ? window.formatCategoryBadgeHtml(row.category) : escapeHtml(row.category)}</td>
         <td class="min-w-[280px] max-w-md truncate" title="${escapeHtml(row.description)}">${escapeHtml(row.description)}</td>
-        <td class="text-right">${row.unit || '0'}</td>
-        <td class="text-right">${Number(row.unitPrice || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+        <td class="text-right font-mono">${row.unit || '0'}</td>
+        <td class="text-right font-mono">${Number(row.unitPrice || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
         <td class="font-bold">${escapeHtml(row.method) || '-'}</td>
-        <td class="text-right text-emerald-400 font-semibold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
-        <td class="text-right text-rose-400 font-semibold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
-        <td class="text-right text-slate-400 font-bold">${Number(row.balances || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-        <td class="text-right text-rose-400 font-bold">${Number(row.liabilities || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-        <td>${escapeHtml(row.transfer) || '-'}</td>
-        <td>${escapeHtml(row.vrNo || '-')}</td>
-        <td>${escapeHtml(row.my || '-')}</td>
-        <td>${escapeHtml(row.fy || '-')}</td>
+        <td class="text-right text-emerald-400 font-mono font-semibold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+        <td class="text-right text-rose-400 font-mono font-semibold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+        <td class="text-right text-slate-400 font-mono font-bold">${Number(row.balances || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+        <td class="text-right text-rose-400 font-mono font-bold">${Number(row.liabilities || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+        <td class="text-xs text-indigo-400">${escapeHtml(row.transfer) || '-'}</td>
+        <td class="font-mono text-xs text-slate-400">${escapeHtml(row.vrNo || '-')}</td>
+        <td class="font-mono text-xs">${escapeHtml(row.my || '-')}</td>
+        <td class="font-mono text-xs font-bold text-indigo-300">${escapeHtml(row.fy || '-')}</td>
         <td class="right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg text-center">
           <div class="flex items-center justify-center gap-3">
             <button onclick="editOfficeEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition ${lockClass}" title="${lockTitle}" ${row.isLocked || isViewer ? 'disabled' : ''}>
@@ -408,7 +410,6 @@ function changePageOffice(dir) {
   }
 }
 
-var searchTimeoutOffice;
 function onSearchInputOffice() {
   clearTimeout(searchTimeoutOffice);
   searchTimeoutOffice = setTimeout(() => {
@@ -419,26 +420,52 @@ function onSearchInputOffice() {
   }, 200);
 }
 
+function bindModalOfficeListeners() {
+  const unitInput = document.getElementById('office-unit');
+  if (unitInput) {
+    unitInput.oninput = onProductChangeOffice;
+  }
+
+  const unitPriceInput = document.getElementById('office-unit-price');
+  if (unitPriceInput) {
+    unitPriceInput.oninput = calculateDebitOffice;
+  }
+
+  const prodSelect = document.getElementById('office-product-id');
+  if (prodSelect) {
+    prodSelect.onchange = onProductChangeOffice;
+  }
+}
+
 function openAddModalOffice() {
   const form = document.getElementById('office-form');
   if (form) form.reset();
 
-  document.getElementById('office-uniqueId').value = "";
+  const uidEl = document.getElementById('office-uniqueId');
+  if (uidEl) uidEl.value = "";
 
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  document.getElementById('office-date').value = `${yyyy}-${mm}-${dd}`;
+  const dateEl = document.getElementById('office-date');
+  if (dateEl) {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    dateEl.value = `${yyyy}-${mm}-${dd}`;
+  }
 
-  document.getElementById('office-form-title').innerText = "Add Office Expense Entry";
+  const titleEl = document.getElementById('office-form-title');
+  if (titleEl) titleEl.innerText = "Add Office Expense Entry";
 
   populateDropdownsOffice();
-  document.getElementById('office-modal').classList.remove('hidden');
+  bindModalOfficeListeners();
+
+  const modalEl = document.getElementById('office-modal');
+  if (modalEl) modalEl.classList.remove('hidden');
 }
 
 function closeOfficeModal() {
-  document.getElementById('office-modal').classList.add('hidden');
+  const modalEl = document.getElementById('office-modal');
+  if (modalEl) modalEl.classList.add('hidden');
 }
 
 function parseLiabilityAmount(val) {
@@ -453,14 +480,14 @@ function parseLiabilityAmount(val) {
  * 💡 Save / Update Office Entry (Calculates and Injects Clean Profit Payload + Triggers Uniform Sync)
  */
 async function saveOfficeForm(e) {
-  e.preventDefault();
+  if (e && e.preventDefault) e.preventDefault();
 
-  const uniqueId = document.getElementById('office-uniqueId').value;
+  const uniqueId = document.getElementById('office-uniqueId')?.value || '';
   const isAdd = (!uniqueId);
-  const category = document.getElementById('office-category').value;
+  const category = document.getElementById('office-category')?.value || '';
   const productId = document.getElementById('office-product-id') ? document.getElementById('office-product-id').value : '';
-  const unit = parseCleanNum(document.getElementById('office-unit').value);
-  const unitPrice = parseCleanNum(document.getElementById('office-unit-price').value);
+  const unit = parseCleanNum(document.getElementById('office-unit')?.value);
+  const unitPrice = parseCleanNum(document.getElementById('office-unit-price')?.value);
 
   // 💡 COMMA-SAFE UNIFORM PROFIT CALCULATION FOR PAYLOAD
   let calculatedProfit = 0;
@@ -475,33 +502,35 @@ async function saveOfficeForm(e) {
 
   const entry = {
     uniqueId: uniqueId,
-    date: document.getElementById('office-date').value,
+    date: document.getElementById('office-date')?.value || '',
     category: category,
     id: productId,
     unit: unit,
     unitPrice: unitPrice,
-    profit: calculatedProfit, // 💡 Clean Profit Amount
-    method: document.getElementById('office-method').value,
-    debit: parseCleanNum(document.getElementById('office-debit').value),
-    credit: parseCleanNum(document.getElementById('office-credit').value),
-    liabilities: parseLiabilityAmount(document.getElementById('office-liabilities').value),
-    transfer: document.getElementById('office-transfer').value,
-    description: document.getElementById('office-description').value,
+    profit: calculatedProfit,
+    method: document.getElementById('office-method')?.value || 'Cash',
+    debit: parseCleanNum(document.getElementById('office-debit')?.value),
+    credit: parseCleanNum(document.getElementById('office-credit')?.value),
+    liabilities: parseLiabilityAmount(document.getElementById('office-liabilities')?.value),
+    transfer: document.getElementById('office-transfer')?.value || '',
+    description: document.getElementById('office-description')?.value || '',
     bookName: 'Office Exp Book',
     createdBy: (window.AppState && window.AppState.currentUser) ? window.AppState.currentUser : "System"
   };
 
   closeOfficeModal();
   const action = isAdd ? 'saveExpenseEntry' : 'updateExpenseEntry';
-  showToast("SUCCESS", "စာရင်းအား သိမ်းဆည်းနေပါသည်...");
-  toggleLoading(true);
+  if (typeof showToast === 'function') showToast("SUCCESS", "စာရင်းအား သိမ်းဆည်းနေပါသည်...");
+  if (typeof toggleLoading === 'function') toggleLoading(true);
 
   try {
     const response = await callApi(action, entry);
-    toggleLoading(false);
+    if (typeof toggleLoading === 'function') toggleLoading(false);
 
     if (response && response.success) {
-      showToast("SUCCESS", isAdd ? "Office Expense စာရင်းသစ် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။" : "Office Expense စာရင်း အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။");
+      if (typeof showToast === 'function') {
+        showToast("SUCCESS", isAdd ? "Office Expense စာရင်းသစ် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။" : "Office Expense စာရင်း အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။");
+      }
       if (window.BankCache) window.BankCache = { bank: null, cash: null, kitchen: null };
       
       // 💡 Advance Uniform ဖြစ်ပါက Uniform Ledger Cache ကိုပါ သန့်ရှင်းပြီး Sync လုပ်ပေးမည်
@@ -514,26 +543,31 @@ async function saveOfficeForm(e) {
 
       loadOfficeData(true);
     } else {
-      showToast("ERROR", "မအောင်မြင်ပါ: " + (response ? response.message : ""));
+      if (typeof showToast === 'function') showToast("ERROR", "မအောင်မြင်ပါ: " + (response ? response.message : ""));
     }
   } catch (err) {
-    toggleLoading(false);
-    showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
+    if (typeof toggleLoading === 'function') toggleLoading(false);
+    if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
   }
 }
 
 function editOfficeEntry(uniqueId) {
   const row = window.OfficeState.activeData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    showToast("ERROR", "မူရင်းဒေတာကို ရှာမတွေ့ပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "မူရင်းဒေတာကို ရှာမတွေ့ပါ။");
     return;
   }
 
   openAddModalOffice();
 
-  document.getElementById('office-uniqueId').value = row.uniqueId;
-  document.getElementById('office-date').value = row.date;
-  document.getElementById('office-category').value = row.category;
+  const uidEl = document.getElementById('office-uniqueId');
+  if (uidEl) uidEl.value = row.uniqueId;
+
+  const dateEl = document.getElementById('office-date');
+  if (dateEl) dateEl.value = row.date;
+
+  const catEl = document.getElementById('office-category');
+  if (catEl) catEl.value = row.category;
   
   onCategoryChangeOffice();
 
@@ -541,20 +575,32 @@ function editOfficeEntry(uniqueId) {
   if (document.getElementById('office-unit')) document.getElementById('office-unit').value = row.unit || 1;
   if (document.getElementById('office-unit-price')) document.getElementById('office-unit-price').value = row.unitPrice || 0;
   
-  document.getElementById('office-method').value = row.method || "Cash";
-  document.getElementById('office-debit').value = row.debit || 0;
-  document.getElementById('office-credit').value = row.credit || 0;
-  document.getElementById('office-liabilities').value = row.liabilities || 0;
-  document.getElementById('office-transfer').value = row.transfer || "";
-  document.getElementById('office-description').value = row.description || "";
+  const methodEl = document.getElementById('office-method');
+  if (methodEl) methodEl.value = row.method || "Cash";
 
-  document.getElementById('office-form-title').innerText = "Edit Office Expense Entry";
+  const debitEl = document.getElementById('office-debit');
+  if (debitEl) debitEl.value = row.debit || 0;
+
+  const creditEl = document.getElementById('office-credit');
+  if (creditEl) creditEl.value = row.credit || 0;
+
+  const liabEl = document.getElementById('office-liabilities');
+  if (liabEl) liabEl.value = row.liabilities || 0;
+
+  const transferEl = document.getElementById('office-transfer');
+  if (transferEl) transferEl.value = row.transfer || "";
+
+  const descEl = document.getElementById('office-description');
+  if (descEl) descEl.value = row.description || "";
+
+  const titleEl = document.getElementById('office-form-title');
+  if (titleEl) titleEl.innerText = "Edit Office Expense Entry";
 }
 
 async function deleteOfficeEntry(uniqueId) {
   if (confirm("ဤ Office Expense စာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) {
-    showToast("SUCCESS", "စာရင်းကို ဖျက်သိမ်းနေပါသည်...");
-    toggleLoading(true);
+    if (typeof showToast === 'function') showToast("SUCCESS", "စာရင်းကို ဖျက်သိမ်းနေပါသည်...");
+    if (typeof toggleLoading === 'function') toggleLoading(true);
 
     try {
       const response = await callApi('deleteExpenseEntry', {
@@ -562,18 +608,18 @@ async function deleteOfficeEntry(uniqueId) {
         bookName: 'Office Exp Book'
       });
 
-      toggleLoading(false);
+      if (typeof toggleLoading === 'function') toggleLoading(false);
 
       if (response && response.success) {
-        showToast("SUCCESS", "စာရင်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။");
+        if (typeof showToast === 'function') showToast("SUCCESS", "စာရင်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။");
         if (window.BankCache) window.BankCache = { bank: null, cash: null, kitchen: null };
         loadOfficeData(true);
       } else {
-        showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response ? response.message : ""));
+        if (typeof showToast === 'function') showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response ? response.message : ""));
       }
     } catch (err) {
-      toggleLoading(false);
-      showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
+      if (typeof toggleLoading === 'function') toggleLoading(false);
+      if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာချိတ်ဆက်မှု အမှား- " + err.message);
     }
   }
 }
@@ -581,14 +627,15 @@ async function deleteOfficeEntry(uniqueId) {
 function exportToCSVOffice() {
   const data = window.OfficeState.activeData;
   if (!data || data.length === 0) {
-    showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့်စာရင်းမျှ မရှိပါ။");
     return;
   }
 
   let csv = "NO,DATE,CATEGORY,DESCRIPTION,UNIT,UNIT PRICE,METHOD,DEBIT,CREDIT,BALANCES,LIABILITIES,TRANSFER,VR NO,MY,FY,UNIQUEID\n";
   data.forEach(row => {
     let desc = `"${(row.description || '').replace(/"/g, '""')}"`;
-    csv += `${row.no},${row.date},${row.category},${desc},${row.unit || 0},${row.unitPrice || 0},${row.method},${row.debit},${row.credit},${row.balances},${row.liabilities || 0},${row.transfer || ''},${row.vrNo || ''},${row.my || ''},${row.fy || ''},${row.uniqueId}\n`;
+    let cat = `"${(row.category || '').replace(/"/g, '""')}"`;
+    csv += `${row.no || ''},${row.date || ''},${cat},${desc},${row.unit || 0},${row.unitPrice || 0},${row.method || ''},${row.debit || 0},${row.credit || 0},${row.balances || 0},${row.liabilities || 0},${row.transfer || ''},${row.vrNo || ''},${row.my || ''},${row.fy || ''},${row.uniqueId || ''}\n`;
   });
 
   const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
@@ -602,20 +649,18 @@ function exportToCSVOffice() {
   document.body.removeChild(link);
 }
 
-// 💡 Event Listeners ကို ချိတ်ဆက်ပေးခြင်း
-document.addEventListener('DOMContentLoaded', () => {
-  const unitInput = document.getElementById('office-unit');
-  if (unitInput) {
-    unitInput.addEventListener('input', onProductChangeOffice);
-  }
-
-  const unitPriceInput = document.getElementById('office-unit-price');
-  if (unitPriceInput) {
-    unitPriceInput.addEventListener('input', calculateDebitOffice);
-  }
-
-  const prodSelect = document.getElementById('office-product-id');
-  if (prodSelect) {
-    prodSelect.addEventListener('change', onProductChangeOffice);
-  }
-});
+// 💡 EXPOSE GLOBALLY
+window.loadOfficeData = loadOfficeData;
+window.openAddModalOffice = openAddModalOffice;
+window.closeOfficeModal = closeOfficeModal;
+window.saveOfficeForm = saveOfficeForm;
+window.editOfficeEntry = editOfficeEntry;
+window.deleteOfficeEntry = deleteOfficeEntry;
+window.exportToCSVOffice = exportToCSVOffice;
+window.onCategoryChangeOffice = onCategoryChangeOffice;
+window.onTransferTargetChangeOffice = onTransferTargetChangeOffice;
+window.onProductChangeOffice = onProductChangeOffice;
+window.calculateDebitOffice = calculateDebitOffice;
+window.onSearchInputOffice = onSearchInputOffice;
+window.clearDateFilterOffice = clearDateFilterOffice;
+window.changePageOffice = changePageOffice;
