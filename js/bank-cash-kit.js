@@ -444,3 +444,16 @@ function exportToCSVBankCashKit() {
   link.click();
   document.body.removeChild(link);
 }
+
+// 💡 Export functions to global window object for app.js integration
+window.switchSubBook = switchSubBook;
+window.loadBankCashKitData = loadBankCashKitData;
+window.openAddModalBankCashKit = openAddModalBankCashKit;
+window.closeBankCashKitModal = closeBankCashKitModal;
+window.saveBankCashKitForm = saveBankCashKitForm;
+window.editBankCashKitEntry = editBankCashKitEntry;
+window.deleteBankCashKitEntry = deleteBankCashKitEntry;
+window.onSearchInputBankCashKit = onSearchInputBankCashKit;
+window.clearDateFilterBankCashKit = clearDateFilterBankCashKit;
+window.changePageBankCashKit = changePageBankCashKit;
+window.exportToCSVBankCashKit = exportToCSVBankCashKit;
