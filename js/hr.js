@@ -151,7 +151,7 @@ function clearDateFilterHrPayroll() {
 }
 
 /**
- * 💡 Render Table Grid
+ * 💡 Render Table Grid with FY Sequence NO
  */
 function renderHrPayrollTable() {
   const tbody = document.getElementById('hr-payroll-table-body');
@@ -176,10 +176,10 @@ function renderHrPayrollTable() {
   pageItems.forEach((item, index) => {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-800/30 transition-all border-b border-slate-800/40 text-xs';
-    const srNo = startIndex + index + 1;
+    const displayNo = item.no || (startIndex + index + 1);
 
     tr.innerHTML = `
-      <td class="text-center font-mono text-slate-400 py-3 px-3">${srNo}</td>
+      <td class="text-center font-mono font-semibold text-slate-400 py-3 px-3">${displayNo}</td>
       <td class="font-mono py-3 px-3">${escapeHtmlHr(item.date) || '-'}</td>
       <td class="py-3 px-3">${typeof window.formatCategoryBadgeHtml === 'function' ? window.formatCategoryBadgeHtml(item.category) : escapeHtmlHr(item.category)}</td>
       <td class="font-bold text-slate-100 max-w-xs truncate py-3 px-3" title="${escapeHtmlHr(item.description)}">${escapeHtmlHr(item.description) || '-'}</td>
@@ -191,7 +191,7 @@ function renderHrPayrollTable() {
       <td class="text-right font-mono font-bold text-teal-400 py-3 px-3">${item.unpaidFund > 0 ? Number(item.unpaidFund).toLocaleString('en-US') : '-'}</td>
       <td class="font-mono text-slate-400 py-3 px-3">${escapeHtmlHr(item.vrNo) || '-'}</td>
       <td class="font-mono py-3 px-3">${escapeHtmlHr(item.my) || '-'}</td>
-      <td class="font-mono font-bold text-indigo-400 py-3 px-3">${escapeHtmlHr(item.fy) || '-'}</td>
+      <td class="font-mono font-bold text-indigo-300 py-3 px-3">${escapeHtmlHr(item.fy) || '-'}</td>
       <td class="text-center right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg py-3 px-3">
         <div class="flex items-center justify-center gap-2">
           <button onclick="printPayslip('${item.uniqueId}')" class="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition" title="Print Payslip"><i class="fa-solid fa-print"></i></button>
@@ -291,10 +291,12 @@ async function onStaffIdChangePayroll() {
     return;
   }
 
-  // 4. Format Date MY String (e.g. "Jul-26")
+  // 4. Format Date MY String (e.g. "Mar-25", "Apr-26") Dynamic Fallback
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const dObj = new Date(dateVal);
-  const myStr = !isNaN(dObj.getTime()) ? `${months[dObj.getMonth()]}-${String(dObj.getFullYear()).slice(-2)}` : 'Jul-26';
+  const now = new Date();
+  const fallbackMY = `${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)}`;
+  const myStr = !isNaN(dObj.getTime()) ? `${months[dObj.getMonth()]}-${String(dObj.getFullYear()).slice(-2)}` : fallbackMY;
 
   // 5. Calculate Values by Category
   let creditVal = 0;
@@ -386,7 +388,7 @@ async function saveHrPayrollForm(e) {
     const response = await callApi(actionName, payload);
 
     if (response && response.success) {
-      if (typeof showToast === 'function') showToast('SUCCESS', 'HR Payroll စာရင်း အချက်အလက်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။');
+      if (typeof showToast === 'function') showToast('SUCCESS', 'HR Payroll စာရင်း အချက်အလုပ်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။');
       if (typeof clearAllApiCache === 'function') clearAllApiCache();
       loadHrPayrollData(false);
     }
@@ -465,10 +467,20 @@ function printPayslip(uniqueId) {
 
   const netAmt = Number(row.credit || row.debit || 0).toLocaleString('en-US') + ' MMK';
 
+  // Dynamic MY Fallback Calculation
+  let displayMY = row.my;
+  if (!displayMY && row.date) {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const d = new Date(row.date);
+    if (!isNaN(d.getTime())) {
+      displayMY = `${months[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
+    }
+  }
+
   setTxt('print-pay-desc-top', row.description);
   setTxt('print-pay-cat-top', row.category);
   setTxt('print-pay-date-top', row.date);
-  setTxt('print-pay-month-top', row.my || 'Jul-26');
+  setTxt('print-pay-month-top', displayMY || '-');
   setTxt('print-pay-net-top', netAmt);
   setTxt('print-pay-bonus-top', Number(row.unpaidBonus || 0).toLocaleString() + ' MMK');
   setTxt('print-pay-fund-top', Number(row.unpaidFund || 0).toLocaleString() + ' MMK');
@@ -476,7 +488,7 @@ function printPayslip(uniqueId) {
   setTxt('print-pay-desc-bot', row.description);
   setTxt('print-pay-cat-bot', row.category);
   setTxt('print-pay-date-bot', row.date);
-  setTxt('print-pay-month-bot', row.my || 'Jul-26');
+  setTxt('print-pay-month-bot', displayMY || '-');
   setTxt('print-pay-net-bot', netAmt);
   setTxt('print-pay-bonus-bot', Number(row.unpaidBonus || 0).toLocaleString() + ' MMK');
   setTxt('print-pay-fund-bot', Number(row.unpaidFund || 0).toLocaleString() + ' MMK');
@@ -485,7 +497,7 @@ function printPayslip(uniqueId) {
 }
 
 /**
- * 💡 CSV Export
+ * 💡 CSV Export Engine
  */
 function exportToCSVHrPayroll() {
   if (!gHrPayrollData || gHrPayrollData.length === 0) {
@@ -496,7 +508,7 @@ function exportToCSVHrPayroll() {
   let csv = "NO,DATE,CATEGORY,DESCRIPTION,METHOD,DEBIT,CREDIT,BALANCES,UNPAID BONUS,UNPAID FUND,VR NO,MY,FY\n";
   gHrPayrollData.forEach(r => {
     let desc = `"${(r.description || '').replace(/"/g, '""')}"`;
-    csv += `${r.no},${r.date},${r.category},${desc},${r.method},${r.debit || 0},${r.credit || 0},${r.balances || 0},${r.unpaidBonus || 0},${r.unpaidFund || 0},${r.vrNo || ''},${r.my || ''},${r.fy || ''}\n`;
+    csv += `${r.no || ''},${r.date || ''},${r.category || ''},${desc},${r.method || ''},${r.debit || 0},${r.credit || 0},${r.balances || 0},${r.unpaidBonus || 0},${r.unpaidFund || 0},${r.vrNo || ''},${r.my || ''},${r.fy || ''}\n`;
   });
 
   const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
@@ -518,3 +530,4 @@ window.saveHrPayrollForm = saveHrPayrollForm;
 window.editHrPayrollEntry = editHrPayrollEntry;
 window.deleteHrPayrollEntry = deleteHrPayrollEntry;
 window.printPayslip = printPayslip;
+window.exportToCSVHrPayroll = exportToCSVHrPayroll;
