@@ -10,7 +10,8 @@
  * @returns {boolean}
  */
 function hasPermission(permissionName) {
-  const role = (window.AppState?.currentUserRole || localStorage.getItem('golden_user_role') || 'Viewer').trim();
+  const rawRole = (window.AppState?.currentUserRole || localStorage.getItem('golden_user_role') || 'Viewer').trim();
+  const role = rawRole.replace(/\s+/g, ' '); // Normalize internal spaces
 
   const matrix = {
     'Owner': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: true, can_backup: true },
@@ -18,6 +19,7 @@ function hasPermission(permissionName) {
     'Finance': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: false, can_backup: true },
     'Accountant': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: false, can_backup: true },
     'HR Staff': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: true, can_backup: false },
+    'HRStaff': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: true, can_backup: false },
     // 💡 CASHIER ROLE: Granted permission to manage & delete Cashier entries
     'Cashier': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: false, can_backup: false },
     'Main Cashier': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: false, can_backup: false },
@@ -33,15 +35,25 @@ function hasPermission(permissionName) {
  * 💡 Handle Login Form Submission
  */
 async function handleLoginSubmit(e) {
-  e.preventDefault();
+  if (e && e.preventDefault) e.preventDefault();
+
   const usernameSelect = document.getElementById('login-username');
   const passwordInput = document.getElementById('login-password');
   const errorBox = document.getElementById('login-error');
 
   if (!usernameSelect || !passwordInput) return;
 
-  const username = usernameSelect.value;
-  const password = passwordInput.value;
+  // 💡 Clean leading/trailing spaces safely
+  const username = (usernameSelect.value || '').trim();
+  const password = (passwordInput.value || '').trim();
+
+  if (!username || !password) {
+    if (errorBox) {
+      errorBox.innerText = "ကျေးဇူးပြု၍ အသုံးပြုသူအမည်နှင့် လျှို့ဝှက်နံပါတ် ဖြည့်သွင်းပါ။";
+      errorBox.classList.remove('hidden');
+    }
+    return;
+  }
 
   if (errorBox) errorBox.classList.add('hidden');
   if (typeof window.showLoading === 'function') window.showLoading(true);
@@ -104,7 +116,7 @@ function applyRoleRestrictions() {
   }
 
   // 2. HR Section Menu Visibility
-  const allowedHrRoles = ["Owner", "Admin", "Finance", "Accountant", "HR Staff", "Staff"];
+  const allowedHrRoles = ["Owner", "Admin", "Finance", "Accountant", "HR Staff", "HRStaff", "Staff"];
   if (hrSection) {
     if (allowedHrRoles.includes(role)) {
       hrSection.classList.remove('hidden');
@@ -190,7 +202,7 @@ function handleLogout() {
     }
 
     showLogin();
-    showToast("SUCCESS", "စနစ်မှ အောင်မြင်စွာ ထွက်ခွာပြီးပါပြီ။");
+    if (typeof showToast === 'function') showToast("SUCCESS", "စနစ်မှ အောင်မြင်စွာ ထွက်ခွာပြီးပါပြီ။");
 
     setTimeout(function() {
       window.location.reload();
