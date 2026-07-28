@@ -15,8 +15,6 @@ window.UniformState = {
 
 /**
  * 💡 Strict Search Filter Function for Uniform Inventory Ledger
- * Searches strictly by: Product ID, Product Name, Type, Size.
- * Excluded: Unit Price, Selling Price, Total Amount, Stock Values.
  */
 function filterUniformData(list = [], searchVal = '') {
   if (!searchVal || !searchVal.trim()) return list;
@@ -94,7 +92,6 @@ function renderUniformTable() {
   const searchInput = document.getElementById('uniform-search');
   const searchVal = searchInput ? searchInput.value.trim() : (window.UniformState.searchVal || '');
 
-  // Apply Strict Filtering Criteria (PID, Name, Type, Size Only)
   const data = filterUniformData(rawData, searchVal);
 
   if (!data || data.length === 0) {
@@ -171,7 +168,6 @@ function openAddModalUniform() {
 
   document.getElementById('uni-uniqueId').value = "";
 
-  // Auto Sequence PID calculation
   let maxSeq = 0;
   if (window.UniformState.activeData) {
     window.UniformState.activeData.forEach(row => {
@@ -233,9 +229,6 @@ async function saveUniformForm(e) {
   }
 }
 
-/**
- * 💡 Edit Uniform Entry
- */
 function editUniformEntry(uniqueId) {
   const row = window.UniformState.activeData.find(item => item.uniqueId === uniqueId);
   if (!row) {
@@ -257,9 +250,6 @@ function editUniformEntry(uniqueId) {
   document.getElementById('uni-form-title').innerText = "Edit Uniform Product";
 }
 
-/**
- * 💡 Delete Uniform Entry
- */
 async function deleteUniformEntry(uniqueId) {
   if (confirm("ဤ ကုန်ပစ္စည်း မှတ်တမ်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) {
     if (typeof showToast === 'function') showToast("SUCCESS", "မှတ်တမ်းအား ဖျက်သိမ်းနေပါသည်...");
@@ -277,9 +267,6 @@ async function deleteUniformEntry(uniqueId) {
   }
 }
 
-/**
- * 💡 CSV Export
- */
 function exportToCSVUniform() {
   const data = window.UniformState.activeData;
   if (!data || data.length === 0) {
@@ -305,3 +292,11 @@ function exportToCSVUniform() {
   link.click();
   document.body.removeChild(link);
 }
+
+// Global Scope
+window.loadUniformData = loadUniformData;
+window.openAddModalUniform = openAddModalUniform;
+window.closeUniformModal = closeUniformModal;
+window.saveUniformForm = saveUniformForm;
+window.editUniformEntry = editUniformEntry;
+window.deleteUniformEntry = deleteUniformEntry;
