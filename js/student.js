@@ -13,6 +13,8 @@ window.StudentState = {
   stats: { totalActive: 0, totalInactive: 0, total: 0 }
 };
 
+var searchTimeoutStudent = null;
+
 /**
  * 💡 Strict Search Filter Function for Student Master List
  * Searches strictly by: Student Name (NAME / FYIDNAME), FYID, Student ID.
@@ -83,7 +85,7 @@ function updateStatsStudent() {
 }
 
 /**
- * 💡 Render Student Table Grid Rows with Precise Search Filtering
+ * 💡 Render Student Table Grid Rows with Precise Search Filtering & FY Sequence NO
  * 🎯 Criteria: Search ONLY by Student Name (NAME), FYIDNAME, FYID, ID
  */
 function renderStudentTable() {
@@ -121,13 +123,13 @@ function renderStudentTable() {
 
     return `
       <tr class="hover:bg-slate-800/20 text-slate-300">
-        <td class="text-center font-semibold text-slate-500">${row.no || '-'}</td>
-        <td>${escapeHtml(displayDate)}</td>
-        <td>${escapeHtml(row.fy || '-')}</td>
-        <td class="font-bold text-slate-200">${escapeHtml(row.fyid || '-')}</td>
+        <td class="text-center font-mono font-semibold text-slate-500">${row.no || '-'}</td>
+        <td class="font-mono text-xs">${escapeHtml(displayDate)}</td>
+        <td class="font-mono font-bold text-indigo-300">${escapeHtml(row.fy || '-')}</td>
+        <td class="font-bold text-slate-200 font-mono">${escapeHtml(row.fyid || '-')}</td>
         <td class="font-bold text-slate-100">${escapeHtml(row.name || '-')}</td>
         <td>${escapeHtml(row.class || '-')}</td>
-        <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">${escapeHtml(row.category)}</span></td>
+        <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">${escapeHtml(row.category || '-')}</span></td>
         <td>${escapeHtml(row.promo || '-')}</td>
         <td>${escapeHtml(row.stuStatus || '-')}</td>
         <td>
@@ -136,9 +138,9 @@ function renderStudentTable() {
           </span>
         </td>
         <td>${escapeHtml(row.gender || '-')}</td>
-        <td>${escapeHtml(displayTransDate || '-')}</td>
+        <td class="font-mono text-xs">${escapeHtml(displayTransDate || '-')}</td>
         <td>${escapeHtml(row.parentsName || '-')}</td>
-        <td>${escapeHtml(row.phoneNo || '-')}</td>
+        <td class="font-mono text-xs">${escapeHtml(row.phoneNo || '-')}</td>
         <td class="max-w-xs truncate" title="${escapeHtml(row.address || '')}">${escapeHtml(row.address || '-')}</td>
         <td class="right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg text-center">
           <div class="flex items-center justify-center gap-3 ${isViewer ? 'hidden' : ''}">
@@ -176,7 +178,6 @@ function changePageStudent(dir) {
   }
 }
 
-var searchTimeoutStudent;
 function onSearchInputStudent() {
   clearTimeout(searchTimeoutStudent);
   searchTimeoutStudent = setTimeout(() => {
@@ -213,26 +214,26 @@ function populateDynamicFYDropdownStudent(selectId) {
  * 💡 Save / Update Student Profile
  */
 async function saveStudentForm(e) {
-  e.preventDefault();
+  if (e && e.preventDefault) e.preventDefault();
   closeStudentModal();
 
-  const uniqueId = document.getElementById('stu-uniqueId').value;
+  const uniqueId = document.getElementById('stu-uniqueId')?.value || '';
   const isAdd = (!uniqueId);
 
   const entry = {
     uniqueId: uniqueId,
-    id: parseInt(document.getElementById('stu-id').value, 10) || "",
-    date: document.getElementById('stu-date').value,
-    fy: document.getElementById('stu-fy').value,
-    name: document.getElementById('stu-name').value,
-    class: document.getElementById('stu-class').value,
-    category: document.getElementById('stu-category').value,
-    promo: document.getElementById('stu-promo').value,
-    stuStatus: document.getElementById('stu-stustatus').value,
-    transferDate: document.getElementById('stu-transferdate').value,
-    parentsName: document.getElementById('stu-parents').value,
-    phoneNo: document.getElementById('stu-phone').value,
-    address: document.getElementById('stu-address').value,
+    id: parseInt(document.getElementById('stu-id')?.value, 10) || "",
+    date: document.getElementById('stu-date')?.value || "",
+    fy: document.getElementById('stu-fy')?.value || "",
+    name: document.getElementById('stu-name')?.value || "",
+    class: document.getElementById('stu-class')?.value || "",
+    category: document.getElementById('stu-category')?.value || "",
+    promo: document.getElementById('stu-promo')?.value || "",
+    stuStatus: document.getElementById('stu-stustatus')?.value || "",
+    transferDate: document.getElementById('stu-transferdate')?.value || "",
+    parentsName: document.getElementById('stu-parents')?.value || "",
+    phoneNo: document.getElementById('stu-phone')?.value || "",
+    address: document.getElementById('stu-address')?.value || "",
     createdBy: (window.AppState ? window.AppState.currentUser : '') || "System"
   };
 
@@ -247,7 +248,7 @@ async function saveStudentForm(e) {
       }
       loadStudentData(true);
     } else {
-      if (typeof showToast === 'function') showToast("ERROR", "သိမ်းဆည်းမှု မအောင်မြင်ပါ: " + (response.message || ""));
+      if (typeof showToast === 'function') showToast("ERROR", "သိမ်းဆည်းမှု မအောင်မြင်ပါ: " + (response ? response.message : ""));
     }
   } catch (err) {
     if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
@@ -258,21 +259,30 @@ function openAddModalStudent() {
   const form = document.getElementById('student-form');
   if (form) form.reset();
 
-  document.getElementById('stu-uniqueId').value = "";
-  document.getElementById('stu-id').value = "";
+  const uidEl = document.getElementById('stu-uniqueId');
+  if (uidEl) uidEl.value = "";
 
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  document.getElementById('stu-date').value = `${yyyy}-${mm}-${dd}`;
+  const idEl = document.getElementById('stu-id');
+  if (idEl) idEl.value = "";
+
+  const dateEl = document.getElementById('stu-date');
+  if (dateEl) {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    dateEl.value = `${yyyy}-${mm}-${dd}`;
+  }
 
   populateDynamicFYDropdownStudent('stu-fy');
-  document.getElementById('student-modal').classList.remove('hidden');
+
+  const modalEl = document.getElementById('student-modal');
+  if (modalEl) modalEl.classList.remove('hidden');
 }
 
 function closeStudentModal() {
-  document.getElementById('student-modal').classList.add('hidden');
+  const modalEl = document.getElementById('student-modal');
+  if (modalEl) modalEl.classList.add('hidden');
 }
 
 /**
@@ -287,19 +297,44 @@ function editStudentEntry(uniqueId) {
 
   openAddModalStudent();
 
-  document.getElementById('stu-uniqueId').value = row.uniqueId;
-  document.getElementById('stu-id').value = row.id || "";
-  document.getElementById('stu-date').value = row.date;
-  document.getElementById('stu-fy').value = row.fy || "";
-  document.getElementById('stu-name').value = row.name || "";
-  document.getElementById('stu-class').value = row.class || "";
-  document.getElementById('stu-category').value = row.category || "";
-  document.getElementById('stu-promo').value = row.promo || "";
-  document.getElementById('stu-stustatus').value = row.stuStatus || "New Student";
-  document.getElementById('stu-transferdate').value = row.transferDate || "";
-  document.getElementById('stu-parents').value = row.parentsName || "";
-  document.getElementById('stu-phone').value = row.phoneNo || "";
-  document.getElementById('stu-address').value = row.address || "";
+  const uidEl = document.getElementById('stu-uniqueId');
+  if (uidEl) uidEl.value = row.uniqueId;
+
+  const idEl = document.getElementById('stu-id');
+  if (idEl) idEl.value = row.id || "";
+
+  const dateEl = document.getElementById('stu-date');
+  if (dateEl) dateEl.value = row.date || "";
+
+  const fyEl = document.getElementById('stu-fy');
+  if (fyEl) fyEl.value = row.fy || "";
+
+  const nameEl = document.getElementById('stu-name');
+  if (nameEl) nameEl.value = row.name || "";
+
+  const classEl = document.getElementById('stu-class');
+  if (classEl) classEl.value = row.class || "";
+
+  const catEl = document.getElementById('stu-category');
+  if (catEl) catEl.value = row.category || "";
+
+  const promoEl = document.getElementById('stu-promo');
+  if (promoEl) promoEl.value = row.promo || "";
+
+  const stuStatusEl = document.getElementById('stu-stustatus');
+  if (stuStatusEl) stuStatusEl.value = row.stuStatus || "New Student";
+
+  const transDateEl = document.getElementById('stu-transferdate');
+  if (transDateEl) transDateEl.value = row.transferDate || "";
+
+  const parentsEl = document.getElementById('stu-parents');
+  if (parentsEl) parentsEl.value = row.parentsName || "";
+
+  const phoneEl = document.getElementById('stu-phone');
+  if (phoneEl) phoneEl.value = row.phoneNo || "";
+
+  const addrEl = document.getElementById('stu-address');
+  if (addrEl) addrEl.value = row.address || "";
 }
 
 /**
@@ -314,7 +349,7 @@ async function deleteStudentEntry(uniqueId) {
         if (typeof showToast === 'function') showToast("SUCCESS", "ကျောင်းသား စာရင်း ဖျက်သိမ်းခြင်း အောင်မြင်ပါသည်။");
         loadStudentData(true);
       } else {
-        if (typeof showToast === 'function') showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response.message || ""));
+        if (typeof showToast === 'function') showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response ? response.message : ""));
       }
     } catch (err) {
       if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
@@ -323,7 +358,7 @@ async function deleteStudentEntry(uniqueId) {
 }
 
 /**
- * 💡 CSV Export
+ * 💡 CSV Export Engine
  */
 function exportToCSVStudent() {
   const data = window.StudentState.activeData;
@@ -337,7 +372,10 @@ function exportToCSVStudent() {
     let name = `"${(row.name || '').replace(/"/g, '""')}"`;
     let parents = `"${(row.parentsName || '').replace(/"/g, '""')}"`;
     let addr = `"${(row.address || '').replace(/"/g, '""')}"`;
-    csv += `${row.no},${row.date},${row.fy || ''},${row.id || ''},${row.fyid || ''},${name},${row.class || ''},${row.category || ''},${row.promo || ''},${row.stuStatus || ''},${row.status || ''},${row.gender || ''},${row.transferDate || ''},${parents},${row.phoneNo || ''},${addr},${row.uniqueId}\n`;
+    let cls = `"${(row.class || '').replace(/"/g, '""')}"`;
+    let cat = `"${(row.category || '').replace(/"/g, '""')}"`;
+
+    csv += `${row.no || ''},${row.date || ''},${row.fy || ''},${row.id || ''},${row.fyid || ''},${name},${cls},${cat},${row.promo || ''},${row.stuStatus || ''},${row.status || ''},${row.gender || ''},${row.transferDate || ''},${parents},${row.phoneNo || ''},${addr},${row.uniqueId || ''}\n`;
   });
 
   const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
@@ -350,3 +388,14 @@ function exportToCSVStudent() {
   link.click();
   document.body.removeChild(link);
 }
+
+// 💡 EXPOSE GLOBALLY
+window.loadStudentData = loadStudentData;
+window.openAddModalStudent = openAddModalStudent;
+window.closeStudentModal = closeStudentModal;
+window.saveStudentForm = saveStudentForm;
+window.editStudentEntry = editStudentEntry;
+window.deleteStudentEntry = deleteStudentEntry;
+window.exportToCSVStudent = exportToCSVStudent;
+window.onSearchInputStudent = onSearchInputStudent;
+window.changePageStudent = changePageStudent;
