@@ -72,7 +72,7 @@ async function loadCashierData(useCache = true) {
     }
 
     const cacheKey = `getCashierData_${JSON.stringify({ bookName: currentCashierSubBook })}`;
-    const hasCache = useCache && !!window.getApiCache(cacheKey);
+    const hasCache = useCache && typeof window.getApiCache === 'function' && !!window.getApiCache(cacheKey);
 
     if (!hasCache && typeof toggleLoading === 'function') {
       toggleLoading(true);
@@ -264,6 +264,19 @@ function renderCashierTableHead() {
 }
 
 /**
+ * Helper function to safely escape HTML
+ */
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
  * 💡 Render Table Grid Rows with 2 Decimal Places Format
  */
 function renderCashierTable() {
@@ -318,7 +331,7 @@ function renderCashierTable() {
         <td class="font-mono text-xs text-slate-400 py-3 px-3">${escapeHtml(item.vrNo) || '-'}</td>
         <td class="max-w-xs truncate text-xs text-slate-400 py-3 px-3" title="${escapeHtml(item.remark || '')}">${escapeHtml(item.remark) || '-'}</td>
         <td class="text-center right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg py-3 px-3">
-          <button onclick="printInvoice('${item.uniqueId}')" class="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition font-bold" title="Print Invoice">
+          <button onclick="if(typeof printInvoice==='function') printInvoice('${item.uniqueId}')" class="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition font-bold" title="Print Invoice">
             <i class="fa-solid fa-print mr-1"></i> Print
           </button>
         </td>
@@ -327,21 +340,21 @@ function renderCashierTable() {
       // 💡 STANDARD CASHIER SUB-LEDGER 17-COLUMN ROW WITH 2 DECIMAL FORMATTING
       tr.innerHTML = `
         <td class="text-center font-mono text-slate-400 py-3 px-3">${srNo}</td>
-        <td class="font-mono py-3 px-3">${item.date || '-'}</td>
-        <td class="font-bold text-amber-300 py-3 px-3">${item.respPerson || '-'}</td>
+        <td class="font-mono py-3 px-3">${escapeHtml(item.date) || '-'}</td>
+        <td class="font-bold text-amber-300 py-3 px-3">${escapeHtml(item.respPerson) || '-'}</td>
         <td class="py-3 px-3">${typeof window.formatCategoryBadgeHtml === 'function' ? window.formatCategoryBadgeHtml(item.category) : escapeHtml(item.category)}</td>
-        <td class="font-bold text-slate-100 max-w-xs truncate py-3 px-3" title="${item.description}">${item.description || '-'}</td>
-        <td class="font-semibold py-3 px-3">${item.method || '-'}</td>
+        <td class="font-bold text-slate-100 max-w-xs truncate py-3 px-3" title="${escapeHtml(item.description)}">${escapeHtml(item.description) || '-'}</td>
+        <td class="font-semibold py-3 px-3">${escapeHtml(item.method) || '-'}</td>
         <td class="text-right font-mono font-bold text-emerald-400 py-3 px-3">${item.debit > 0 ? Number(item.debit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
         <td class="text-right font-mono font-bold text-rose-400 py-3 px-3">${item.credit > 0 ? Number(item.credit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
         <td class="text-right font-mono font-bold text-indigo-400 py-3 px-3">${Number(item.balances || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td class="py-3 px-3 text-slate-300">${item.transfer || '-'}</td>
-        <td class="font-mono text-slate-400 py-3 px-3">${item.vrNo || '-'}</td>
-        <td class="font-mono py-3 px-3">${item.my || '-'}</td>
-        <td class="font-mono font-bold text-indigo-400 py-3 px-3">${item.fy || '-'}</td>
-        <td class="py-3 px-3">${item.bookName || '-'}</td>
-        <td class="py-3 px-3">${item.createdBy || 'System'}</td>
-        <td class="font-mono text-slate-500 py-3 px-3">${item.createdAt ? item.createdAt.slice(0,10) : '-'}</td>
+        <td class="py-3 px-3 text-slate-300">${escapeHtml(item.transfer) || '-'}</td>
+        <td class="font-mono text-slate-400 py-3 px-3">${escapeHtml(item.vrNo) || '-'}</td>
+        <td class="font-mono py-3 px-3">${escapeHtml(item.my) || '-'}</td>
+        <td class="font-mono font-bold text-indigo-400 py-3 px-3">${escapeHtml(item.fy) || '-'}</td>
+        <td class="py-3 px-3">${escapeHtml(item.bookName) || '-'}</td>
+        <td class="py-3 px-3">${escapeHtml(item.createdBy) || 'System'}</td>
+        <td class="font-mono text-slate-500 py-3 px-3">${item.createdAt ? escapeHtml(item.createdAt.slice(0,10)) : '-'}</td>
         <td class="text-center right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg py-3 px-3">
           <div class="flex items-center justify-center gap-2">
             <button onclick="editCashierEntry('${item.uniqueId}')" class="p-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg transition" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
@@ -423,21 +436,31 @@ function autoFillTransferDescriptionCashier() {
 }
 
 /**
- * 💡 Open Add Modal
+ * 💡 Open Add Modal with Safety Guards
  */
 function openAddModalCashier() {
   const form = document.getElementById('cashier-form');
   if (form) form.reset();
 
-  document.getElementById('ca-uniqueId').value = '';
-  document.getElementById('ca-date').value = new Date().toISOString().slice(0, 10);
-  document.getElementById('ca-debit').value = 0;
-  document.getElementById('ca-credit').value = 0;
+  const elId = document.getElementById('ca-uniqueId');
+  if (elId) elId.value = '';
+
+  const elDate = document.getElementById('ca-date');
+  if (elDate) elDate.value = new Date().toISOString().slice(0, 10);
+
+  const elDeb = document.getElementById('ca-debit');
+  if (elDeb) elDeb.value = 0;
+
+  const elCred = document.getElementById('ca-credit');
+  if (elCred) elCred.value = 0;
 
   populateDropdownsCashier();
 
-  document.getElementById('ca-form-title').textContent = `Add Entry (${currentCashierSubBook})`;
-  document.getElementById('cashier-modal').classList.remove('hidden');
+  const elTitle = document.getElementById('ca-form-title');
+  if (elTitle) elTitle.textContent = `Add Entry (${currentCashierSubBook})`;
+
+  const modal = document.getElementById('cashier-modal');
+  if (modal) modal.classList.remove('hidden');
 }
 
 function closeCashierModal() {
@@ -446,23 +469,23 @@ function closeCashierModal() {
 }
 
 /**
- * 💡 Save Form Handler
+ * 💡 Save Form Handler with Safety Checks
  */
 async function saveCashierForm(e) {
-  e.preventDefault();
+  if (e && e.preventDefault) e.preventDefault();
 
-  const uniqueId = document.getElementById('ca-uniqueId').value;
+  const uniqueId = document.getElementById('ca-uniqueId')?.value || '';
   const payload = {
     uniqueId,
     bookName: currentCashierSubBook,
-    date: document.getElementById('ca-date').value,
-    respPerson: document.getElementById('ca-resp-person').value,
-    category: document.getElementById('ca-category').value,
-    method: document.getElementById('ca-method').value,
-    transfer: document.getElementById('ca-transfer').value,
-    debit: Number(document.getElementById('ca-debit').value || 0),
-    credit: Number(document.getElementById('ca-credit').value || 0),
-    description: document.getElementById('ca-description').value,
+    date: document.getElementById('ca-date')?.value || '',
+    respPerson: document.getElementById('ca-resp-person')?.value || '',
+    category: document.getElementById('ca-category')?.value || '',
+    method: document.getElementById('ca-method')?.value || '',
+    transfer: document.getElementById('ca-transfer')?.value || '',
+    debit: Number(document.getElementById('ca-debit')?.value || 0),
+    credit: Number(document.getElementById('ca-credit')?.value || 0),
+    description: document.getElementById('ca-description')?.value || '',
     createdBy: (window.AppState ? window.AppState.currentUser : '') || "System"
   };
 
@@ -473,38 +496,56 @@ async function saveCashierForm(e) {
     const response = await callApi(actionName, payload);
 
     if (response && response.success) {
-      showToast('SUCCESS', 'Cashier စာရင်း အချက်အလက်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။');
+      if (typeof showToast === 'function') showToast('SUCCESS', 'Cashier စာရင်း အချက်အလက်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။');
       if (typeof clearAllApiCache === 'function') clearAllApiCache();
       loadCashierData(false);
     }
   } catch (error) {
-    showToast('ERROR', `အမှားအယွင်း ဖြစ်ပေါ်ခဲ့သည်: ${error.message}`);
+    if (typeof showToast === 'function') showToast('ERROR', `အမှားအယွင်း ဖြစ်ပေါ်ခဲ့သည်: ${error.message}`);
   }
 }
 
 /**
- * 💡 Edit Entry
+ * 💡 Edit Entry with Null-Safety
  */
 function editCashierEntry(uniqueId) {
   const row = allCashierData.find(item => item.uniqueId === uniqueId);
   if (!row) {
-    showToast("ERROR", "မူရင်း အချက်အလက် ရှာမတွေ့ပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "မူရင်း အချက်အလက် ရှာမတွေ့ပါ။");
     return;
   }
 
   openAddModalCashier();
 
-  document.getElementById('ca-uniqueId').value = row.uniqueId || '';
-  document.getElementById('ca-date').value = row.date || '';
-  document.getElementById('ca-resp-person').value = row.respPerson || '';
-  document.getElementById('ca-category').value = row.category || 'Income';
-  document.getElementById('ca-method').value = row.method || 'Cash';
-  document.getElementById('ca-transfer').value = row.transfer || '';
-  document.getElementById('ca-debit').value = row.debit || 0;
-  document.getElementById('ca-credit').value = row.credit || 0;
-  document.getElementById('ca-description').value = row.description || '';
+  const elId = document.getElementById('ca-uniqueId');
+  if (elId) elId.value = row.uniqueId || '';
 
-  document.getElementById('ca-form-title').textContent = `Edit Entry (${currentCashierSubBook})`;
+  const elDate = document.getElementById('ca-date');
+  if (elDate) elDate.value = row.date || '';
+
+  const elResp = document.getElementById('ca-resp-person');
+  if (elResp) elResp.value = row.respPerson || '';
+
+  const elCat = document.getElementById('ca-category');
+  if (elCat) elCat.value = row.category || 'Income';
+
+  const elMethod = document.getElementById('ca-method');
+  if (elMethod) elMethod.value = row.method || 'Cash';
+
+  const elTrans = document.getElementById('ca-transfer');
+  if (elTrans) elTrans.value = row.transfer || '';
+
+  const elDeb = document.getElementById('ca-debit');
+  if (elDeb) elDeb.value = row.debit || 0;
+
+  const elCred = document.getElementById('ca-credit');
+  if (elCred) elCred.value = row.credit || 0;
+
+  const elDesc = document.getElementById('ca-description');
+  if (elDesc) elDesc.value = row.description || '';
+
+  const elTitle = document.getElementById('ca-form-title');
+  if (elTitle) elTitle.textContent = `Edit Entry (${currentCashierSubBook})`;
 }
 
 /**
@@ -517,12 +558,12 @@ async function deleteCashierEntry(uniqueId) {
     const response = await callApi('deleteCashierEntry', { uniqueId, bookName: currentCashierSubBook });
 
     if (response && response.success) {
-      showToast('SUCCESS', 'Cashier စာရင်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။');
+      if (typeof showToast === 'function') showToast('SUCCESS', 'Cashier စာရင်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။');
       if (typeof clearAllApiCache === 'function') clearAllApiCache();
       loadCashierData(false);
     }
   } catch (error) {
-    showToast('ERROR', `ဖျက်သိမ်းမှု အမှား: ${error.message}`);
+    if (typeof showToast === 'function') showToast('ERROR', `ဖျက်သိမ်းမှု အမှား: ${error.message}`);
   }
 }
 
@@ -531,7 +572,7 @@ async function deleteCashierEntry(uniqueId) {
  */
 function exportToCSVCashier() {
   if (!allCashierData || allCashierData.length === 0) {
-    showToast("ERROR", "ထုတ်ယူရန် မည်သည့် စာရင်းမျှ မရှိပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့် စာရင်းမျှ မရှိပါ။");
     return;
   }
 
