@@ -9,6 +9,7 @@ var bckLimit = 30;
 var bckTotalRows = 0;
 var bckActiveData = [];
 var currentSubBook = 'bank'; // 'bank' or 'cash'
+var searchTimeoutBck = null;
 
 /**
  * 💡 Strict Search Filter Function for Main Bank & Cash Books
@@ -42,8 +43,14 @@ function clearDateFilterBCK() {
   renderTableBankCashKit();
 }
 
+/**
+ * 💡 Debounced Search Input Handler
+ */
 function onSearchInputBankCashKit() {
-  renderTableBankCashKit();
+  if (searchTimeoutBck) clearTimeout(searchTimeoutBck);
+  searchTimeoutBck = setTimeout(() => {
+    renderTableBankCashKit();
+  }, 100);
 }
 
 /**
@@ -58,7 +65,9 @@ function switchSubBook(bookType) {
     titleEl.textContent = currentSubBook === 'bank' ? 'Main Bank Book' : 'Main Cash Book';
   }
 
-  updateSidebarHighlight(currentSubBook);
+  if (typeof updateSidebarHighlight === 'function') {
+    updateSidebarHighlight(currentSubBook);
+  }
   loadBankCashKitData(false, false);
 }
 
@@ -123,7 +132,7 @@ function renderStatsBankCashKit(stats) {
 }
 
 /**
- * 💡 Render Table Grid Rows with Precise Search Filtering
+ * 💡 Render Table Grid Rows with Precise Search Filtering & FY Sequence Display
  * 🎯 Criteria: Search ONLY by Description, Category, Debit, Credit
  */
 function renderTableBankCashKit() {
@@ -158,12 +167,12 @@ function renderTableBankCashKit() {
         <td class="font-bold text-slate-100 max-w-sm truncate" title="${escapeHtml(row.description)}">${escapeHtml(row.description) || '-'}</td>
         <td class="font-bold text-slate-400">${escapeHtml(row.method) || '-'}</td>
         <td class="text-right text-emerald-400 font-mono font-bold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
-<td class="text-right text-rose-400 font-mono font-bold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
-<td class="text-right text-slate-200 font-mono font-bold">${Number(row.balances || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+        <td class="text-right text-rose-400 font-mono font-bold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+        <td class="text-right text-slate-200 font-mono font-bold">${Number(row.balances || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
         <td class="text-xs text-indigo-400">${escapeHtml(row.transfer) || '-'}</td>
         <td class="font-mono text-xs text-slate-400">${escapeHtml(row.vrNo) || '-'}</td>
         <td class="font-mono text-xs">${escapeHtml(row.my) || '-'}</td>
-        <td class="font-mono text-xs">${escapeHtml(row.fy) || '-'}</td>
+        <td class="font-mono text-xs font-bold text-indigo-300">${escapeHtml(row.fy) || '-'}</td>
         <td class="right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg text-center">
           <div class="flex items-center justify-center gap-3">
             <button onclick="editBankCashKitEntry('${row.uniqueId}')" class="text-indigo-400 hover:text-indigo-300 transition ${lockClass}" title="Edit ${lockTitle}" ${row.isLocked || isViewer ? 'disabled' : ''}>
@@ -186,15 +195,27 @@ function openAddModalBankCashKit() {
   const form = document.getElementById('bck-form');
   if (form) form.reset();
 
-  document.getElementById('bck-uniqueId').value = "";
-  document.getElementById('bck-date').value = new Date().toISOString().slice(0, 10);
-  document.getElementById('bck-debit').value = 0;
-  document.getElementById('bck-credit').value = 0;
+  const uniqueIdEl = document.getElementById('bck-uniqueId');
+  if (uniqueIdEl) uniqueIdEl.value = "";
+
+  const dateEl = document.getElementById('bck-date');
+  if (dateEl) dateEl.value = new Date().toISOString().slice(0, 10);
+
+  const debitEl = document.getElementById('bck-debit');
+  if (debitEl) debitEl.value = 0;
+
+  const creditEl = document.getElementById('bck-credit');
+  if (creditEl) creditEl.value = 0;
 
   populateDropdownsBCK();
 
-  document.getElementById('bck-form-title').innerText = currentSubBook === 'bank' ? "Add Bank Entry" : "Add Cash Entry";
-  document.getElementById('bck-modal').classList.remove('hidden');
+  const titleEl = document.getElementById('bck-form-title');
+  if (titleEl) {
+    titleEl.innerText = currentSubBook === 'bank' ? "Add Bank Entry" : "Add Cash Entry";
+  }
+
+  const modalEl = document.getElementById('bck-modal');
+  if (modalEl) modalEl.classList.remove('hidden');
 }
 
 function closeBankCashKitModal() {
@@ -272,7 +293,7 @@ function autoFillTransferDescriptionBCK() {
  * 💡 Save / Submit Entry (Add or Update)
  */
 async function saveBankCashKitForm(e) {
-  e.preventDefault();
+  if (e && e.preventDefault) e.preventDefault();
 
   const bookName = currentSubBook === 'bank' ? 'Main Bank Book' : 'Main Cash Book';
   const uniqueId = document.getElementById('bck-uniqueId')?.value || "";
@@ -321,20 +342,35 @@ function editBankCashKitEntry(uniqueId) {
 
   openAddModalBankCashKit();
 
-  document.getElementById('bck-uniqueId').value = row.uniqueId || "";
-  document.getElementById('bck-date').value = row.date || "";
-  document.getElementById('bck-category').value = row.category || "Income";
-  document.getElementById('bck-method').value = row.method || (currentSubBook === 'bank' ? 'Bank' : 'Cash');
+  const uidEl = document.getElementById('bck-uniqueId');
+  if (uidEl) uidEl.value = row.uniqueId || "";
+
+  const dateEl = document.getElementById('bck-date');
+  if (dateEl) dateEl.value = row.date || "";
+
+  const catEl = document.getElementById('bck-category');
+  if (catEl) catEl.value = row.category || "Income";
+
+  const methodEl = document.getElementById('bck-method');
+  if (methodEl) methodEl.value = row.method || (currentSubBook === 'bank' ? 'Bank' : 'Cash');
   
   // Repopulate with filter before setting value
   populateDropdownsBCK();
-  document.getElementById('bck-transfer').value = row.transfer || "";
-  
-  document.getElementById('bck-debit').value = row.debit || 0;
-  document.getElementById('bck-credit').value = row.credit || 0;
-  document.getElementById('bck-description').value = row.description || "";
 
-  document.getElementById('bck-form-title').innerText = "Edit Entry";
+  const transferEl = document.getElementById('bck-transfer');
+  if (transferEl) transferEl.value = row.transfer || "";
+  
+  const debitEl = document.getElementById('bck-debit');
+  if (debitEl) debitEl.value = row.debit || 0;
+
+  const creditEl = document.getElementById('bck-credit');
+  if (creditEl) creditEl.value = row.credit || 0;
+
+  const descEl = document.getElementById('bck-description');
+  if (descEl) descEl.value = row.description || "";
+
+  const titleEl = document.getElementById('bck-form-title');
+  if (titleEl) titleEl.innerText = "Edit Entry";
 }
 
 /**
@@ -387,13 +423,6 @@ function updatePaginationUIBankCashKit() {
   if (nextBtn) nextBtn.disabled = (bckPage * bckLimit >= bckTotalRows);
 }
 
-function onSearchInputBankCashKit() {
-  if (window.searchTimeoutBck) clearTimeout(window.searchTimeoutBck);
-  window.searchTimeoutBck = setTimeout(() => {
-    renderTableBankCashKit();
-  }, 100);
-}
-
 function exportToCSVBankCashKit() {
   if (!bckActiveData || bckActiveData.length === 0) {
     if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့် စာရင်းမျှ မရှိပါ။");
@@ -402,7 +431,7 @@ function exportToCSVBankCashKit() {
 
   let csv = "NO,DATE,CATEGORY,DESCRIPTION,METHOD,DEBIT,CREDIT,BALANCES,TRANSFER,VR NO,MY,FY,UNIQUEID\n";
   bckActiveData.forEach(r => {
-    let desc = `"${r.description || ''}"`;
+    let desc = `"${(r.description || '').replace(/"/g, '""')}"`;
     csv += `${r.no},${r.date},${r.category},${desc},${r.method},${r.debit},${r.credit},${r.balances},${r.transfer || ''},${r.vrNo},${r.my || ''},${r.fy || ''},${r.uniqueId}\n`;
   });
 
