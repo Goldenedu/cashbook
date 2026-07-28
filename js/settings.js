@@ -142,14 +142,8 @@ async function startDriveBackupAndResetWorkflow() {
         showToast("SUCCESS", res.message || "Google Drive Backup အောင်မြင်ပါသည်။");
       }
 
-      // Update backup status text inside modal
-      const statusMsg = document.getElementById('drive-backup-status-msg');
-      if (statusMsg) {
-        statusMsg.innerHTML = `<strong>ဖိုင်အမည်:</strong> ${escapeHtml(res.backupFileName)}<br><strong>ဖိုဒါအမည်:</strong> ${escapeHtml(res.fyFolderName)}`;
-      }
-
-      // Open Sheet Reset Selection Modal
-      openDriveResetModal();
+      // Open High-Contrast Clean Reset Modal
+      openDriveResetModal(res);
     } else {
       throw new Error(res?.message || "Google Drive Backup ကူးယူခြင်း မအောင်မြင်ပါ။");
     }
@@ -165,20 +159,117 @@ async function startDriveBackupAndResetWorkflow() {
 }
 
 /**
+ * 💡 HIGH-CONTRAST TIDY MODAL RENDERER
+ */
+function renderDriveResetModalContent(resData = {}) {
+  const container = document.getElementById('drive-reset-modal') || document.getElementById('reset-modal');
+  if (!container) return;
+
+  const folderTitle = resData.fyFolderName || "FY 2026-2027 CASH BOOK DATA";
+  const fileTitle = resData.backupFileName || "";
+
+  // Update or inject Status Banner
+  const statusMsg = document.getElementById('drive-backup-status-msg');
+  if (statusMsg) {
+    statusMsg.className = "p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl space-y-1 mb-4 shadow-lg shadow-emerald-500/5";
+    statusMsg.innerHTML = `
+      <div class="flex items-center gap-2 font-black text-emerald-400 uppercase tracking-wider text-xs">
+        <i class="fa-solid fa-circle-check text-sm"></i> Backup Confirmed & Secured!
+      </div>
+      <div class="text-slate-200 font-bold text-xs flex flex-wrap items-center gap-2 pt-1">
+        <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-lg font-mono flex items-center gap-1.5">
+          <i class="fa-solid fa-folder-closed text-amber-400"></i> ${escapeHtml(folderTitle)}
+        </span>
+        ${fileTitle ? `<span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-1 rounded-lg font-mono flex items-center gap-1.5"><i class="fa-solid fa-file-csv text-indigo-400"></i> ${escapeHtml(fileTitle)}</span>` : ''}
+      </div>
+    `;
+  }
+
+  // Schema for Main & Cashier Sheets
+  const mainSheets = [
+    { id: 'Bank', name: 'BANK (Main Bank Book)', icon: 'fa-building-columns text-amber-400' },
+    { id: 'Cash', name: 'CASH (Main Cash Book)', icon: 'fa-money-bill-wave text-emerald-400' },
+    { id: 'Office', name: 'OFFICE (Office Exp Book)', icon: 'fa-briefcase text-cyan-400' },
+    { id: 'Kitchen', name: 'KITCHEN (Kitchen Exp Book)', icon: 'fa-utensils text-rose-400' },
+    { id: 'Payroll', name: 'PAYROLL (HR Payroll Exp)', icon: 'fa-money-check-dollar text-teal-400' },
+    { id: 'Income', name: 'INCOME (Main Income Book)', icon: 'fa-wallet text-sky-400' },
+    { id: 'Student', name: 'STUDENT (Student List)', icon: 'fa-user-graduate text-indigo-400' }
+  ];
+
+  const cashierSheets = [
+    { id: 'CABank', name: 'CABANK (Cashier Bank)', icon: 'fa-building-columns text-amber-300' },
+    { id: 'CACash', name: 'CACASH (Cashier Cash)', icon: 'fa-cash-register text-emerald-300' },
+    { id: 'CAOffice', name: 'CAOFFICE (Cashier Office)', icon: 'fa-briefcase text-cyan-300' },
+    { id: 'CAKitchen', name: 'CAKITCHEN (Cashier Kitchen)', icon: 'fa-utensils text-rose-300' },
+    { id: 'CAPayroll', name: 'CAPAYROLL (Cashier Payroll)', icon: 'fa-purple-400 fa-money-check-dollar text-purple-300' }
+  ];
+
+  // Render Grid Sheets Selection if container exists
+  const sheetsBox = document.getElementById('drive-reset-sheets-box') || document.getElementById('reset-sheets-container');
+  if (sheetsBox) {
+    sheetsBox.innerHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- MAIN BOOKS -->
+        <div class="bg-[#0e172a] border border-slate-800 rounded-xl p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="text-xs font-black text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-book"></i> MAIN CASH BOOK SHEETS
+            </span>
+            <button type="button" onclick="toggleGroupCheckboxes('main', true)" class="text-[10px] font-bold text-slate-400 hover:text-white underline">Select All</button>
+          </div>
+          <div class="space-y-1.5">
+            ${mainSheets.map(s => `
+              <label class="flex items-center justify-between p-2 bg-[#090d16] hover:bg-slate-800/80 border border-slate-800 hover:border-indigo-500/40 rounded-lg cursor-pointer transition group">
+                <div class="flex items-center gap-2.5">
+                  <i class="fa-solid ${s.icon} text-xs w-4 text-center"></i>
+                  <span class="font-extrabold text-slate-100 group-hover:text-white text-xs tracking-wide">${s.name}</span>
+                </div>
+                <input type="checkbox" value="${s.id}" checked class="sheet-reset-cb cb-main w-5 h-5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900 cursor-pointer">
+              </label>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- CASHIER BOOKS -->
+        <div class="bg-[#0e172a] border border-slate-800 rounded-xl p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-cash-register"></i> CASHIER SUB-LEDGER SHEETS
+            </span>
+            <button type="button" onclick="toggleGroupCheckboxes('cashier', true)" class="text-[10px] font-bold text-slate-400 hover:text-white underline">Select All</button>
+          </div>
+          <div class="space-y-1.5">
+            ${cashierSheets.map(s => `
+              <label class="flex items-center justify-between p-2 bg-[#090d16] hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/40 rounded-lg cursor-pointer transition group">
+                <div class="flex items-center gap-2.5">
+                  <i class="fa-solid ${s.icon} text-xs w-4 text-center"></i>
+                  <span class="font-extrabold text-slate-100 group-hover:text-white text-xs tracking-wide">${s.name}</span>
+                </div>
+                <input type="checkbox" value="${s.id}" checked class="sheet-reset-cb cb-cashier w-5 h-5 rounded border-slate-700 bg-slate-900 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-slate-900 cursor-pointer">
+              </label>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+/**
  * 💡 Modal Controls for Drive Reset Workflow
  */
-function openDriveResetModal() {
-  const modal = document.getElementById('drive-reset-modal');
+function openDriveResetModal(resData = {}) {
+  renderDriveResetModalContent(resData);
+  const modal = document.getElementById('drive-reset-modal') || document.getElementById('reset-modal');
   if (modal) {
     modal.classList.remove('hidden');
-    // Check all checkboxes by default
     toggleGroupCheckboxes('main', true);
     toggleGroupCheckboxes('cashier', true);
   }
 }
 
 function closeDriveResetModal() {
-  const modal = document.getElementById('drive-reset-modal');
+  const modal = document.getElementById('drive-reset-modal') || document.getElementById('reset-modal');
   if (modal) modal.classList.add('hidden');
 }
 
