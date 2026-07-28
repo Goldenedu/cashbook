@@ -10,6 +10,7 @@ var incomeTotalRows = 0;
 var incomeActiveData = [];
 var allStudentsLookupCache = null;
 var promoMatrixCache = null;
+var searchTimeoutIncome = null;
 
 /**
  * 💡 Strict Search Filter Function for Main Income Book
@@ -43,8 +44,14 @@ function clearDateFilterIncome() {
   renderTableIncome();
 }
 
+/**
+ * 💡 Debounced Search Input Handler
+ */
 function onSearchInputIncome() {
-  renderTableIncome();
+  if (searchTimeoutIncome) clearTimeout(searchTimeoutIncome);
+  searchTimeoutIncome = setTimeout(() => {
+    renderTableIncome();
+  }, 200);
 }
 
 /**
@@ -109,7 +116,7 @@ function renderStatsIncome(stats) {
 }
 
 /**
- * 💡 Render Table Grid Rows with Precise Search Filtering
+ * 💡 Render Table Grid Rows with Precise Search Filtering & FY NO Display
  * 🎯 Criteria: Search ONLY by Student Name (NAME/FYIDNAME), FYID, ID
  */
 function renderTableIncome() {
@@ -124,7 +131,7 @@ function renderTableIncome() {
   const fromDate = fromEl ? fromEl.value : '';
   const toDate = toEl ? toEl.value : '';
 
-  // 💡 Client-side Strict Multi-Column Filter (NAME, FYIDNAME, FYID, ID Only + Date Range)
+  // 💡 Client-side Strict Multi-Column Filter
   const filteredRows = filterIncomeData(incomeActiveData, searchVal, fromDate, toDate);
 
   if (!filteredRows || filteredRows.length === 0) {
@@ -140,10 +147,10 @@ function renderTableIncome() {
 
     return `
       <tr class="hover:bg-slate-800/30 text-slate-300">
-        <td class="text-center font-semibold text-slate-500">${row.no || '-'}</td>
+        <td class="text-center font-mono font-semibold text-slate-500">${row.no || '-'}</td>
         <td class="font-mono text-xs">${escapeHtml(row.effDate) || '-'}</td>
         <td class="font-mono text-xs">${escapeHtml(row.date) || '-'}</td>
-        <td class="font-mono">${escapeHtml(row.fy) || '-'}</td>
+        <td class="font-mono font-bold text-indigo-300">${escapeHtml(row.fy) || '-'}</td>
         <td class="font-mono font-bold">${escapeHtml(row.id) || '-'}</td>
         <td class="font-mono font-bold text-indigo-400">${escapeHtml(row.fyid) || '-'}</td>
         <td class="font-bold text-slate-100">${escapeHtml(row.fyidName) || '-'}</td>
@@ -152,8 +159,8 @@ function renderTableIncome() {
         <td class="font-semibold text-slate-200">${escapeHtml(row.accountName) || '-'}</td>
         <td class="font-bold text-slate-400">${escapeHtml(row.method) || '-'}</td>
         <td class="text-right text-rose-400 font-mono font-bold">${row.debit > 0 ? Number(row.debit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
-<td class="text-right text-emerald-400 font-mono font-bold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
-<td class="text-right text-indigo-400 font-mono font-bold">${row.autAmount > 0 ? Number(row.autAmount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+        <td class="text-right text-emerald-400 font-mono font-bold">${row.credit > 0 ? Number(row.credit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+        <td class="text-right text-indigo-400 font-mono font-bold">${row.autAmount > 0 ? Number(row.autAmount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
         <td class="text-xs">${escapeHtml(row.promo) || '-'}</td>
         <td class="font-mono text-xs">${escapeHtml(row.my) || '-'}</td>
         <td class="font-mono text-xs text-slate-400">${escapeHtml(row.vrNo) || '-'}</td>
@@ -312,18 +319,27 @@ function openAddModalIncome() {
   const form = document.getElementById('income-form');
   if (form) form.reset();
   
-  document.getElementById('inc-uniqueId').value = "";
+  const uidEl = document.getElementById('inc-uniqueId');
+  if (uidEl) uidEl.value = "";
   
   const today = new Date().toISOString().slice(0, 10);
-  document.getElementById('inc-date').value = today;
-  document.getElementById('inc-effdate').value = today;
-  document.getElementById('inc-autamount').value = 0;
+  const dateEl = document.getElementById('inc-date');
+  if (dateEl) dateEl.value = today;
+
+  const effDateEl = document.getElementById('inc-effdate');
+  if (effDateEl) effDateEl.value = today;
+
+  const autAmtEl = document.getElementById('inc-autamount');
+  if (autAmtEl) autAmtEl.value = 0;
 
   populateFYDropdownIncome();
   toggleSplitPaymentIncome();
 
-  document.getElementById('inc-form-title').innerText = "Add Income Entry";
-  document.getElementById('income-modal').classList.remove('hidden');
+  const titleEl = document.getElementById('inc-form-title');
+  if (titleEl) titleEl.innerText = "Add Income Entry";
+
+  const modalEl = document.getElementById('income-modal');
+  if (modalEl) modalEl.classList.remove('hidden');
 }
 
 function closeIncomeModal() {
@@ -350,7 +366,7 @@ function populateFYDropdownIncome() {
  * 💡 Save / Submit Income Entry
  */
 async function saveIncomeForm(e) {
-  e.preventDefault();
+  if (e && e.preventDefault) e.preventDefault();
 
   const isSplit = document.getElementById('inc-is-split')?.checked;
   const fyidShowVal = document.getElementById('inc-fyid-show')?.value;
@@ -416,23 +432,46 @@ function editIncomeEntry(uniqueId) {
 
   openAddModalIncome();
 
-  document.getElementById('inc-uniqueId').value = row.uniqueId || "";
-  document.getElementById('inc-date').value = row.date || "";
-  document.getElementById('inc-effdate').value = row.effDate || "";
-  document.getElementById('inc-fy').value = row.fy || "";
-  document.getElementById('inc-id-search').value = row.id || "";
+  const uidEl = document.getElementById('inc-uniqueId');
+  if (uidEl) uidEl.value = row.uniqueId || "";
+
+  const dateEl = document.getElementById('inc-date');
+  if (dateEl) dateEl.value = row.date || "";
+
+  const effDateEl = document.getElementById('inc-effdate');
+  if (effDateEl) effDateEl.value = row.effDate || "";
+
+  const fyEl = document.getElementById('inc-fy');
+  if (fyEl) fyEl.value = row.fy || "";
+
+  const idSearchEl = document.getElementById('inc-id-search');
+  if (idSearchEl) idSearchEl.value = row.id || "";
 
   onStudentIdOrFYChangeIncome();
 
-  document.getElementById('inc-category').value = row.category || "Boarder";
-  document.getElementById('inc-account').value = row.accountName || "Registration";
-  document.getElementById('inc-method').value = row.method || "Cash";
-  document.getElementById('inc-debit').value = row.debit || 0;
-  document.getElementById('inc-credit').value = row.credit || 0;
-  document.getElementById('inc-autamount').value = row.autAmount || 0;
-  document.getElementById('inc-remark').value = row.remark || "";
+  const catEl = document.getElementById('inc-category');
+  if (catEl) catEl.value = row.category || "Boarder";
 
-  document.getElementById('inc-form-title').innerText = "Edit Income Entry";
+  const accEl = document.getElementById('inc-account');
+  if (accEl) accEl.value = row.accountName || "Registration";
+
+  const methodEl = document.getElementById('inc-method');
+  if (methodEl) methodEl.value = row.method || "Cash";
+
+  const debitEl = document.getElementById('inc-debit');
+  if (debitEl) debitEl.value = row.debit || 0;
+
+  const creditEl = document.getElementById('inc-credit');
+  if (creditEl) creditEl.value = row.credit || 0;
+
+  const autAmtEl = document.getElementById('inc-autamount');
+  if (autAmtEl) autAmtEl.value = row.autAmount || 0;
+
+  const remarkEl = document.getElementById('inc-remark');
+  if (remarkEl) remarkEl.value = row.remark || "";
+
+  const titleEl = document.getElementById('inc-form-title');
+  if (titleEl) titleEl.innerText = "Edit Income Entry";
 }
 
 /**
@@ -488,15 +527,8 @@ function updatePaginationUIIncome() {
   if (nextBtn) nextBtn.disabled = (incomePage * incomeLimit >= incomeTotalRows);
 }
 
-function onSearchInputIncome() {
-  if (window.searchTimeoutIncome) clearTimeout(window.searchTimeoutIncome);
-  window.searchTimeoutIncome = setTimeout(() => {
-    renderTableIncome();
-  }, 200);
-}
-
 /**
- * 💡 Export CSV
+ * 💡 CSV Export Engine
  */
 function exportToCSVIncome() {
   if (!incomeActiveData || incomeActiveData.length === 0) {
@@ -506,9 +538,9 @@ function exportToCSVIncome() {
 
   let csv = "NO,EFFECT DATE,DATE,FY,ID,FYID,FYID NAME,CLASS,CATEGORY,ACCOUNT NAME,METHOD,DEBIT,CREDIT,AUT AMOUNT,PROMO,MY,VR NO,REMARK,UNIQUEID\n";
   incomeActiveData.forEach(r => {
-    let name = `"${r.fyidName || ''}"`;
-    let remark = `"${r.remark || ''}"`;
-    csv += `${r.no},${r.effDate || ''},${r.date},${r.fy},${r.id},${r.fyid},${name},${r.class},${r.category},${r.accountName},${r.method},${r.debit},${r.credit},${r.autAmount},${r.promo},${r.my || ''},${r.vrNo},${remark},${r.uniqueId}\n`;
+    let name = `"${(r.fyidName || '').replace(/"/g, '""')}"`;
+    let remark = `"${(r.remark || '').replace(/"/g, '""')}"`;
+    csv += `${r.no || ''},${r.effDate || ''},${r.date || ''},${r.fy || ''},${r.id || ''},${r.fyid || ''},${name},${r.class || ''},${r.category || ''},${r.accountName || ''},${r.method || ''},${r.debit || 0},${r.credit || 0},${r.autAmount || 0},${r.promo || ''},${r.my || ''},${r.vrNo || ''},${remark},${r.uniqueId || ''}\n`;
   });
 
   const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
@@ -551,7 +583,7 @@ function printInvoice(uniqueId) {
   const copies = ['customer', 'received'];
   copies.forEach(copy => {
     const nameEl = document.getElementById(`print-${copy}-name`);
-    if (nameEl) nameEl.textContent = studentName;
+    if (nameEl) nameEl.textContent = studentName || '-';
 
     const dateEl = document.getElementById(`print-${copy}-date`);
     if (dateEl) {
@@ -591,3 +623,19 @@ function printInvoice(uniqueId) {
 
   window.print();
 }
+
+// 💡 EXPOSE GLOBALLY
+window.loadIncomeData = loadIncomeData;
+window.onSearchInputIncome = onSearchInputIncome;
+window.clearDateFilterIncome = clearDateFilterIncome;
+window.onStudentIdOrFYChangeIncome = onStudentIdOrFYChangeIncome;
+window.onAccountNameOrCategoryChangeIncome = onAccountNameOrCategoryChangeIncome;
+window.toggleSplitPaymentIncome = toggleSplitPaymentIncome;
+window.openAddModalIncome = openAddModalIncome;
+window.closeIncomeModal = closeIncomeModal;
+window.saveIncomeForm = saveIncomeForm;
+window.editIncomeEntry = editIncomeEntry;
+window.deleteIncomeEntry = deleteIncomeEntry;
+window.changePageIncome = changePageIncome;
+window.exportToCSVIncome = exportToCSVIncome;
+window.printInvoice = printInvoice;
