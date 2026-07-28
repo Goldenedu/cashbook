@@ -5,6 +5,16 @@
   color-scheme: dark; 
 }
 
+/* ⬇️ ဤနေရာကြားထဲတွင် ကူးထည့်လိုက်ပါ ⬇️ */
+/* 💡 GUARANTEED GOLD GRADIENT TEXT WITH BROWSER FALLBACK */
+.text-gold-gradient {
+  color: #fbbf24 !important; /* Fallback: Browser က Gradient မပံ့ပိုးပါက ဒီအရောင် ပေါ်မည် */
+  background: linear-gradient(135deg, #fef08a 0%, #facc15 50%, #d97706 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
 /* 💡 Custom Eye-Friendly Scrollbar */
 ::-webkit-scrollbar { 
   width: 6px; 
