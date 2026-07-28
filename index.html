@@ -36,24 +36,33 @@
 </head>
 <body class="bg-[#090d16] font-sans flex h-screen overflow-hidden text-slate-300">
 
-  <!-- LOGIN OVERLAY -->
+  <!-- 💡 GOLDEN LUXURY LOGIN OVERLAY -->
   <div id="login-overlay" class="fixed inset-0 bg-[#090d16] z-[100] flex items-center justify-center p-4">
-    <div class="w-full max-w-sm bg-[#0c1322] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5 text-slate-300">
+    <div class="relative w-full max-w-md bg-[#0e131f]/90 border border-amber-500/20 backdrop-blur-xl rounded-3xl p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] text-center overflow-hidden space-y-6 text-slate-300">
       
-      <div class="text-center space-y-1.5">
-        <div class="inline-flex p-3.5 bg-indigo-500/10 text-indigo-400 rounded-2xl mb-1 shadow-lg shadow-indigo-500/5">
-          <i class="fa-solid fa-graduation-cap text-3xl"></i>
+      <!-- ရွှေရောင် အလင်းရောင် Glow Effect Background -->
+      <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- 🎓 1. ဘွဲ့ရ ဦးထုပ် (Gold Gradient Cap Icon) -->
+      <div class="text-center">
+        <div class="inline-flex items-center justify-center p-4 rounded-2xl bg-gradient-to-b from-amber-500/15 to-amber-600/5 border border-amber-500/30 shadow-inner group transition-all duration-300 hover:scale-105 mb-3">
+          <i class="fa-solid fa-graduation-cap text-4xl text-amber-400 filter drop-shadow-[0_2px_8px_rgba(245,158,11,0.5)]"></i>
         </div>
-        <h2 class="text-base font-extrabold text-slate-100 tracking-wide">Golden Education Private High School
-</h2>
-        <p class="text-[10px] text-slate-500 uppercase tracking-wider">Financial Management System</p>
+        <!-- 🏫 2. Title: Golden Education Private High School (ရွှေရောင် ပြောင်လက်သည့် စာသား) -->
+        <h2 class="text-xl font-black tracking-tight mb-1 bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 bg-clip-text text-transparent filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          Golden Education Private High School
+        </h2>
+        <!-- 📊 3. Subtitle: Financial Management System (Pro စာလုံးအလှ) -->
+        <p class="text-[11px] font-extrabold uppercase tracking-[0.25em] text-amber-200/70 pb-3 border-b border-amber-500/10">
+          Financial Management System
+        </p>
       </div>
 
-      <form id="login-form" onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs">
+      <form id="login-form" onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs text-left">
         <div>
-          <label class="block font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Username</label>
+          <label class="block font-bold text-[11px] text-slate-300 uppercase tracking-widest mb-1.5">Username</label>
           <!-- 💡 FLEXIBLE USERNAME INPUT WITH ROLE SUGGESTIONS -->
-          <input type="text" id="login-username" list="username-list" required placeholder="Type username or select account..." class="w-full p-2.5 bg-[#0f172a] border border-slate-800 rounded-lg text-xs text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500">
+          <input type="text" id="login-username" list="username-list" required placeholder="Type username or select account..." class="w-full p-3 bg-[#070a12]/80 border border-slate-700/60 rounded-xl text-xs text-slate-100 placeholder:text-slate-600 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all duration-300">
           <datalist id="username-list">
             <option value="Owner"></option>
             <option value="Admin"></option>
@@ -61,22 +70,34 @@
             <option value="HRStaff"></option>
             <option value="Accountant"></option>
             <option value="Staff"></option>
-            <option value="Cashier"></option
+            <option value="Cashier"></option>
             <option value="Viewer"></option>
           </datalist>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Password</label>
-          <input type="password" id="login-password" required placeholder="••••••••" class="w-full p-2.5 bg-[#0f172a] border border-slate-800 rounded-lg text-xs text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500">
+          <label class="block font-bold text-[11px] text-slate-300 uppercase tracking-widest mb-1.5">Password</label>
+          <input type="password" id="login-password" required placeholder="••••••••" class="w-full p-3 bg-[#070a12]/80 border border-slate-700/60 rounded-xl text-xs text-slate-100 placeholder:text-slate-600 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all duration-300">
         </div>
 
-        <div id="login-error" class="hidden text-rose-400 font-semibold text-[11px] bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg text-center"></div>
+        <div id="login-error" class="hidden text-rose-400 font-semibold text-[11px] bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl text-center"></div>
 
-        <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-all shadow-lg shadow-indigo-500/10 flex items-center justify-center gap-1.5">
-          Enter System <i class="fa-solid fa-arrow-right-to-bracket"></i>
+        <!-- 🚀 Enter System Button -->
+        <button type="submit" class="w-full py-3.5 mt-2 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl transition-all duration-300 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 flex items-center justify-center gap-2 text-xs tracking-wider active:scale-[0.99] cursor-pointer">
+          <span>Enter System</span>
+          <i class="fa-solid fa-arrow-right-to-bracket text-sm"></i>
         </button>
       </form>
+
+      <!-- ⬇️ Enter System အောက်တွင် ပြသပေးမည့် Pro Footer Panel -->
+      <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="font-medium text-slate-400">System Ready</span>
+        </div>
+        <span class="font-mono text-slate-500">v2.4 Secured</span>
+      </div>
+
     </div>
   </div>
 
@@ -389,10 +410,6 @@
   </div>
 
   <!-- JS Modules -->
-  <!-- 💡 Cache-busting: bump ?v= on every deploy so browsers/CDN edges never
-       hold a stale copy of one file alongside fresh copies of the others
-       (mismatched versions is what causes things like duplicate top-level
-       declarations or missing functions after an update). -->
   <script src="js/config.js?v=20260728"></script>
   <script src="js/api.js?v=20260728"></script>
   <script src="js/auth.js?v=20260728"></script>
@@ -404,7 +421,6 @@
   <script src="js/student.js?v=20260728"></script>
   <script src="js/promotion.js?v=20260728"></script>
   <script src="js/uniform.js?v=20260728"></script>
-  <!-- 💡 CASHIER MODULE JS SCRIPT -->
   <script src="js/cashier.js?v=20260728"></script>
   <script src="js/reports.js?v=20260728"></script>
   <script src="js/settings.js?v=20260728"></script>
