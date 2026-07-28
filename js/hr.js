@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - HR PAYROLL EXP BOOK CONTROLLER
  * File: js/hr.js
- * 💡 SECURED: Auto Staff ID Lookup, Dynamic Credit/Bonus/Fund Auto-Fill, Auto-Description & Payslip Print Engine
+ * 💡 SECURED: Auto Staff ID Lookup (FT/PT Category Specific), Dynamic Credit/Bonus/Fund Auto-Fill, Auto-Description & Payslip Print Engine
  */
 
 var gHrSubTab = 'payroll'; // 'payroll' | 'fulltime' | 'parttime'
@@ -9,7 +9,11 @@ var gHrPayrollData = [];
 var gHrPayrollFilteredData = [];
 var gHrPayrollPage = 1;
 var gHrPayrollLimit = 15;
-var gHrStaffCache = []; // Internal Staff Lookup Cache
+
+// 💡 Full Time နှင့် Part Time စာရင်းကို သီးသန့်ခွဲထားရန် Cache Variable များ
+var gHrStaffFT = []; // Full-Time Staff Cache
+var gHrStaffPT = []; // Part-Time Staff Cache
+var gHrStaffCache = []; // Legacy Fallback Cache
 
 /**
  * 💡 Switch Sub-Tabs in HR Module
@@ -82,10 +86,9 @@ async function preloadStaffCacheForPayroll() {
     const resFT = await callApi('getStaffData', { category: 'Full Time', page: 1, limit: 500 });
     const resPT = await callApi('getStaffData', { category: 'Part Time', page: 1, limit: 500 });
 
-    const listFT = (resFT && resFT.success && Array.isArray(resFT.data)) ? resFT.data : [];
-    const listPT = (resPT && resPT.success && Array.isArray(resPT.data)) ? resPT.data : [];
-
-    gHrStaffCache = [...listFT, ...listPT];
+    gHrStaffFT = (resFT && resFT.success && Array.isArray(resFT.data)) ? resFT.data : [];
+    gHrStaffPT = (resPT && resPT.success && Array.isArray(resPT.data)) ? resPT.data : [];
+    gHrStaffCache = [...gHrStaffFT, ...gHrStaffPT];
   } catch (e) {
     console.warn("Staff cache preload warning:", e.message);
   }
@@ -226,7 +229,7 @@ function escapeHtmlHr(str) {
 }
 
 // ============================================================================
-// 💡 CRITICAL AUTO-FILL ENGINE: ON STAFF ID CHANGE
+// 💡 CRITICAL AUTO-FILL ENGINE: ON STAFF ID / CATEGORY CHANGE
 // ============================================================================
 
 async function onStaffIdChangePayroll() {
@@ -251,56 +254,71 @@ async function onStaffIdChangePayroll() {
     return;
   }
 
-  // 1. If cache is empty, fetch staff list immediately
-  if (!gHrStaffCache || gHrStaffCache.length === 0) {
+  // 1. Cache မရှိသေးပါက API မှ ဖတ်ယူမည်
+  if ((!gHrStaffFT || gHrStaffFT.length === 0) && (!gHrStaffPT || gHrStaffPT.length === 0)) {
     await preloadStaffCacheForPayroll();
   }
 
-  // Also check window.gStaffData from js/staff.js
-  const allStaff = [...gHrStaffCache, ...(window.gStaffData || [])];
+  // 2. ရွေးချယ်ထားသော Category ပေါ်မူတည်၍ Part Time (PT) သို့မဟုတ် Full Time (FT) စာရင်းကို ခွဲထုတ်မည်
+  const isPartTime = category.toLowerCase().includes('part time');
+  let targetStaffList = isPartTime ? gHrStaffPT : gHrStaffFT;
 
-  // 2. Find Staff by ID matching (1, "001", "FID 001", etc.)
+  // Global window.gStaffData ရှိပါက Category ခွဲ၍ Fallback စစ်ပေးမည်
+  if ((!targetStaffList || targetStaffList.length === 0) && window.gStaffData) {
+    targetStaffList = window.gStaffData.filter(s => {
+      const cat = String(s.category || s.staffCategory || '').toLowerCase();
+      return isPartTime ? cat.includes('part') : cat.includes('full');
+    });
+  }
+
+  // 3. Staff ID Matching စစ်ဆေးမည် (FID သို့မဟုတ် PID)
   const targetIdNum = parseInt(rawStaffId, 10);
-  const matchedStaff = allStaff.find(s => {
+  const prefixKey = isPartTime ? 'pid' : 'fid';
+
+  const matchedStaff = targetStaffList.find(s => {
     const sId = parseInt(s.staffId || s.id || s.fid || s.pid || 0, 10);
     const sName = String(s.staffIdName || s.name || '').toLowerCase();
     const searchPad = `00${targetIdNum}`.slice(-3);
 
-    return sId === targetIdNum || sName.includes(`fid ${searchPad}`) || sName.includes(`pid ${searchPad}`);
+    return sId === targetIdNum || sName.includes(`${prefixKey} ${searchPad}`) || sName.includes(`${prefixKey}${searchPad}`);
   });
 
   if (!matchedStaff) {
     if (elCredit) elCredit.value = 0;
     if (elBonus) elBonus.value = 0;
     if (elFund) elFund.value = 0;
-    if (elDesc) elDesc.value = `[Staff ID ${rawStaffId} မရှိပါ]`;
+    if (elDesc) elDesc.value = `[${isPartTime ? 'PID' : 'FID'} ${rawStaffId} ဝန်ထမ်း မရှိပါ]`;
     return;
   }
 
-  // 3. Format Date MY String (e.g. "Jul-26")
+  // 4. Format Date MY String (e.g. "Jul-26")
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const dObj = new Date(dateVal);
   const myStr = !isNaN(dObj.getTime()) ? `${months[dObj.getMonth()]}-${String(dObj.getFullYear()).slice(-2)}` : 'Jul-26';
 
-  // 4. Calculate Values by Category
+  // 5. Calculate Values by Category
   let creditVal = 0;
   const unpaidBonusVal = matchedStaff.unpaidBonus || matchedStaff.bonus || 0;
   const unpaidFundVal = matchedStaff.unpaidFund || matchedStaff.fund || 0;
 
   if (category === 'Full Time Salary' || category === 'Part Time Salary') {
-    creditVal = matchedStaff.totalNetAmt || matchedStaff.totalSalary || 0;
-  } else if (category === 'Full Time Bonus') {
-    creditVal = unpaidBonusVal || matchedStaff.bonus || 0;
-  } else if (category === 'Full Time Fund') {
-    creditVal = unpaidFundVal || matchedStaff.fund || 0;
+    creditVal = matchedStaff.totalNetAmt || matchedStaff.totalSalary || matchedStaff.salary || 0;
+  } else if (category === 'Full Time Bonus' || category === 'Part Time Bonus') {
+    creditVal = unpaidBonusVal;
+  } else if (category === 'Full Time Fund' || category === 'Part Time Fund') {
+    creditVal = unpaidFundVal;
   }
 
-  // 5. Populate Input Fields
+  // 6. Populate Input Fields
   if (elCredit) elCredit.value = creditVal;
   if (elBonus) elBonus.value = unpaidBonusVal;
   if (elFund) elFund.value = unpaidFundVal;
 
-  const staffDisplayName = matchedStaff.staffIdName || `FID ${String(matchedStaff.staffId || 1).padStart(3, '0')} ${matchedStaff.name || ''}`;
+  // 7. Auto Display Name Generation (FID 001 ... သို့မဟုတ် PID 001 ...)
+  const defaultPrefix = isPartTime ? 'PID' : 'FID';
+  const defaultIdStr = `${defaultPrefix} ${String(matchedStaff.staffId || matchedStaff.id || targetIdNum).padStart(3, '0')} ${matchedStaff.name || ''}`;
+  const staffDisplayName = matchedStaff.staffIdName || defaultIdStr;
+
   if (elDesc) elDesc.value = `[${staffDisplayName}, ${category} ${myStr}]`;
 }
 
