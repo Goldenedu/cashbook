@@ -331,3 +331,12 @@ function exportToCSVPromotion() {
   a.download = `Promotion_Matrix_Export_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
+
+// 💡 Export functions to global window object for app.js integration
+window.loadPromotionData = loadPromotionData;
+window.openAddModalPromotion = openAddModalPromotion;
+window.closePromotionModal = closePromotionModal;
+window.savePromotionForm = savePromotionForm;
+window.editPromotionEntry = editPromotionEntry;
+window.deletePromotionEntry = deletePromotionEntry;
+window.exportToCSVPromotion = exportToCSVPromotion;
