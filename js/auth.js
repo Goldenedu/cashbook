@@ -22,7 +22,6 @@ function hasPermission(permissionName) {
     'HRStaff': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: true, can_backup: false },
     // 💡 CASHIER ROLE: Granted permission to manage & delete Cashier entries
     'Cashier': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: false, can_backup: false },
-    'Main Cashier': { can_view: true, can_add: true, can_edit: true, can_delete: true, can_manage_grades: false, can_backup: false },
     'Staff': { can_view: true, can_add: true, can_edit: false, can_delete: false, can_manage_grades: false, can_backup: false },
     'Viewer': { can_view: true, can_add: false, can_edit: false, can_delete: false, can_manage_grades: false, can_backup: false }
   };
@@ -116,7 +115,7 @@ function applyRoleRestrictions() {
   }
 
   // 2. HR Section Menu Visibility
-  const allowedHrRoles = ["Owner", "Admin", "Finance", "Accountant", "HR Staff", "HRStaff", "Staff"];
+  const allowedHrRoles = ["Owner", "Admin", "Finance","HR Staff", "HRStaff"];
   if (hrSection) {
     if (allowedHrRoles.includes(role)) {
       hrSection.classList.remove('hidden');
