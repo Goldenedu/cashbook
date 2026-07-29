@@ -58,7 +58,7 @@ function onSearchInputIncome() {
  * 💡 Load Main Income Book Data
  */
 async function loadIncomeData(isSilent = false, forceRefresh = false) {
-  const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
+  const token = localStorage.getItem('golden_auth_token');
   if (!token) return;
 
   try {
