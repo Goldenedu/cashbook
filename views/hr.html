@@ -305,12 +305,30 @@
           </div>
         </div>
 
-        <!-- Preview Card -->
-        <div class="bg-indigo-950/30 border border-indigo-500/20 p-3 rounded-xl grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-          <div><p class="text-[10px] text-slate-400 font-bold">TOTAL SALARY</p><p id="preview-total-salary" class="text-xs font-bold text-slate-200">0 MMK</p></div>
-          <div><p class="text-[10px] text-emerald-400 font-bold">BONUS</p><p id="preview-bonus" class="text-xs font-bold text-emerald-400">0 MMK</p></div>
-          <div><p class="text-[10px] text-teal-400 font-bold">FUND</p><p id="preview-fund" class="text-xs font-bold text-teal-400">0 MMK</p></div>
-          <div><p class="text-[10px] text-indigo-400 font-extrabold">NET SALARY</p><p id="preview-total-net" class="text-xs font-extrabold text-indigo-400">0 MMK</p></div>
+        <!-- 💡 UPDATED PREVIEW CARD LAYOUT (BONUS & FUND TOP, TOTAL SALARY & NET BOTTOM) -->
+        <div class="bg-indigo-950/30 border border-indigo-500/20 p-3.5 rounded-xl space-y-2.5">
+          <!-- Row 1: BONUS & FUND -->
+          <div class="grid grid-cols-2 gap-2 text-center pb-2 border-b border-indigo-500/10">
+            <div>
+              <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">BONUS</p>
+              <p id="preview-bonus" class="text-xs font-bold text-emerald-400">0 MMK</p>
+            </div>
+            <div>
+              <p class="text-[10px] text-teal-400 font-bold uppercase tracking-wider">FUND</p>
+              <p id="preview-fund" class="text-xs font-bold text-teal-400">0 MMK</p>
+            </div>
+          </div>
+          <!-- Row 2: TOTAL SALARY & NET SALARY -->
+          <div class="grid grid-cols-2 gap-2 text-center pt-0.5">
+            <div>
+              <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">TOTAL SALARY</p>
+              <p id="preview-total-salary" class="text-xs font-bold text-slate-200">0 MMK</p>
+            </div>
+            <div>
+              <p class="text-[10px] text-indigo-400 font-extrabold uppercase tracking-wider">NET SALARY</p>
+              <p id="preview-total-net" class="text-xs font-extrabold text-indigo-400">0 MMK</p>
+            </div>
+          </div>
         </div>
       </div>
 
