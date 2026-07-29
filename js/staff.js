@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - STAFF MODULE
  * File: js/staff.js
- * 💡 Staff Master Directory with Dynamic Google Sheet Grade Matrix Engine
+ * 💡 Staff Master Directory with Safe Google Sheet Grade Matrix Engine
  */
 
 var gStaffCategory = 'Full Time'; // 'Full Time' or 'Part Time'
@@ -585,7 +585,7 @@ function exportToCSVStaff() {
 }
 
 /**
- * 💡 OPEN GRADE EDIT MODAL (Reads Google Sheet Data)
+ * 💡 OPEN GRADE EDIT MODAL (Reads Directly from Google Sheet)
  */
 async function openGradeModal() {
   const modal = document.getElementById('grade-modal');
@@ -675,4 +675,9 @@ window.closeStaffModal = closeStaffModal;
 window.editStaffEntry = editStaffEntry;
 window.saveStaffForm = saveStaffForm;
 window.deleteStaffEntry = deleteStaffEntry;
-window.exportToCSVStaff = expor
+window.exportToCSVStaff = exportToCSVStaff;
+window.openGradeModal = openGradeModal;
+window.closeGradeModal = closeGradeModal;
+window.saveGradeForm = saveGradeForm;
+window.onSalaryGradeChangeStaff = onSalaryGradeChangeStaff;
+window.calculateLiveStaffSalary = calculateLiveStaffSalary;
