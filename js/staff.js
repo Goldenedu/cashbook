@@ -23,8 +23,6 @@ var gPayrollSettings = {
 
 /**
  * 💡 Strict Search Filter Function for Staff Directory
- * Searches strictly by: Staff Name (name / staffIdName), Staff ID (fid / pid / id), Position.
- * Excluded: Phone, NRC, Email, Gender, Bank Account.
  */
 function filterStaffData(list = [], searchVal = '') {
   if (!searchVal || !searchVal.trim()) return list;
@@ -183,7 +181,7 @@ function renderStaffKpis(stats) {
 }
 
 /**
- * 💡 Render Staff Table (Strict Search Filter Applied)
+ * 💡 Render Staff Table
  */
 function renderStaffTable(rawData) {
   const tbody = document.getElementById('staff-table-body');
@@ -287,7 +285,7 @@ function onSearchInputStaff() {
 }
 
 /**
- * 💡 Safe Dynamic Dropdown Population
+ * 💡 Dynamic Dropdown Population
  */
 async function populateDropdownsStaff() {
   try {
@@ -369,9 +367,6 @@ function calculateLiveStaffSalary() {
   if (pNet) pNet.textContent = `${totalNet.toLocaleString()} MMK`;
 }
 
-/**
- * 💡 Open Add Modal Staff (Non-blocking async UI engine)
- */
 async function openAddModalStaff() {
   const modal = document.getElementById('staff-modal');
   const form = document.getElementById('staff-form');
@@ -398,10 +393,8 @@ async function openAddModalStaff() {
     if (ptFields) ptFields.classList.remove('hidden');
   }
 
-  // 1. Reveal Modal Immediately
   if (modal) modal.classList.remove('hidden');
 
-  // 2. Safely populate options and calculate live salary
   try {
     await populateDropdownsStaff();
   } catch (e) {
@@ -448,11 +441,37 @@ async function editStaffEntry(uniqueId) {
   calculateLiveStaffSalary();
 }
 
+/**
+ * 💡 SAVE STAFF FORM (Bonus, Fund & TotalNet Payload Auto-Calculator Added)
+ */
 async function saveStaffForm(event) {
   event.preventDefault();
 
   const uid = document.getElementById('staff-uniqueId')?.value || '';
   const actionName = uid ? 'updateStaffEntry' : 'saveStaffEntry';
+
+  const basic = parseFloat(document.getElementById('staff-basic')?.value || 0);
+  const extra = parseFloat(document.getElementById('staff-extra')?.value || 0);
+  const days = parseFloat(document.getElementById('staff-working-days')?.value || 26);
+  const isResigned = !!document.getElementById('staff-resigned')?.value;
+
+  const bonusConfig = gPayrollSettings.bonus || 0;
+  const fundRateConfig = gPayrollSettings.fundRate || 0;
+
+  let totalSalary = 0;
+  let bonus = 0;
+  let fund = 0;
+  let totalNetAmt = 0;
+
+  if (gStaffCategory === 'Full Time') {
+    totalSalary = isResigned ? 0 : Math.round((basic + extra) * (days / 26));
+    bonus = isResigned ? 0 : bonusConfig;
+    fund = isResigned ? 0 : Math.round(totalSalary * fundRateConfig);
+    totalNetAmt = totalSalary + bonus + fund;
+  } else {
+    totalSalary = parseFloat(document.getElementById('staff-total-salary')?.value || 0);
+    totalNetAmt = totalSalary;
+  }
 
   const payload = {
     category: gStaffCategory,
@@ -462,10 +481,13 @@ async function saveStaffForm(event) {
     education: document.getElementById('staff-education')?.value || '',
     position: document.getElementById('staff-position')?.value || '',
     salaryGrade: document.getElementById('staff-grade')?.value || 'Non',
-    workingDays: parseFloat(document.getElementById('staff-working-days')?.value || 26),
-    basicAmt: parseFloat(document.getElementById('staff-basic')?.value || 0),
-    extraAmt: parseFloat(document.getElementById('staff-extra')?.value || 0),
-    totalSalary: parseFloat(document.getElementById('staff-total-salary')?.value || 0),
+    workingDays: days,
+    basicAmt: basic,
+    extraAmt: extra,
+    totalSalary: totalSalary,
+    bonus: bonus,               // 💡 Bonus တန်ဖိုး ပို့ပေးရန်
+    fund: fund,                 // 💡 Fund တန်ဖိုး ပို့ပေးရန်
+    totalNetAmt: totalNetAmt,   // 💡 Total Net Amount ပို့ပေးရန်
     nrcNo: document.getElementById('staff-nrc')?.value || '',
     bankAccount: document.getElementById('staff-bank')?.value || '',
     phoneNo: document.getElementById('staff-phone')?.value || '',
@@ -529,10 +551,6 @@ function exportToCSVStaff() {
   a.download = `Staff_${gStaffCategory}_Export_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
-
-// ============================================================================
-// 💡 GRADE MATRIX EDITOR MODAL FUNCTIONS (Instant Launcher)
-// ============================================================================
 
 async function openGradeModal() {
   const modal = document.getElementById('grade-modal');
