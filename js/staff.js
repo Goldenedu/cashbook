@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - STAFF MODULE
  * File: js/staff.js
- * 💡 Staff Master Directory with Strict Search Criteria & Dynamic Grade Matrix Engine
+ * 💡 Staff Master Directory with Dynamic Google Sheet Grade Matrix Engine
  */
 
 var gStaffCategory = 'Full Time'; // 'Full Time' or 'Part Time'
@@ -10,16 +10,32 @@ var gStaffLimit = 30;
 var gStaffSearch = '';
 var gStaffData = [];
 
-// Dynamic Payroll Settings cache with safe defaults
+// 💡 Google Sheet (FullTime!I1:U2) မှ ဖတ်ယူမည့် Dynamic Payroll Settings Cache
 var gPayrollSettings = {
-  grades: {
-    'GRADE A': 0, 'GRADE B': 0, 'GRADE C': 0, 'GRADE D': 0,
-    'GRADE E': 0, 'GRADE F': 0, 'GRADE G': 0, 'GRADE H': 0,
-    'GRADE I': 0, 'GRADE J': 0, 'GRADE K': 0
-  },
+  grades: {},
   bonus: 0,
   fundRate: 0
 };
+
+/**
+ * 💡 Fetch Payroll Settings Directly from Google Sheet (FullTime!I1:U2)
+ */
+async function fetchPayrollSettings() {
+  try {
+    const res = await callApi('getPayrollSettings', {});
+    const pData = (res && res.data) ? res.data : (res && res.grades ? res : null);
+    if (pData) {
+      gPayrollSettings = {
+        grades: pData.grades || {},
+        bonus: pData.bonus || 0,
+        fundRate: pData.fundRate || 0
+      };
+    }
+  } catch (err) {
+    console.warn("Could not load payroll settings from Sheet API:", err);
+  }
+  return gPayrollSettings;
+}
 
 /**
  * 💡 Strict Search Filter Function for Staff Directory
@@ -180,9 +196,6 @@ function renderStaffKpis(stats) {
   `;
 }
 
-/**
- * 💡 Render Staff Table
- */
 function renderStaffTable(rawData) {
   const tbody = document.getElementById('staff-table-body');
   if (!tbody) return;
@@ -285,27 +298,45 @@ function onSearchInputStaff() {
 }
 
 /**
- * 💡 Dynamic Dropdown Population
+ * 💡 SALARY GRADE DROPDOWN RENDERER (Strictly Uses Google Sheet Data)
  */
-async function populateDropdownsStaff() {
-  try {
-    const res = await callApi('getPayrollSettings', {});
-    const pData = (res && res.data) ? res.data : (res && res.grades ? res : null);
-    if (pData) {
-      gPayrollSettings = pData;
-    }
-  } catch (err) {
-    console.warn("Could not load payroll settings from API:", err);
-  }
+function renderGradeDropdownOptions(selectedValue = 'Non') {
+  const gradeSelect = document.getElementById('staff-grade');
+  if (!gradeSelect) return;
 
-  // 1. Education Dropdown
+  const currentVal = selectedValue || gradeSelect.value || 'Non';
+  let html = '<option value="Non">Non-Grade</option>';
+
+  const grades = gPayrollSettings.grades || {};
+
+  Object.keys(grades).forEach(g => {
+    const keyName = g.startsWith('GRADE') ? g : `GRADE ${g}`;
+    const amt = Number(grades[g] || 0);
+    html += `<option value="${keyName}">${keyName} (${amt.toLocaleString()} MMK)</option>`;
+  });
+
+  gradeSelect.innerHTML = html;
+  gradeSelect.value = currentVal;
+}
+
+/**
+ * 💡 Dynamic Dropdown Population (Pure Google Sheet Dependency)
+ */
+async function populateDropdownsStaff(selectedValue = 'Non') {
+  // 1. Fetch live settings directly from Sheet (FullTime!I1:U2)
+  await fetchPayrollSettings();
+
+  // 2. Render Grade Dropdown from Sheet Data
+  renderGradeDropdownOptions(selectedValue);
+
+  // 3. Education Dropdown
   const eduSelect = document.getElementById('staff-education');
   if (eduSelect) {
     const edus = window.DROPDOWNS?.staffCommon?.education || ["Non", "Phd", "Master", "Degree", "High Graduate", "Middle", "Primary", "High School"];
     eduSelect.innerHTML = edus.map(e => `<option value="${e}">${e}</option>`).join('');
   }
 
-  // 2. Position Dropdown
+  // 4. Position Dropdown
   const posSelect = document.getElementById('staff-position');
   if (posSelect) {
     let positions = [];
@@ -316,27 +347,29 @@ async function populateDropdownsStaff() {
     }
     posSelect.innerHTML = positions.map(p => `<option value="${p}">${p}</option>`).join('');
   }
-
-  // 3. Salary Grade Dropdown
-  const gradeSelect = document.getElementById('staff-grade');
-  if (gradeSelect) {
-    let html = '<option value="Non">Non-Grade</option>';
-    const grades = gPayrollSettings.grades || {};
-    Object.keys(grades).forEach(g => {
-      html += `<option value="${g}">${g} (${Number(grades[g] || 0).toLocaleString()} MMK)</option>`;
-    });
-    gradeSelect.innerHTML = html;
-  }
 }
 
+/**
+ * 💡 ON SALARY GRADE CHANGE
+ */
 function onSalaryGradeChangeStaff() {
   const gradeVal = document.getElementById('staff-grade')?.value || 'Non';
   const basicInput = document.getElementById('staff-basic');
 
-  if (basicInput && gPayrollSettings.grades && gPayrollSettings.grades[gradeVal] !== undefined) {
-    basicInput.value = gPayrollSettings.grades[gradeVal];
-  } else if (basicInput && gradeVal === 'Non') {
-    basicInput.value = 0;
+  let basicAmt = 0;
+  if (gradeVal !== 'Non' && gPayrollSettings.grades) {
+    if (gPayrollSettings.grades[gradeVal] !== undefined) {
+      basicAmt = gPayrollSettings.grades[gradeVal];
+    } else {
+      const cleanKey = gradeVal.replace('GRADE ', '').trim();
+      Object.keys(gPayrollSettings.grades).forEach(k => {
+        if (k.includes(cleanKey)) basicAmt = gPayrollSettings.grades[k];
+      });
+    }
+  }
+
+  if (basicInput) {
+    basicInput.value = (gradeVal === 'Non') ? 0 : basicAmt;
   }
 
   calculateLiveStaffSalary();
@@ -395,11 +428,8 @@ async function openAddModalStaff() {
 
   if (modal) modal.classList.remove('hidden');
 
-  try {
-    await populateDropdownsStaff();
-  } catch (e) {
-    console.warn("Dropdown populate notice:", e);
-  }
+  // Fetch directly from Google Sheet and populate options
+  await populateDropdownsStaff('Non');
   calculateLiveStaffSalary();
 }
 
@@ -424,7 +454,9 @@ async function editStaffEntry(uniqueId) {
   if (document.getElementById('staff-position')) document.getElementById('staff-position').value = item.position || '';
 
   if (gStaffCategory === 'Full Time') {
-    if (document.getElementById('staff-grade')) document.getElementById('staff-grade').value = item.salaryGrade || 'Non';
+    const gradeVal = item.salaryGrade || 'Non';
+    await populateDropdownsStaff(gradeVal);
+    if (document.getElementById('staff-grade')) document.getElementById('staff-grade').value = gradeVal;
     if (document.getElementById('staff-working-days')) document.getElementById('staff-working-days').value = item.workingDays || 26;
     if (document.getElementById('staff-basic')) document.getElementById('staff-basic').value = item.basicAmt || 0;
     if (document.getElementById('staff-extra')) document.getElementById('staff-extra').value = item.extraAmt || 0;
@@ -442,7 +474,7 @@ async function editStaffEntry(uniqueId) {
 }
 
 /**
- * 💡 SAVE STAFF FORM (Bonus, Fund & TotalNet Payload Auto-Calculator Added)
+ * 💡 SAVE STAFF FORM
  */
 async function saveStaffForm(event) {
   event.preventDefault();
@@ -485,9 +517,9 @@ async function saveStaffForm(event) {
     basicAmt: basic,
     extraAmt: extra,
     totalSalary: totalSalary,
-    bonus: bonus,               // 💡 Bonus တန်ဖိုး ပို့ပေးရန်
-    fund: fund,                 // 💡 Fund တန်ဖိုး ပို့ပေးရန်
-    totalNetAmt: totalNetAmt,   // 💡 Total Net Amount ပို့ပေးရန်
+    bonus: bonus,
+    fund: fund,
+    totalNetAmt: totalNetAmt,
     nrcNo: document.getElementById('staff-nrc')?.value || '',
     bankAccount: document.getElementById('staff-bank')?.value || '',
     phoneNo: document.getElementById('staff-phone')?.value || '',
@@ -552,24 +584,25 @@ function exportToCSVStaff() {
   a.click();
 }
 
+/**
+ * 💡 OPEN GRADE EDIT MODAL (Reads Google Sheet Data)
+ */
 async function openGradeModal() {
   const modal = document.getElementById('grade-modal');
   if (modal) modal.classList.remove('hidden');
 
   try {
     if (typeof toggleLoading === 'function') toggleLoading(true);
-    const res = await callApi('getPayrollSettings', {});
-
-    const settings = (res && res.data) ? res.data : (res && res.grades ? res : null);
-    if (settings) {
-      gPayrollSettings = settings;
-    }
+    await fetchPayrollSettings();
 
     const grades = gPayrollSettings.grades || {};
 
     ['A','B','C','D','E','F','G','H','I','J','K'].forEach(letter => {
       const input = document.getElementById(`grade-${letter}`);
-      if (input) input.value = grades[`GRADE ${letter}`] !== undefined ? grades[`GRADE ${letter}`] : (grades[letter] || 0);
+      const fullKey = `GRADE ${letter}`;
+      if (input) {
+        input.value = grades[fullKey] !== undefined ? grades[fullKey] : (grades[letter] || 0);
+      }
     });
 
     const bonusInput = document.getElementById('grade-bonus');
@@ -589,6 +622,9 @@ function closeGradeModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+/**
+ * 💡 SAVE GRADE FORM (Saves To Google Sheet & Immediately Refreshes Runtime Cache)
+ */
 async function saveGradeForm(event) {
   event.preventDefault();
 
@@ -613,9 +649,12 @@ async function saveGradeForm(event) {
     const res = await callApi('updatePayrollSettings', { values });
 
     if (res && res.success) {
-      if (typeof showToast === 'function') showToast("SUCCESS", "Grade Matrix နှုန်းထားများကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+      if (typeof showToast === 'function') showToast("SUCCESS", "Grade Matrix နှုန်းထားများကို Google Sheet ထဲသို့ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       closeGradeModal();
-      await populateDropdownsStaff();
+      
+      // Google Sheet မှ တန်ဖိုးအသစ်များကို အချိန်နဲ့တစ်ပြေးညီ ရယူ၍ Dropdown အား ပြန်လည် Render လုပ်ပေးမည်
+      await fetchPayrollSettings();
+      renderGradeDropdownOptions();
     } else {
       if (typeof showToast === 'function') showToast("ERROR", res.message || "Grade သိမ်းဆည်းမှု မအောင်မြင်ပါ။");
     }
@@ -636,9 +675,4 @@ window.closeStaffModal = closeStaffModal;
 window.editStaffEntry = editStaffEntry;
 window.saveStaffForm = saveStaffForm;
 window.deleteStaffEntry = deleteStaffEntry;
-window.exportToCSVStaff = exportToCSVStaff;
-window.openGradeModal = openGradeModal;
-window.closeGradeModal = closeGradeModal;
-window.saveGradeForm = saveGradeForm;
-window.onSalaryGradeChangeStaff = onSalaryGradeChangeStaff;
-window.calculateLiveStaffSalary = calculateLiveStaffSalary;
+window.exportToCSVStaff = expor
