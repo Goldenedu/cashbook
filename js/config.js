@@ -48,9 +48,22 @@ window.MAGIC_NUMBERS = {
   PROMO_CACHE_TTL_SECONDS: 600
 };
 
+// 💡 Environment Detection for API URL Configuration
+function getApiUrl() {
+  const hostname = window.location.hostname;
+  
+  // Development environment (localhost)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return localStorage.getItem('dev_api_url') || 'http://localhost:8787';
+  }
+  
+  // Production environment
+  return localStorage.getItem('prod_api_url') || 'https://cashbook-api.goldeneduprivateschool.workers.dev';
+}
+
 window.CONFIG = {
-  API_URL: "https://cashbook-api.goldeneduprivateschool.workers.dev",
-  API_BASE_URL: "https://cashbook-api.goldeneduprivateschool.workers.dev",
+  API_URL: getApiUrl(),
+  API_BASE_URL: getApiUrl(),
   STORAGE_KEY_TOKEN: "golden_auth_token",
   STORAGE_KEY_USER: "golden_user",
 
