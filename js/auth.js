@@ -31,6 +31,52 @@ function hasPermission(permissionName) {
 }
 
 /**
+ * 💡 Client-Side Password Hashing using Web Crypto API (SHA-256)
+ * Security: Password ကို plain text ဖြင့် မပို့ဘဲ hashed version ပို့သည်
+ */
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+/**
+ * 💡 Enhanced Input Validation
+ * Username နှင့် Password ကို validate လုပ်သည်
+ */
+function validateLoginInput(username, password) {
+  const errors = [];
+  
+  // Username validation
+  if (!username || username.trim().length === 0) {
+    errors.push("အသုံးပြုသူအမည် ဖြည့်သွင်းပါ");
+  } else if (username.length < 3) {
+    errors.push("အသုံးပြုသူအမည် အနည်းဆုံး ၃ လုံး ရှိရပါမည်");
+  } else if (username.length > 50) {
+    errors.push("အသုံးပြုသူအမည် အများဆုံး ၅၀ လုံး ဖြစ်နိုင်ပါသည်");
+  } else if (!/^[a-zA-Z0-9\s]+$/.test(username)) {
+    errors.push("အသုံးပြုသူအမည်တွင် စာလုံးနှင့် ကိန်းဂဏန်းသာ ပါဝင်နိုင်ပါသည်");
+  }
+  
+  // Password validation
+  if (!password || password.trim().length === 0) {
+    errors.push("လျှို့ဝှက်နံပါတ် ဖြည့်သွင်းပါ");
+  } else if (password.length < 4) {
+    errors.push("လျှို့ဝှက်နံပါတ် အနည်းဆုံး ၄ လုံး ရှိရပါမည်");
+  } else if (password.length > 100) {
+    errors.push("လျှို့ဝှက်နံပါတ် အများဆုံး ၁၀၀ လုံး ဖြစ်နိုင်ပါသည်");
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors: errors
+  };
+}
+
+/**
  * 💡 Handle Login Form Submission
  */
 async function handleLoginSubmit(e) {
@@ -46,9 +92,11 @@ async function handleLoginSubmit(e) {
   const username = (usernameSelect.value || '').trim();
   const password = (passwordInput.value || '').trim();
 
-  if (!username || !password) {
+  // 💡 Enhanced input validation
+  const validation = validateLoginInput(username, password);
+  if (!validation.isValid) {
     if (errorBox) {
-      errorBox.innerText = "ကျေးဇူးပြု၍ အသုံးပြုသူအမည်နှင့် လျှို့ဝှက်နံပါတ် ဖြည့်သွင်းပါ။";
+      errorBox.innerText = validation.errors.join(' | ');
       errorBox.classList.remove('hidden');
     }
     return;
@@ -58,7 +106,9 @@ async function handleLoginSubmit(e) {
   if (typeof window.showLoading === 'function') window.showLoading(true);
 
   try {
-    const response = await callApi('checkLogin', { username, password });
+    // 💡 Hash password before sending to server for security
+    const hashedPassword = await hashPassword(password);
+    const response = await callApi('checkLogin', { username, password: hashedPassword });
     if (typeof window.hideLoading === 'function') window.hideLoading();
 
     if (response && response.success) {
