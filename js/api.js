@@ -13,7 +13,7 @@ const API_WORKER_URL = (typeof window !== 'undefined' && window.CONFIG?.API_URL)
 window.AppState = window.AppState || {
   currentUser: localStorage.getItem('golden_user_name') || null,
   currentUserRole: localStorage.getItem('golden_user_role') || null,
-  authToken: localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token') || null,
+  authToken: localStorage.getItem('golden_auth_token') || null,
   currentModule: 'dashboard'
 };
 
@@ -180,7 +180,7 @@ window.ErrorLogger = {
  * 💡 Storage ထဲမှ လတ်ဆတ်သော Token ကို ရယူပေးသည့် Helper
  */
 function getFreshAuthToken() {
-  const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token') || (window.AppState ? window.AppState.authToken : null) || '';
+  const token = localStorage.getItem('golden_auth_token') || (window.AppState ? window.AppState.authToken : null) || '';
   if (window.AppState) window.AppState.authToken = token;
   return token;
 }
@@ -257,7 +257,6 @@ window.callApi = async function(action, payload = {}, method = 'POST') {
       console.warn(`[API 401] Unauthorized access for action: ${action}`);
 
       localStorage.removeItem('golden_auth_token');
-      localStorage.removeItem('erp_token');
       localStorage.removeItem('golden_user_name');
       localStorage.removeItem('golden_user_role');
 
