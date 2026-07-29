@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
  * 💡 Initialize ERP Application Shell with Cashier Auto-Landing Support
  */
 function initApp() {
-  const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
+  const token = localStorage.getItem('golden_auth_token');
   const user = localStorage.getItem('golden_user_name') || 'User';
   const role = (localStorage.getItem('golden_user_role') || '').trim();
 
@@ -127,7 +127,7 @@ if (!window.headerClockInterval) {
  * 💡 Central Tab & View Router Engine (Instant 0ms Rendering)
  */
 async function switchTab(tabId) {
-  const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
+  const token = localStorage.getItem('golden_auth_token');
 
   if (!token) {
     document.documentElement.className = 'dark not-authed';
@@ -359,7 +359,7 @@ function updateSidebarHighlight(activeTabId) {
  * 💡 Load Home Dashboard Analytics Data
  */
 async function loadDashboardData(isSilent = false, forceRefresh = false) {
-  const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
+  const token = localStorage.getItem('golden_auth_token');
   if (!token) return;
 
   try {
