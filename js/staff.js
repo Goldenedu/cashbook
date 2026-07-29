@@ -10,8 +10,16 @@ var gStaffLimit = 30;
 var gStaffSearch = '';
 var gStaffData = [];
 
-// Dynamic Payroll Settings cache read from FullTime!I1:U2
-var gPayrollSettings = { grades: {}, bonus: 0, fundRate: 0 };
+// Dynamic Payroll Settings cache with safe defaults
+var gPayrollSettings = {
+  grades: {
+    'GRADE A': 0, 'GRADE B': 0, 'GRADE C': 0, 'GRADE D': 0,
+    'GRADE E': 0, 'GRADE F': 0, 'GRADE G': 0, 'GRADE H': 0,
+    'GRADE I': 0, 'GRADE J': 0, 'GRADE K': 0
+  },
+  bonus: 0,
+  fundRate: 0
+};
 
 /**
  * 💡 Strict Search Filter Function for Staff Directory
@@ -129,10 +137,10 @@ async function loadStaffData(useCache = false) {
       renderStaffTable(gStaffData);
       renderStaffPagination(res.totalRows || 0);
     } else {
-      showToast("ERROR", res.message || "Staff အချက်အလက်များ ရယူ၍ မရပါ။");
+      if (typeof showToast === 'function') showToast("ERROR", res.message || "Staff အချက်အလက်များ ရယူ၍ မရပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
@@ -181,7 +189,6 @@ function renderStaffTable(rawData) {
   const tbody = document.getElementById('staff-table-body');
   if (!tbody) return;
 
-  // Apply Strict Filtering Criteria (Staff Name, Staff ID, Position)
   const data = filterStaffData(rawData, gStaffSearch);
 
   if (!data || data.length === 0) {
@@ -280,13 +287,14 @@ function onSearchInputStaff() {
 }
 
 /**
- * 💡 Config ထဲမှ Education & Position Dropdowns များကို Dynamic ဖြည့်ပေးခြင်း
+ * 💡 Safe Dynamic Dropdown Population
  */
 async function populateDropdownsStaff() {
   try {
     const res = await callApi('getPayrollSettings', {});
-    if (res && res.success && res.data) {
-      gPayrollSettings = res.data;
+    const pData = (res && res.data) ? res.data : (res && res.grades ? res : null);
+    if (pData) {
+      gPayrollSettings = pData;
     }
   } catch (err) {
     console.warn("Could not load payroll settings from API:", err);
@@ -317,7 +325,7 @@ async function populateDropdownsStaff() {
     let html = '<option value="Non">Non-Grade</option>';
     const grades = gPayrollSettings.grades || {};
     Object.keys(grades).forEach(g => {
-      html += `<option value="${g}">${g} (${grades[g].toLocaleString()} MMK)</option>`;
+      html += `<option value="${g}">${g} (${Number(grades[g] || 0).toLocaleString()} MMK)</option>`;
     });
     gradeSelect.innerHTML = html;
   }
@@ -326,13 +334,13 @@ async function populateDropdownsStaff() {
 function onSalaryGradeChangeStaff() {
   const gradeVal = document.getElementById('staff-grade')?.value || 'Non';
   const basicInput = document.getElementById('staff-basic');
-  
-  if (basicInput && gPayrollSettings.grades && gPayrollSettings.grades[gradeVal]) {
+
+  if (basicInput && gPayrollSettings.grades && gPayrollSettings.grades[gradeVal] !== undefined) {
     basicInput.value = gPayrollSettings.grades[gradeVal];
   } else if (basicInput && gradeVal === 'Non') {
     basicInput.value = 0;
   }
-  
+
   calculateLiveStaffSalary();
 }
 
@@ -361,10 +369,13 @@ function calculateLiveStaffSalary() {
   if (pNet) pNet.textContent = `${totalNet.toLocaleString()} MMK`;
 }
 
+/**
+ * 💡 Open Add Modal Staff (Non-blocking async UI engine)
+ */
 async function openAddModalStaff() {
-  await populateDropdownsStaff();
-
+  const modal = document.getElementById('staff-modal');
   const form = document.getElementById('staff-form');
+
   if (form) form.reset();
 
   const uid = document.getElementById('staff-uniqueId');
@@ -387,9 +398,16 @@ async function openAddModalStaff() {
     if (ptFields) ptFields.classList.remove('hidden');
   }
 
-  calculateLiveStaffSalary();
-  const modal = document.getElementById('staff-modal');
+  // 1. Reveal Modal Immediately
   if (modal) modal.classList.remove('hidden');
+
+  // 2. Safely populate options and calculate live salary
+  try {
+    await populateDropdownsStaff();
+  } catch (e) {
+    console.warn("Dropdown populate notice:", e);
+  }
+  calculateLiveStaffSalary();
 }
 
 function closeStaffModal() {
@@ -406,26 +424,26 @@ async function editStaffEntry(uniqueId) {
   const title = document.getElementById('staff-form-title');
   if (title) title.textContent = `Edit ${gStaffCategory} Record`;
 
-  document.getElementById('staff-uniqueId').value = item.uniqueId;
-  document.getElementById('staff-joindate').value = item.joinDate || '';
-  document.getElementById('staff-name').value = item.name || '';
-  document.getElementById('staff-education').value = item.education || '';
-  document.getElementById('staff-position').value = item.position || '';
+  if (document.getElementById('staff-uniqueId')) document.getElementById('staff-uniqueId').value = item.uniqueId;
+  if (document.getElementById('staff-joindate')) document.getElementById('staff-joindate').value = item.joinDate || '';
+  if (document.getElementById('staff-name')) document.getElementById('staff-name').value = item.name || '';
+  if (document.getElementById('staff-education')) document.getElementById('staff-education').value = item.education || '';
+  if (document.getElementById('staff-position')) document.getElementById('staff-position').value = item.position || '';
 
   if (gStaffCategory === 'Full Time') {
-    document.getElementById('staff-grade').value = item.salaryGrade || 'Non';
-    document.getElementById('staff-working-days').value = item.workingDays || 26;
-    document.getElementById('staff-basic').value = item.basicAmt || 0;
-    document.getElementById('staff-extra').value = item.extraAmt || 0;
+    if (document.getElementById('staff-grade')) document.getElementById('staff-grade').value = item.salaryGrade || 'Non';
+    if (document.getElementById('staff-working-days')) document.getElementById('staff-working-days').value = item.workingDays || 26;
+    if (document.getElementById('staff-basic')) document.getElementById('staff-basic').value = item.basicAmt || 0;
+    if (document.getElementById('staff-extra')) document.getElementById('staff-extra').value = item.extraAmt || 0;
   } else {
-    document.getElementById('staff-total-salary').value = item.totalSalary || 0;
+    if (document.getElementById('staff-total-salary')) document.getElementById('staff-total-salary').value = item.totalSalary || 0;
   }
 
-  document.getElementById('staff-nrc').value = item.nrcNo || '';
-  document.getElementById('staff-bank').value = item.bankAccount || '';
-  document.getElementById('staff-phone').value = item.phoneNo || '';
-  document.getElementById('staff-email').value = item.email || '';
-  document.getElementById('staff-resigned').value = item.resignedDate || '';
+  if (document.getElementById('staff-nrc')) document.getElementById('staff-nrc').value = item.nrcNo || '';
+  if (document.getElementById('staff-bank')) document.getElementById('staff-bank').value = item.bankAccount || '';
+  if (document.getElementById('staff-phone')) document.getElementById('staff-phone').value = item.phoneNo || '';
+  if (document.getElementById('staff-email')) document.getElementById('staff-email').value = item.email || '';
+  if (document.getElementById('staff-resigned')) document.getElementById('staff-resigned').value = item.resignedDate || '';
 
   calculateLiveStaffSalary();
 }
@@ -459,14 +477,14 @@ async function saveStaffForm(event) {
     if (typeof toggleLoading === 'function') toggleLoading(true);
     const res = await callApi(actionName, payload);
     if (res && res.success) {
-      showToast("SUCCESS", "ဝန်ထမ်း အချက်အလက်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+      if (typeof showToast === 'function') showToast("SUCCESS", "ဝန်ထမ်း အချက်အလက်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       closeStaffModal();
       loadStaffData(false);
     } else {
-      showToast("ERROR", res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ။");
+      if (typeof showToast === 'function') showToast("ERROR", res.message || "သိမ်းဆည်းမှု မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
@@ -483,13 +501,13 @@ async function deleteStaffEntry(uniqueId) {
     });
 
     if (res && res.success) {
-      showToast("SUCCESS", "ဝန်ထမ်း မှတ်တမ်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။");
+      if (typeof showToast === 'function') showToast("SUCCESS", "ဝန်ထမ်း မှတ်တမ်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။");
       loadStaffData(false);
     } else {
-      showToast("ERROR", res.message || "ဖျက်သိမ်းမှု မအောင်မြင်ပါ။");
+      if (typeof showToast === 'function') showToast("ERROR", res.message || "ဖျက်သိမ်းမှု မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
@@ -497,7 +515,7 @@ async function deleteStaffEntry(uniqueId) {
 
 function exportToCSVStaff() {
   if (!gStaffData || gStaffData.length === 0) {
-    showToast("ERROR", "ထုတ်ယူရန် မည်သည့် အချက်အလက်မျှ မရှိပါ။");
+    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့် အချက်အလက်မျှ မရှိပါ။");
     return;
   }
   let csv = "NO,JOIN_DATE,STAFF_IDNAME,POSITION,PHONE,STATUS\n";
@@ -513,35 +531,36 @@ function exportToCSVStaff() {
 }
 
 // ============================================================================
-// 💡 GRADE MATRIX EDITOR MODAL FUNCTIONS
+// 💡 GRADE MATRIX EDITOR MODAL FUNCTIONS (Instant Launcher)
 // ============================================================================
 
 async function openGradeModal() {
+  const modal = document.getElementById('grade-modal');
+  if (modal) modal.classList.remove('hidden');
+
   try {
     if (typeof toggleLoading === 'function') toggleLoading(true);
     const res = await callApi('getPayrollSettings', {});
-    
-    if (res && res.success && res.data) {
-      gPayrollSettings = res.data;
-      const grades = res.data.grades || {};
 
-      ['A','B','C','D','E','F','G','H','I','J','K'].forEach(letter => {
-        const input = document.getElementById(`grade-${letter}`);
-        if (input) input.value = grades[`GRADE ${letter}`] || 0;
-      });
-
-      const bonusInput = document.getElementById('grade-bonus');
-      const fundInput = document.getElementById('grade-fund');
-      if (bonusInput) bonusInput.value = res.data.bonus || 0;
-      if (fundInput) fundInput.value = res.data.fundRate || 0;
-
-      const modal = document.getElementById('grade-modal');
-      if (modal) modal.classList.remove('hidden');
-    } else {
-      showToast("ERROR", "Grade Settings ဖတ်ယူ၍ မရပါ။");
+    const settings = (res && res.data) ? res.data : (res && res.grades ? res : null);
+    if (settings) {
+      gPayrollSettings = settings;
     }
+
+    const grades = gPayrollSettings.grades || {};
+
+    ['A','B','C','D','E','F','G','H','I','J','K'].forEach(letter => {
+      const input = document.getElementById(`grade-${letter}`);
+      if (input) input.value = grades[`GRADE ${letter}`] !== undefined ? grades[`GRADE ${letter}`] : (grades[letter] || 0);
+    });
+
+    const bonusInput = document.getElementById('grade-bonus');
+    const fundInput = document.getElementById('grade-fund');
+    if (bonusInput) bonusInput.value = gPayrollSettings.bonus || 0;
+    if (fundInput) fundInput.value = gPayrollSettings.fundRate || 0;
+
   } catch (err) {
-    showToast("ERROR", "Grade ဖတ်ယူမှု အမှား: " + err.message);
+    console.warn("Grade modal settings fetch warning:", err);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
@@ -576,15 +595,32 @@ async function saveGradeForm(event) {
     const res = await callApi('updatePayrollSettings', { values });
 
     if (res && res.success) {
-      showToast("SUCCESS", "Grade Matrix နှုန်းထားများကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+      if (typeof showToast === 'function') showToast("SUCCESS", "Grade Matrix နှုန်းထားများကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       closeGradeModal();
       await populateDropdownsStaff();
     } else {
-      showToast("ERROR", res.message || "Grade သိမ်းဆည်းမှု မအောင်မြင်ပါ။");
+      if (typeof showToast === 'function') showToast("ERROR", res.message || "Grade သိမ်းဆည်းမှု မအောင်မြင်ပါ။");
     }
   } catch (err) {
-    showToast("ERROR", "Grade သိမ်းဆည်းမှု အမှား: " + err.message);
+    if (typeof showToast === 'function') showToast("ERROR", "Grade သိမ်းဆည်းမှု အမှား: " + err.message);
   } finally {
     if (typeof toggleLoading === 'function') toggleLoading(false);
   }
 }
+
+// Global Expose
+window.switchStaffCategory = switchStaffCategory;
+window.loadStaffData = loadStaffData;
+window.onSearchInputStaff = onSearchInputStaff;
+window.changePageStaff = changePageStaff;
+window.openAddModalStaff = openAddModalStaff;
+window.closeStaffModal = closeStaffModal;
+window.editStaffEntry = editStaffEntry;
+window.saveStaffForm = saveStaffForm;
+window.deleteStaffEntry = deleteStaffEntry;
+window.exportToCSVStaff = exportToCSVStaff;
+window.openGradeModal = openGradeModal;
+window.closeGradeModal = closeGradeModal;
+window.saveGradeForm = saveGradeForm;
+window.onSalaryGradeChangeStaff = onSalaryGradeChangeStaff;
+window.calculateLiveStaffSalary = calculateLiveStaffSalary;
