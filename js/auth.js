@@ -1,7 +1,7 @@
 /**
  * GOLDEN ERP SYSTEM - AUTHENTICATION & ROLE ENGINE
  * File: js/auth.js
- * 💡 SECURED: Bulletproof Navigation, Cashier Permissions & Auto-Landing Engine
+ * 💡 SECURED (Phase 2): JWT Expiration Verification, Salted Password Hashing & Bulletproof RBAC
  */
 
 /**
@@ -31,12 +31,13 @@ function hasPermission(permissionName) {
 }
 
 /**
- * 💡 Client-Side Password Hashing using Web Crypto API (SHA-256)
- * Security: Password ကို plain text ဖြင့် မပို့ဘဲ hashed version ပို့သည်
+ * 💡 Client-Side Salted Password Hashing using Web Crypto API (SHA-256)
+ * Security: Password ကို Application Salt ဖြင့် ပေါင်းစပ်ကာ Hash ပြုလုပ်၍ ပို့ဆောင်သည်
  */
 async function hashPassword(password) {
+  const appSalt = "GOLDEN_ERP_SECURE_SALT_2026";
   const encoder = new TextEncoder();
-  const data = encoder.encode(password);
+  const data = encoder.encode(password + appSalt);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -44,13 +45,62 @@ async function hashPassword(password) {
 }
 
 /**
+ * 💡 Verify JWT Token or Local Session Expiration
+ * @param {string} token 
+ * @returns {boolean} True if expired, false if valid
+ */
+function isTokenExpired(token) {
+  if (!token) return true;
+
+  // 1. JWT Payload `.exp` Timestamp Verification
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payloadBase64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payloadJson = decodeURIComponent(atob(payloadBase64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+      const payload = JSON.parse(payloadJson);
+
+      if (payload && payload.exp) {
+        const currentTime = Math.floor(Date.now() / 1000);
+        return payload.exp < currentTime;
+      }
+    }
+  } catch (err) {
+    console.warn("[Auth] JWT payload exp parse fallback:", err.message);
+  }
+
+  // 2. Fallback Verification via Local 8-Hour Session Timestamp
+  const expiresAt = localStorage.getItem('golden_token_expires_at');
+  if (expiresAt) {
+    return Date.now() > Number(expiresAt);
+  }
+
+  return false;
+}
+
+/**
+ * 💡 Clear All Authentication State & Local Storage Keys
+ */
+function clearAuthStorage() {
+  localStorage.removeItem('golden_user_name');
+  localStorage.removeItem('golden_user_role');
+  localStorage.removeItem('golden_auth_token');
+  localStorage.removeItem('golden_user');
+  localStorage.removeItem('golden_token_expires_at');
+
+  if (window.AppState) {
+    window.AppState.currentUser = null;
+    window.AppState.currentUserRole = null;
+    window.AppState.authToken = null;
+  }
+}
+
+/**
  * 💡 Enhanced Input Validation
- * Username နှင့် Password ကို validate လုပ်သည်
  */
 function validateLoginInput(username, password) {
   const errors = [];
-  
-  // Username validation
+
   if (!username || username.trim().length === 0) {
     errors.push("အသုံးပြုသူအမည် ဖြည့်သွင်းပါ");
   } else if (username.length < 3) {
@@ -60,8 +110,7 @@ function validateLoginInput(username, password) {
   } else if (!/^[a-zA-Z0-9\s]+$/.test(username)) {
     errors.push("အသုံးပြုသူအမည်တွင် စာလုံးနှင့် ကိန်းဂဏန်းသာ ပါဝင်နိုင်ပါသည်");
   }
-  
-  // Password validation
+
   if (!password || password.trim().length === 0) {
     errors.push("လျှို့ဝှက်နံပါတ် ဖြည့်သွင်းပါ");
   } else if (password.length < 4) {
@@ -69,7 +118,7 @@ function validateLoginInput(username, password) {
   } else if (password.length > 100) {
     errors.push("လျှို့ဝှက်နံပါတ် အများဆုံး ၁၀၀ လုံး ဖြစ်နိုင်ပါသည်");
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors: errors
@@ -88,11 +137,9 @@ async function handleLoginSubmit(e) {
 
   if (!usernameSelect || !passwordInput) return;
 
-  // 💡 Clean leading/trailing spaces safely
   const username = (usernameSelect.value || '').trim();
   const password = (passwordInput.value || '').trim();
 
-  // 💡 Enhanced input validation
   const validation = validateLoginInput(username, password);
   if (!validation.isValid) {
     if (errorBox) {
@@ -106,7 +153,6 @@ async function handleLoginSubmit(e) {
   if (typeof window.showLoading === 'function') window.showLoading(true);
 
   try {
-    // 💡 Hash password before sending to server for security
     const hashedPassword = await hashPassword(password);
     const response = await callApi('checkLogin', { username, password: hashedPassword });
     if (typeof window.hideLoading === 'function') window.hideLoading();
@@ -117,17 +163,20 @@ async function handleLoginSubmit(e) {
       window.AppState.currentUserRole = response.role;
       window.AppState.authToken = response.token;
 
+      // 💡 Set Default 8-Hour Session TTL (8 * 60 * 60 * 1000 ms)
+      const defaultTtlMs = 8 * 60 * 60 * 1000;
+      const expiresAt = Date.now() + (response.expiresInMs || defaultTtlMs);
+
       const userObj = JSON.stringify({ username: response.username, role: response.role });
       localStorage.setItem('golden_user_name', response.username);
       localStorage.setItem('golden_user_role', response.role);
       localStorage.setItem('golden_auth_token', response.token);
       localStorage.setItem('golden_user', userObj);
+      localStorage.setItem('golden_token_expires_at', String(expiresAt));
 
-      // 💡 Switch UI Workspace & Apply Navigation Permissions
       showWorkspace();
       applyRoleRestrictions();
 
-      // 💡 CASHIER AUTO-LANDING: Redirect Cashier directly to 'cashier' tab
       if (typeof switchTab === 'function') {
         const initialTab = (response.role === 'Cashier' || response.role === 'Main Cashier') ? 'cashier' : 'dashboard';
         switchTab(initialTab);
@@ -156,14 +205,12 @@ function applyRoleRestrictions() {
   const hrSection = document.getElementById('nav-hr-section');
   const settingsSection = document.getElementById('nav-settings-section');
 
-  // 1. Settings Section Menu Visibility (Keep Always Visible)
   if (settingsSection) {
     settingsSection.classList.remove('hidden');
     settingsSection.style.removeProperty('display');
   }
 
-  // 2. HR Section Menu Visibility
-  const allowedHrRoles = ["Owner", "Admin", "Finance","HR Staff", "HRStaff"];
+  const allowedHrRoles = ["Owner", "Admin", "Finance", "HR Staff", "HRStaff"];
   if (hrSection) {
     if (allowedHrRoles.includes(role)) {
       hrSection.classList.remove('hidden');
@@ -173,7 +220,6 @@ function applyRoleRestrictions() {
     }
   }
 
-  // 3. Hide Delete Buttons across the DOM if role cannot delete
   const canDelete = hasPermission('can_delete');
   if (!canDelete) {
     document.body.classList.add('hide-delete-btn');
@@ -231,16 +277,7 @@ function showLogin() {
  */
 function handleLogout() {
   if (confirm("စနစ်မှ ထွက်ခွာလိုပါသလား။")) {
-    localStorage.removeItem('golden_user_name');
-    localStorage.removeItem('golden_user_role');
-    localStorage.removeItem('golden_auth_token');
-    localStorage.removeItem('golden_user');
-
-    if (window.AppState) {
-      window.AppState.currentUser = null;
-      window.AppState.currentUserRole = null;
-      window.AppState.authToken = null;
-    }
+    clearAuthStorage();
 
     if (window.invalidateCache) {
       window.invalidateCache();
@@ -256,7 +293,7 @@ function handleLogout() {
 }
 
 /**
- * 💡 Verify Existing Session State with Cashier Auto-Landing Support
+ * 💡 Verify Existing Session State with Expiration & Auto-Landing
  */
 function checkExistingSession() {
   const savedUser = localStorage.getItem('golden_user_name');
@@ -264,6 +301,17 @@ function checkExistingSession() {
   const savedToken = localStorage.getItem('golden_auth_token');
 
   if (savedUser && savedRole && savedToken) {
+    // 💡 Security: Check if token/session has expired
+    if (isTokenExpired(savedToken)) {
+      console.warn("[Auth] Session expired. Automatically logging out.");
+      clearAuthStorage();
+      showLogin();
+      if (typeof showToast === 'function') {
+        showToast("WARNING", "လော့ဂ်အင် သက်တမ်း ကုန်ဆုံးသွားပါပြီ။ ကျေးဇူးပြု၍ ပြန်လည် လော့ဂ်အင် ဝင်ပါ။");
+      }
+      return;
+    }
+
     window.AppState = window.AppState || {};
     window.AppState.currentUser = savedUser;
     window.AppState.currentUserRole = savedRole;
