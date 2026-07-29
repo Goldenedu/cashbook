@@ -122,8 +122,6 @@ async function handleLoginSubmit(e) {
       localStorage.setItem('golden_user_role', response.role);
       localStorage.setItem('golden_auth_token', response.token);
       localStorage.setItem('golden_user', userObj);
-      localStorage.setItem('erp_token', response.token);
-      localStorage.setItem('erp_role', response.role);
 
       // 💡 Switch UI Workspace & Apply Navigation Permissions
       showWorkspace();
@@ -237,8 +235,6 @@ function handleLogout() {
     localStorage.removeItem('golden_user_role');
     localStorage.removeItem('golden_auth_token');
     localStorage.removeItem('golden_user');
-    localStorage.removeItem('erp_token');
-    localStorage.removeItem('erp_role');
 
     if (window.AppState) {
       window.AppState.currentUser = null;
@@ -265,7 +261,7 @@ function handleLogout() {
 function checkExistingSession() {
   const savedUser = localStorage.getItem('golden_user_name');
   const savedRole = localStorage.getItem('golden_user_role');
-  const savedToken = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
+  const savedToken = localStorage.getItem('golden_auth_token');
 
   if (savedUser && savedRole && savedToken) {
     window.AppState = window.AppState || {};
