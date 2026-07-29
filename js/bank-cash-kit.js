@@ -75,7 +75,7 @@ function switchSubBook(bookType) {
  * 💡 Load Bank or Cash Ledger Data
  */
 async function loadBankCashKitData(isSilent = false, forceRefresh = false) {
-  const token = localStorage.getItem('golden_auth_token') || localStorage.getItem('erp_token');
+  const token = localStorage.getItem('golden_auth_token');
   if (!token) return;
 
   try {
@@ -454,6 +454,5 @@ window.saveBankCashKitForm = saveBankCashKitForm;
 window.editBankCashKitEntry = editBankCashKitEntry;
 window.deleteBankCashKitEntry = deleteBankCashKitEntry;
 window.onSearchInputBankCashKit = onSearchInputBankCashKit;
-window.clearDateFilterBankCashKit = clearDateFilterBankCashKit;
 window.changePageBankCashKit = changePageBankCashKit;
 window.exportToCSVBankCashKit = exportToCSVBankCashKit;
