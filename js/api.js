@@ -4,7 +4,10 @@
  * 💡 SECURED: SWR In-Memory Caching, Background Prefetching (with Cashier Sync) & Formal Toast Engine
  */
 
-const API_WORKER_URL = "https://cashbook-api.goldeneduprivateschool.workers.dev/";
+// 💡 Dynamic API URL from config
+const API_WORKER_URL = (typeof window !== 'undefined' && window.CONFIG?.API_URL) 
+  ? window.CONFIG.API_URL 
+  : "https://cashbook-api.goldeneduprivateschool.workers.dev/";
 
 // 💡 Global AppState
 window.AppState = window.AppState || {
@@ -18,20 +21,70 @@ window.AppState = window.AppState || {
 window.gDataCache = window.gDataCache || {};
 
 /**
- * 💡 Cache Helper Functions
+ * 💡 Cache Helper Functions with localStorage Persistence
+ * Critical data များကို localStorage တွင်လည်း သိမ်းဆည်းပြီး page refresh လုပ်လျှင် ပြန်ရအောင် လုပ်သည်
  */
 window.getApiCache = function(cacheKey) {
-  return window.gDataCache[cacheKey] || null;
+  // First check in-memory cache
+  if (window.gDataCache[cacheKey]) {
+    return window.gDataCache[cacheKey];
+  }
+  
+  // Then check localStorage persistence
+  try {
+    const persistedCache = localStorage.getItem('api_cache_' + cacheKey);
+    if (persistedCache) {
+      const parsed = JSON.parse(persistedCache);
+      // Check if cache is still valid (24 hours TTL)
+      const cacheAge = Date.now() - parsed.timestamp;
+      if (cacheAge < 24 * 60 * 60 * 1000) {
+        // Restore to in-memory cache
+        window.gDataCache[cacheKey] = parsed.data;
+        return parsed.data;
+      } else {
+        // Cache expired, remove from localStorage
+        localStorage.removeItem('api_cache_' + cacheKey);
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to read from localStorage cache:', e);
+  }
+  
+  return null;
 };
 
 window.setApiCache = function(cacheKey, data) {
   if (data && data.success) {
+    // Set in-memory cache
     window.gDataCache[cacheKey] = data;
+    
+    // Also persist to localStorage for critical data
+    try {
+      const cacheEntry = {
+        timestamp: Date.now(),
+        data: data
+      };
+      localStorage.setItem('api_cache_' + cacheKey, JSON.stringify(cacheEntry));
+    } catch (e) {
+      console.warn('Failed to persist cache to localStorage:', e);
+    }
   }
 };
 
 window.clearAllApiCache = function() {
   window.gDataCache = {};
+  
+  // Clear all persisted cache from localStorage
+  try {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('api_cache_')) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (e) {
+    console.warn('Failed to clear localStorage cache:', e);
+  }
 };
 
 window.invalidateApiCache = function(actionPrefix = '') {
@@ -39,11 +92,88 @@ window.invalidateApiCache = function(actionPrefix = '') {
     window.clearAllApiCache();
     return;
   }
+  
+  // Clear from in-memory cache
   Object.keys(window.gDataCache).forEach(key => {
     if (key.toLowerCase().includes(actionPrefix.toLowerCase())) {
       delete window.gDataCache[key];
     }
   });
+  
+  // Also clear from localStorage persistence (selective invalidation)
+  try {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('api_cache_') && key.toLowerCase().includes(actionPrefix.toLowerCase())) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (e) {
+    console.warn('Failed to invalidate localStorage cache:', e);
+  }
+};
+
+/**
+ * 💡 Enhanced Error Logging System
+ * Error များကို detailed ဖြင့် log လုပ်ထားပြီး localStorage တွင် သိမ်းဆည်းသည်
+ */
+window.ErrorLogger = {
+  maxLogs: 50,
+  
+  logError: function(context, error, additionalInfo = {}) {
+    const errorEntry = {
+      timestamp: new Date().toISOString(),
+      context: context,
+      errorMessage: error?.message || String(error),
+      errorStack: error?.stack || null,
+      additionalInfo: additionalInfo,
+      userAgent: navigator.userAgent,
+      url: window.location.href
+    };
+    
+    // Get existing logs
+    let logs = [];
+    try {
+      const storedLogs = localStorage.getItem('error_logs');
+      if (storedLogs) {
+        logs = JSON.parse(storedLogs);
+      }
+    } catch (e) {
+      console.warn('Failed to parse error logs:', e);
+    }
+    
+    // Add new error
+    logs.unshift(errorEntry);
+    
+    // Keep only last maxLogs entries
+    if (logs.length > this.maxLogs) {
+      logs = logs.slice(0, this.maxLogs);
+    }
+    
+    // Save to localStorage
+    try {
+      localStorage.setItem('error_logs', JSON.stringify(logs));
+    } catch (e) {
+      console.warn('Failed to save error logs:', e);
+    }
+    
+    // Also log to console for debugging
+    console.error(`[ErrorLogger] ${context}:`, error, additionalInfo);
+  },
+  
+  getLogs: function() {
+    try {
+      const storedLogs = localStorage.getItem('error_logs');
+      return storedLogs ? JSON.parse(storedLogs) : [];
+    } catch (e) {
+      console.warn('Failed to get error logs:', e);
+      return [];
+    }
+  },
+  
+  clearLogs: function() {
+    localStorage.removeItem('error_logs');
+  }
 };
 
 /**
@@ -178,6 +308,16 @@ window.callApi = async function(action, payload = {}, method = 'POST') {
     return result;
 
   } catch (err) {
+    // 💡 Enhanced error logging with detailed context
+    if (window.ErrorLogger) {
+      window.ErrorLogger.logError(`API_CALL_${action}`, err, {
+        action: action,
+        payload: serverPayload,
+        method: method,
+        url: url
+      });
+    }
+
     console.error(`API Error [${action}]:`, err);
 
     if (!err.message || !err.message.includes("401")) {
