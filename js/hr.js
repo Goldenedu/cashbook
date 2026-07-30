@@ -2,6 +2,7 @@
  * GOLDEN ERP SYSTEM - HR PAYROLL EXP BOOK CONTROLLER
  * File: js/hr.js
  * 💡 SECURED: Auto Staff ID Lookup (FT/PT Category Specific), Dynamic Credit/Bonus/Fund Auto-Fill, Auto-Description & Payslip Print Engine
+ * 🛠️ ENHANCED: Restores Staff ID, Unpaid Bonus, and Unpaid Fund in editHrPayrollEntry for complete edit form precision.
  */
 
 var gHrSubTab = 'payroll'; // 'payroll' | 'fulltime' | 'parttime'
@@ -398,7 +399,7 @@ async function saveHrPayrollForm(e) {
 }
 
 /**
- * 💡 Edit Entry
+ * 💡 Edit Entry (Enhanced with Staff ID, Unpaid Bonus & Fund Auto-Restore)
  */
 function editHrPayrollEntry(uniqueId) {
   const row = gHrPayrollData.find(item => item.uniqueId === uniqueId);
@@ -426,6 +427,18 @@ function editHrPayrollEntry(uniqueId) {
 
   const elCred = document.getElementById('hr-pay-credit');
   if (elCred) elCred.value = row.credit || 0;
+
+  const elBonus = document.getElementById('hr-pay-unpaid-bonus');
+  if (elBonus) elBonus.value = row.unpaidBonus || 0;
+
+  const elFund = document.getElementById('hr-pay-unpaid-fund');
+  if (elFund) elFund.value = row.unpaidFund || 0;
+
+  const elStaffId = document.getElementById('hr-pay-staff-id');
+  if (elStaffId) {
+    const matchId = String(row.description || '').match(/(?:FID|PID)\s*0*(\d+)/i);
+    elStaffId.value = row.staffId || (matchId ? matchId[1] : '');
+  }
 
   const elDesc = document.getElementById('hr-pay-description');
   if (elDesc) elDesc.value = row.description || '';
