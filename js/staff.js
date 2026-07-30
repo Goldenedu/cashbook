@@ -1,7 +1,8 @@
 /**
  * GOLDEN ERP SYSTEM - STAFF MODULE
  * File: js/staff.js
- * 💡 Staff Master Directory with Safe Google Sheet Grade Matrix Engine
+ * 💡 Staff Master Directory with Safe Google Sheet Grade Matrix Engine (H1:U2 - 14 Columns)
+ * 🛠️ FIXED: Added missing Grade L to openGradeModal & saveGradeForm (14 values payload).
  */
 
 var gStaffCategory = 'Full Time'; // 'Full Time' or 'Part Time'
@@ -10,7 +11,7 @@ var gStaffLimit = 30;
 var gStaffSearch = '';
 var gStaffData = [];
 
-// 💡 Google Sheet (FullTime!I1:U2) မှ ဖတ်ယူမည့် Dynamic Payroll Settings Cache
+// 💡 Google Sheet (FullTime!H1:U2) မှ ဖတ်ယူမည့် Dynamic Payroll Settings Cache
 var gPayrollSettings = {
   grades: {},
   bonus: 0,
@@ -18,7 +19,7 @@ var gPayrollSettings = {
 };
 
 /**
- * 💡 Fetch Payroll Settings Directly from Google Sheet (FullTime!I1:U2)
+ * 💡 Fetch Payroll Settings Directly from Google Sheet (FullTime!H1:U2)
  */
 async function fetchPayrollSettings() {
   try {
@@ -323,7 +324,7 @@ function renderGradeDropdownOptions(selectedValue = 'Non') {
  * 💡 Dynamic Dropdown Population (Pure Google Sheet Dependency)
  */
 async function populateDropdownsStaff(selectedValue = 'Non') {
-  // 1. Fetch live settings directly from Sheet (FullTime!I1:U2)
+  // 1. Fetch live settings directly from Sheet (FullTime!H1:U2)
   await fetchPayrollSettings();
 
   // 2. Render Grade Dropdown from Sheet Data
@@ -597,7 +598,7 @@ async function openGradeModal() {
 
     const grades = gPayrollSettings.grades || {};
 
-    ['A','B','C','D','E','F','G','H','I','J','K'].forEach(letter => {
+    ['A','B','C','D','E','F','G','H','I','J','K','L'].forEach(letter => {
       const input = document.getElementById(`grade-${letter}`);
       const fullKey = `GRADE ${letter}`;
       if (input) {
@@ -640,6 +641,7 @@ async function saveGradeForm(event) {
     parseFloat(document.getElementById('grade-I')?.value || 0),
     parseFloat(document.getElementById('grade-J')?.value || 0),
     parseFloat(document.getElementById('grade-K')?.value || 0),
+    parseFloat(document.getElementById('grade-L')?.value || 0),
     parseFloat(document.getElementById('grade-bonus')?.value || 0),
     parseFloat(document.getElementById('grade-fund')?.value || 0)
   ];
