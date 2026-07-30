@@ -1,5 +1,5 @@
 /**
- * GOLDEN ERP SYSTEM - OFFICE EXPENSE & INVENTORY MODULE
+ * GOLDEN ERP SYSTEM - OFFICE EXPENSE & INVENTORY MODULE 
  * File: js/office.js 
  * 💡 19-Column Schema + Strict Search Criteria + Transfer Auto-Description + Universal Lock Engine + Comma-Safe Uniform Profit Engine
  */
