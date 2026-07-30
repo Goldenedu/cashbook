@@ -308,7 +308,8 @@ async function onStaffIdChangePayroll() {
   }
 
   // 2. ရွေးချယ်ထားသော Category ပေါ်မူတည်၍ Part Time (PT) သို့မဟုတ် Full Time (FT) စာရင်းကို ခွဲထုတ်မည်
-  const isPartTime = category.toLowerCase().includes('part time');
+  // 🛡️ FIX: More precise category matching to avoid false positives
+  const isPartTime = category.toLowerCase().includes('part time salary') || category.toLowerCase().includes('part time bonus') || category.toLowerCase().includes('part time fund');
 
   // 🛡️ FIX: Check & refresh the cache for the SPECIFIC category we need right now,
   // instead of only refreshing when BOTH lists were empty. This prevents a stale/empty
