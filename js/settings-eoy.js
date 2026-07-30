@@ -127,7 +127,7 @@ async function confirmAndExecuteEoySheetReset() {
     return;
   }
 
-  const confirmMsg = `သေချာပါသလား။ ရွေးချယ်ထားသော Sheet (${selectedSheets.join(', ')}) များ၏ Row 6 အောက်ပိုင်း ဒေတာများနှင့် Home Sheet ရှိ သက်ဆိုင်ရာ Summary Block များကို ရှင်းလင်းပစ်ပါမည်။\n\n* (Google Drive ထဲတွင် Backup ကူးယူပြီးပါပြီ။ Row 1-5 ၏ Formula/Header များ လုံးဝ ထိခိုက်မည်မဟုတ်ပါ)`;
+  const confirmMsg = `သေချာပါသလား။ ရွေးချယ်ထားသော Sheet (${selectedSheets.join(', ')}) များ၏ Row 6 အောက်ပိုင်း ဒေတာများကို ရှင်းလင်းပြီး Home Sheet ရှိ သက်ဆိုင်ရာ Summary Block ဒေတာများကို Opening Balance အသစ်အဖြစ် Row 6 သို့ Auto ကူးထည့်ပါမည်။\n\n* (Google Drive ထဲတွင် Backup ကူးယူပြီးပါပြီ။ Row 1-5 ၏ Formula/Header များနှင့် Home Sheet ကို လုံးဝ ထိခိုက်မည်မဟုတ်ပါ)`;
 
   if (!confirm(confirmMsg)) return;
 
