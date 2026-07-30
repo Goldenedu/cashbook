@@ -27,6 +27,35 @@ function switchExpenseBook(bookType) {
 }
 
 /**
+ * 🛠️ 2026-07-30 FIX — Single source of truth for "which book am I actually on".
+ * Every place that used to hardcode "Office" (modal title, bookName sent to the
+ * server, category/method/transfer dropdown list) now reads this instead, so
+ * Kitchen Exp Book entries are saved to Kitchen Exp Book — not Office Exp Book —
+ * and the Kitchen-specific category list (Rice & Oil, Fish & meat/Eggs, ...) is
+ * shown instead of Office's category list.
+ * Uses the same dual check as loadOfficeData() (currentExpenseBook OR
+ * AppState.currentModule) so it stays correct no matter which one fired first.
+ */
+function getExpenseBookContext() {
+  const isKitchen = (window.currentExpenseBook === 'kitchen' || window.AppState?.currentModule === 'kitchen');
+  return {
+    isKitchen,
+    bookName: isKitchen ? 'Kitchen Exp Book' : 'Office Exp Book',
+    dropdownKey: isKitchen ? 'kitchenExpBook' : 'officeExpBook',
+    label: isKitchen ? 'Kitchen' : 'Office'
+  };
+}
+
+/**
+ * 💡 Keeps the "+ Add ... Entry" toolbar button in sync with the current book
+ */
+function updateOfficeAddButtonLabel() {
+  const ctx = getExpenseBookContext();
+  const labelEl = document.getElementById('office-add-btn-label');
+  if (labelEl) labelEl.innerText = `Add ${ctx.label} Entry`;
+}
+
+/**
  * 💡 Safe Comma String Number Parser (Fixes "25,000" -> 25000 Parsing Issue)
  */
 function parseCleanNum(val) {
@@ -71,7 +100,8 @@ function clearDateFilterOffice() {
  * 💡 Dropdown Options များကို Config.js မှ Dynamic ဖြည့်ပေးခြင်း
  */
 function populateDropdownsOffice() {
-  const def = (window.DROPDOWNS && window.DROPDOWNS.officeExpBook) || {};
+  const ctx = getExpenseBookContext();
+  const def = (window.DROPDOWNS && window.DROPDOWNS[ctx.dropdownKey]) || {};
 
   const catSelect = document.getElementById('office-category');
   if (catSelect && def.category) {
@@ -280,7 +310,10 @@ async function fetchUniformProductsListOffice() {
 
 async function loadOfficeData(isSilent = false, forceRefresh = false) {
   const state = window.OfficeState;
-  const bookName = (window.currentExpenseBook === 'kitchen' || window.AppState?.currentModule === 'kitchen') ? 'Kitchen Exp Book' : 'Office Exp Book';
+  const ctx = getExpenseBookContext();
+  const bookName = ctx.bookName;
+
+  updateOfficeAddButtonLabel();
 
   try {
     const cacheKey = `getExpenseData_${JSON.stringify({ bookName, page: state.page, limit: state.limit, searchVal: state.searchVal })}`;
@@ -464,7 +497,7 @@ function openAddModalOffice() {
   }
 
   const titleEl = document.getElementById('office-form-title');
-  if (titleEl) titleEl.innerText = "Add Office Expense Entry";
+  if (titleEl) titleEl.innerText = `Add ${getExpenseBookContext().label} Expense Entry`;
 
   populateDropdownsOffice();
   bindModalOfficeListeners();
@@ -524,7 +557,7 @@ async function saveOfficeForm(e) {
     liabilities: parseLiabilityAmount(document.getElementById('office-liabilities')?.value),
     transfer: document.getElementById('office-transfer')?.value || '',
     description: document.getElementById('office-description')?.value || '',
-    bookName: 'Office Exp Book',
+    bookName: getExpenseBookContext().bookName,
     createdBy: (window.AppState && window.AppState.currentUser) ? window.AppState.currentUser : "System"
   };
 
@@ -539,7 +572,8 @@ async function saveOfficeForm(e) {
 
     if (response && response.success) {
       if (typeof showToast === 'function') {
-        showToast("SUCCESS", isAdd ? "Office Expense စာရင်းသစ် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။" : "Office Expense စာရင်း အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။");
+        const label = getExpenseBookContext().label;
+        showToast("SUCCESS", isAdd ? `${label} Expense စာရင်းသစ် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။` : `${label} Expense စာရင်း အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။`);
       }
       if (window.BankCache) window.BankCache = { bank: null, cash: null, kitchen: null };
       
@@ -604,18 +638,19 @@ function editOfficeEntry(uniqueId) {
   if (descEl) descEl.value = row.description || "";
 
   const titleEl = document.getElementById('office-form-title');
-  if (titleEl) titleEl.innerText = "Edit Office Expense Entry";
+  if (titleEl) titleEl.innerText = `Edit ${getExpenseBookContext().label} Expense Entry`;
 }
 
 async function deleteOfficeEntry(uniqueId) {
-  if (confirm("ဤ Office Expense စာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) {
+  const ctx = getExpenseBookContext();
+  if (confirm(`ဤ ${ctx.label} Expense စာရင်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။`)) {
     if (typeof showToast === 'function') showToast("SUCCESS", "စာရင်းကို ဖျက်သိမ်းနေပါသည်...");
     if (typeof toggleLoading === 'function') toggleLoading(true);
 
     try {
       const response = await callApi('deleteExpenseEntry', {
         uniqueId: uniqueId,
-        bookName: 'Office Exp Book'
+        bookName: ctx.bookName
       });
 
       if (typeof toggleLoading === 'function') toggleLoading(false);
@@ -675,3 +710,5 @@ window.onSearchInputOffice = onSearchInputOffice;
 window.clearDateFilterOffice = clearDateFilterOffice;
 window.changePageOffice = changePageOffice;
 window.switchExpenseBook = switchExpenseBook;
+window.getExpenseBookContext = getExpenseBookContext;
+window.updateOfficeAddButtonLabel = updateOfficeAddButtonLabel;
