@@ -359,22 +359,35 @@ async function onStaffIdChangePayroll() {
   const myStr = !isNaN(dObj.getTime()) ? `${months[dObj.getMonth()]}-${String(dObj.getFullYear()).slice(-2)}` : fallbackMY;
 
   // 5. Calculate Values by Category
+  // 🛡️ FIX: These used to share one `unpaidBonusVal`/`unpaidFundVal` pair that preferred
+  // the ALREADY-ACCUMULATED balance over the fresh monthly rate. That meant every "Full
+  // Time Salary" run re-added the running TOTAL instead of just that month's new Bonus/Fund
+  // (e.g. Month 3 would add the Month-1+2 total again, doubling the balance instead of
+  // accruing linearly), and a "Full Time Bonus/Fund" payout with a genuine 0 balance would
+  // silently fall back to the monthly rate and let you pay out a bonus that never accrued.
+  // Now each category uses the value that's actually correct for it:
+  //  - Salary  -> the fresh monthly Bonus/Fund RATE (to be ACCRUED on top of the running balance)
+  //  - Bonus/Fund payout -> the real ACCUMULATED unpaid balance (0 if nothing has accrued yet)
   let creditVal = 0;
-  const unpaidBonusVal = matchedStaff.unpaidBonus || matchedStaff.bonus || 0;
-  const unpaidFundVal = matchedStaff.unpaidFund || matchedStaff.fund || 0;
+  let bonusFieldVal = 0;
+  let fundFieldVal = 0;
 
   if (category === 'Full Time Salary' || category === 'Part Time Salary') {
     creditVal = matchedStaff.totalNetAmt || matchedStaff.totalSalary || matchedStaff.salary || 0;
+    bonusFieldVal = matchedStaff.bonus || 0;
+    fundFieldVal = matchedStaff.fund || 0;
   } else if (category === 'Full Time Bonus' || category === 'Part Time Bonus') {
-    creditVal = unpaidBonusVal;
+    bonusFieldVal = matchedStaff.unpaidBonus || 0;
+    creditVal = bonusFieldVal;
   } else if (category === 'Full Time Fund' || category === 'Part Time Fund') {
-    creditVal = unpaidFundVal;
+    fundFieldVal = matchedStaff.unpaidFund || 0;
+    creditVal = fundFieldVal;
   }
 
   // 6. Populate Input Fields
   if (elCredit) elCredit.value = creditVal;
-  if (elBonus) elBonus.value = unpaidBonusVal;
-  if (elFund) elFund.value = unpaidFundVal;
+  if (elBonus) elBonus.value = bonusFieldVal;
+  if (elFund) elFund.value = fundFieldVal;
 
   // 7. Auto Display Name Generation (FID 001 ... သို့မဟုတ် PID 001 ...)
   const defaultPrefix = isPartTime ? 'PID' : 'FID';
