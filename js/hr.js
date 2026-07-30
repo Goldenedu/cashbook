@@ -91,8 +91,11 @@ async function loadHrPayrollData(useCache = true) {
  */
 async function preloadStaffCacheForPayroll() {
   try {
-    const resFT = await callApi('getStaffData', { category: 'Full Time', page: 1, limit: 500 });
-    const resPT = await callApi('getStaffData', { category: 'Part Time', page: 1, limit: 500 });
+    // 🛡️ FIX: forceRefresh:true was missing — without it callApi() silently returns the
+    // 24h client-side cached response instead of hitting the server, so a newly-added
+    // staff member (or a corrected sheet value) would not show up until the cache expired.
+    const resFT = await callApi('getStaffData', { category: 'Full Time', page: 1, limit: 500, forceRefresh: true });
+    const resPT = await callApi('getStaffData', { category: 'Part Time', page: 1, limit: 500, forceRefresh: true });
 
     gHrStaffFT = (resFT && resFT.success && Array.isArray(resFT.data)) ? resFT.data : [];
     gHrStaffPT = (resPT && resPT.success && Array.isArray(resPT.data)) ? resPT.data : [];
@@ -128,7 +131,8 @@ async function ensureStaffCacheForCategory(isPartTime) {
 
   try {
     const category = isPartTime ? 'Part Time' : 'Full Time';
-    const res = await callApi('getStaffData', { category, page: 1, limit: 500 });
+    // 🛡️ FIX: forceRefresh:true — same stale-cache issue as preloadStaffCacheForPayroll().
+    const res = await callApi('getStaffData', { category, page: 1, limit: 500, forceRefresh: true });
 
     if (res && res.success && Array.isArray(res.data)) {
       if (isPartTime) {
