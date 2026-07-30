@@ -206,12 +206,21 @@
 
   <div id="toast-container" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- 💡 CANONICAL SHARED SALARY GRADE MATRIX MODAL (Range H1:U2 & Grade A to L) -->
+  <!-- 💡 CANONICAL SHARED SALARY GRADE MATRIX MODAL (Range H1:U2 & Grade A to L)
+       🛠️ SINGLE SOURCE OF TRUTH: This is the ONLY copy of #grade-modal in the whole app.
+       It used to be duplicated in views/hr.html and views/staff.html as well, which meant
+       three elements shared the same id="grade-modal" / id="grade-A".."grade-L" / id="grade-bonus"
+       / id="grade-fund" at the same time once a view was injected into #view-container.
+       document.getElementById() always returns the FIRST match in DOM order, so openGradeModal()/
+       saveGradeForm() could silently read from or write to the WRONG (invisible) copy depending on
+       where the view happened to sit in the page — a classic duplicate-ID bug. Both duplicates have
+       been removed from views/hr.html and views/staff.html; this is now the only instance,
+       triggered identically from both the Staff page and the HR page via openGradeModal(). -->
   <div id="grade-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-[#0c1322] border border-slate-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
       <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-[#0e172a] shrink-0">
         <h3 class="text-sm font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
-          <i class="fa-solid fa-sliders"></i> Edit Salary Grade Matrix (FullTime Sheet Range H1:U2)
+          <i class="fa-solid fa-sliders"></i> Edit Salary Grade Matrix Settings (FullTime Sheet Range H1:U2)
         </h3>
         <button onclick="closeGradeModal()" class="text-slate-500 hover:text-white transition"><i class="fa-solid fa-xmark text-sm"></i></button>
       </div>
@@ -221,35 +230,71 @@
           ⚠️ ဤနေရာတွင် ပြင်ဆင်လိုက်သော Grade နှုန်းထားများ၊ BONUS နှင့် FUND တို့သည် Google Sheet (FullTime!H1:U2) ထဲတွင် အလိုအလျောက် သွားရောက် Update ဖြစ်ပြီး စနစ်တစ်ခုလုံးတွင် တိုက်ရိုက် သက်ရောက်သွားပါမည်။
         </div>
 
-        <div class="grid grid-cols-4 gap-3">
-          <div><label class="font-bold text-slate-400 uppercase">Grade A</label><input type="number" id="grade-A" required class="w-full text-right font-bold text-white font-mono"></div>
-          <div><label class="font-bold text-slate-400 uppercase">Grade B</label><input type="number" id="grade-B" required class="w-full text-right font-bold text-white font-mono"></div>
-          <div><label class="font-bold text-slate-400 uppercase">Grade C</label><input type="number" id="grade-C" required class="w-full text-right font-bold text-white font-mono"></div>
-          <div><label class="font-bold text-slate-400 uppercase">Grade D</label><input type="number" id="grade-D" required class="w-full text-right font-bold text-white font-mono"></div>
-          <div><label class="font-bold text-slate-400 uppercase">Grade E</label><input type="number" id="grade-E" required class="w-full text-right font-bold text-white font-mono"></div>
-          <div><label class="font-bold text-slate-400 uppercase">Grade F</label><input type="number" id="grade-F" required class="w-full text-right font-bold text-white font-mono"></div>
-          <div><label class="font-bold text-slate-400 uppercase">Grade G</label><input type="number" id="grade-G" required class="w-full text-right font-bold text-white font-mono"></div>
-          <div><label class="font-bold text-slate-400 uppercase">Grade H</label><input type="number" id="grade-H" required class="w-full text-right font-bold text-white font-mono"></div>
-          <div><label class="font-bold text-slate-400 uppercase">Grade I</label><input type="number" id="grade-I" required class="w-full text-right font-bold text-white font-mono"></div>
-          <div><label class="font-bold text-slate-400 uppercase">Grade J</label><input type="number" id="grade-J" required class="w-full text-right font-bold text-white font-mono"></div>
-          <div><label class="font-bold text-slate-400 uppercase">Grade K</label><input type="number" id="grade-K" required class="w-full text-right font-bold text-white font-mono"></div>
-          <div><label class="font-bold text-slate-400 uppercase">Grade L</label><input type="number" id="grade-L" required class="w-full text-right font-bold text-white font-mono"></div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-slate-300">GRADE A</label>
+            <input type="number" id="grade-A" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-amber-300 font-bold rounded-lg p-2 outline-none focus:border-amber-500">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-slate-300">GRADE B</label>
+            <input type="number" id="grade-B" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-amber-300 font-bold rounded-lg p-2 outline-none focus:border-amber-500">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-slate-300">GRADE C</label>
+            <input type="number" id="grade-C" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-amber-300 font-bold rounded-lg p-2 outline-none focus:border-amber-500">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-slate-300">GRADE D</label>
+            <input type="number" id="grade-D" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-amber-300 font-bold rounded-lg p-2 outline-none focus:border-amber-500">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-slate-300">GRADE E</label>
+            <input type="number" id="grade-E" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-amber-300 font-bold rounded-lg p-2 outline-none focus:border-amber-500">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-slate-300">GRADE F</label>
+            <input type="number" id="grade-F" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-amber-300 font-bold rounded-lg p-2 outline-none focus:border-amber-500">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-slate-300">GRADE G</label>
+            <input type="number" id="grade-G" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-amber-300 font-bold rounded-lg p-2 outline-none focus:border-amber-500">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-slate-300">GRADE H</label>
+            <input type="number" id="grade-H" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-amber-300 font-bold rounded-lg p-2 outline-none focus:border-amber-500">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-slate-300">GRADE I</label>
+            <input type="number" id="grade-I" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-amber-300 font-bold rounded-lg p-2 outline-none focus:border-amber-500">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-slate-300">GRADE J</label>
+            <input type="number" id="grade-J" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-amber-300 font-bold rounded-lg p-2 outline-none focus:border-amber-500">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-slate-300">GRADE K</label>
+            <input type="number" id="grade-K" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-amber-300 font-bold rounded-lg p-2 outline-none focus:border-amber-500">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-slate-300">GRADE L</label>
+            <input type="number" id="grade-L" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-amber-300 font-bold rounded-lg p-2 outline-none focus:border-amber-500">
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4 pt-3 border-t border-slate-800">
-          <div>
-            <label class="font-bold text-emerald-400 uppercase">BONUS Amount</label>
-            <input type="number" id="grade-bonus" required class="w-full text-right font-bold text-emerald-400 font-mono bg-emerald-500/5 border border-emerald-500/20">
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-emerald-400">Fixed Bonus Rate (MMK)</label>
+            <input type="number" id="grade-bonus" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-emerald-400 font-bold rounded-lg p-2.5 outline-none focus:border-emerald-500">
           </div>
-          <div>
-            <label class="font-bold text-teal-400 uppercase">FUND Rate (e.g. 0.05 = 5%)</label>
-            <input type="number" step="0.001" id="grade-fund" required class="w-full text-right font-bold text-teal-400 font-mono bg-teal-500/5 border border-teal-500/20">
+          <div class="flex flex-col gap-1">
+            <label class="font-bold text-teal-400">Fund Rate (0.05 = 5%)</label>
+            <input type="number" step="0.01" id="grade-fund" value="0" required class="w-full bg-[#0f172a] border border-slate-800 text-teal-400 font-bold rounded-lg p-2.5 outline-none focus:border-teal-500">
           </div>
         </div>
 
         <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-800">
           <button type="button" onclick="closeGradeModal()" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">Cancel</button>
-          <button type="submit" class="px-5 py-2 rounded-lg text-xs font-black bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/10 transition-all">Confirm & Save</button>
+          <button type="submit" class="px-5 py-2 rounded-lg text-xs font-black bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/10 transition-all">Save Matrix Settings</button>
         </div>
       </form>
     </div>
