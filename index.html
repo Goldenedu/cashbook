@@ -456,7 +456,30 @@
     </div>
   </div>
 
-  <script src="js/app.bundle.js?v=20260730" defer></script>
+  <!--
+    💡 2026-07-30 FIX: index.html was loading only the stale js/app.bundle.js, which was
+    built BEFORE the Kitchen Exp Book fix (getExpenseBookContext / kitchenExpBook dropdowns /
+    dynamic "Add Kitchen Entry" button label) was written into the individual source files
+    below. Because the bundle was never regenerated, the browser only ever ran the old
+    hardcoded "Office"-only logic, so Kitchen Exp Book entries were shown/saved as Office
+    Exp Book entries with Office's category list. Loading the real, current source files
+    (which already contain the fix) instead of the outdated bundle resolves this.
+  -->
+  <script src="js/config.js?v=20260730" defer></script>
+  <script src="js/api.js?v=20260730" defer></script>
+  <script src="js/auth.js?v=20260730" defer></script>
+  <script src="js/bank-cash-kit.js?v=20260730" defer></script>
+  <script src="js/office.js?v=20260730" defer></script>
+  <script src="js/cashier.js?v=20260730" defer></script>
+  <script src="js/hr.js?v=20260730" defer></script>
+  <script src="js/income.js?v=20260730" defer></script>
+  <script src="js/staff.js?v=20260730" defer></script>
+  <script src="js/student.js?v=20260730" defer></script>
+  <script src="js/uniform.js?v=20260730" defer></script>
+  <script src="js/promotion.js?v=20260730" defer></script>
+  <script src="js/reports.js?v=20260730" defer></script>
+  <script src="js/settings.js?v=20260730" defer></script>
+  <script src="js/app.js?v=20260730" defer></script>
   <!-- 💡 EOY Drive Backup & Reset controller — split out of settings.js, self-wires into loadSettingsData() above -->
   <script src="js/settings-eoy.js?v=20260730" defer></script>
 </body>
