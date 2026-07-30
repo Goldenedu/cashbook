@@ -3,6 +3,11 @@
  * File: js/hr.js
  * 💡 SECURED: Auto Staff ID Lookup (FT/PT Category Specific), Dynamic Credit/Bonus/Fund Auto-Fill, Auto-Description & Payslip Print Engine
  * 🛠️ ENHANCED: Restores Staff ID, Unpaid Bonus, and Unpaid Fund in editHrPayrollEntry for complete edit form precision.
+ * 🛡️ FIX (NEW): "ဝန်ထမ်း မရှိပါ" false-negative bug fixed. Previously the FT/PT staff cache was only
+ *     refreshed when BOTH lists were empty, so adding a new Full-Time staff member while the Part-Time
+ *     cache already had data meant the FT cache silently stayed stale/empty and lookups failed. The cache
+ *     is now checked and refreshed per-category, and fetch failures are surfaced via toast instead of
+ *     being silently swallowed.
  */
 
 var gHrSubTab = 'payroll'; // 'payroll' | 'fulltime' | 'parttime'
@@ -81,6 +86,8 @@ async function loadHrPayrollData(useCache = true) {
 
 /**
  * 💡 Preload Full-Time & Part-Time Staff Data for Fast ID Lookup
+ * 🛡️ FIXED: always fetches both lists fresh when explicitly called (e.g. on modal open),
+ * and now reports fetch failures instead of silently leaving stale/empty cache in place.
  */
 async function preloadStaffCacheForPayroll() {
   try {
@@ -90,8 +97,53 @@ async function preloadStaffCacheForPayroll() {
     gHrStaffFT = (resFT && resFT.success && Array.isArray(resFT.data)) ? resFT.data : [];
     gHrStaffPT = (resPT && resPT.success && Array.isArray(resPT.data)) ? resPT.data : [];
     gHrStaffCache = [...gHrStaffFT, ...gHrStaffPT];
+
+    if (!resFT || !resFT.success) {
+      console.warn("Full-Time staff cache preload failed:", resFT && resFT.message);
+      if (typeof showToast === 'function') showToast('ERROR', 'Full-Time ဝန်ထမ်းစာရင်း ပြန်ဆွဲယူ၍ မရပါ: ' + (resFT?.message || 'Unknown error'));
+    }
+    if (!resPT || !resPT.success) {
+      console.warn("Part-Time staff cache preload failed:", resPT && resPT.message);
+      if (typeof showToast === 'function') showToast('ERROR', 'Part-Time ဝန်ထမ်းစာရင်း ပြန်ဆွဲယူ၍ မရပါ: ' + (resPT?.message || 'Unknown error'));
+    }
   } catch (e) {
     console.warn("Staff cache preload warning:", e.message);
+    if (typeof showToast === 'function') showToast('ERROR', 'ဝန်ထမ်းစာရင်း Cache ပြန်ဆွဲယူ၍ မရပါ: ' + e.message);
+  }
+}
+
+/**
+ * 🛡️ NEW HELPER: Ensures the staff cache for the given category (FT or PT) is populated.
+ * Unlike the old logic (which only refreshed when BOTH lists were empty), this checks
+ * the SPECIFIC category needed right now and refreshes just that list if it's stale/empty.
+ * This is what fixes the "ဝန်ထမ်း မရှိပါ" false-negative when a staff member was added but
+ * the *other* category's cache happened to already have data.
+ */
+async function ensureStaffCacheForCategory(isPartTime) {
+  const needsRefresh = isPartTime
+    ? (!gHrStaffPT || gHrStaffPT.length === 0)
+    : (!gHrStaffFT || gHrStaffFT.length === 0);
+
+  if (!needsRefresh) return;
+
+  try {
+    const category = isPartTime ? 'Part Time' : 'Full Time';
+    const res = await callApi('getStaffData', { category, page: 1, limit: 500 });
+
+    if (res && res.success && Array.isArray(res.data)) {
+      if (isPartTime) {
+        gHrStaffPT = res.data;
+      } else {
+        gHrStaffFT = res.data;
+      }
+      gHrStaffCache = [...gHrStaffFT, ...gHrStaffPT];
+    } else {
+      console.warn(`${category} staff cache refresh failed:`, res && res.message);
+      if (typeof showToast === 'function') showToast('ERROR', `${category} ဝန်ထမ်းစာရင်း ပြန်ဆွဲယူ၍ မရပါ: ` + (res?.message || 'Unknown error'));
+    }
+  } catch (e) {
+    console.warn("ensureStaffCacheForCategory warning:", e.message);
+    if (typeof showToast === 'function') showToast('ERROR', 'ဝန်ထမ်းစာရင်း ပြန်ဆွဲယူ၍ မရပါ: ' + e.message);
   }
 }
 
@@ -255,13 +307,15 @@ async function onStaffIdChangePayroll() {
     return;
   }
 
-  // 1. Cache မရှိသေးပါက API မှ ဖတ်ယူမည်
-  if ((!gHrStaffFT || gHrStaffFT.length === 0) && (!gHrStaffPT || gHrStaffPT.length === 0)) {
-    await preloadStaffCacheForPayroll();
-  }
-
   // 2. ရွေးချယ်ထားသော Category ပေါ်မူတည်၍ Part Time (PT) သို့မဟုတ် Full Time (FT) စာရင်းကို ခွဲထုတ်မည်
   const isPartTime = category.toLowerCase().includes('part time');
+
+  // 🛡️ FIX: Check & refresh the cache for the SPECIFIC category we need right now,
+  // instead of only refreshing when BOTH lists were empty. This prevents a stale/empty
+  // Full-Time cache (or Part-Time cache) from causing a false "ဝန်ထမ်း မရှိပါ" result
+  // just because the OTHER category's cache already had data.
+  await ensureStaffCacheForCategory(isPartTime);
+
   let targetStaffList = isPartTime ? gHrStaffPT : gHrStaffFT;
 
   // Global window.gStaffData ရှိပါက Category ခွဲ၍ Fallback စစ်ပေးမည်
@@ -276,7 +330,7 @@ async function onStaffIdChangePayroll() {
   const targetIdNum = parseInt(rawStaffId, 10);
   const prefixKey = isPartTime ? 'pid' : 'fid';
 
-  const matchedStaff = targetStaffList.find(s => {
+  const matchedStaff = (targetStaffList || []).find(s => {
     const sId = parseInt(s.staffId || s.id || s.fid || s.pid || 0, 10);
     const sName = String(s.staffIdName || s.name || '').toLowerCase();
     const searchPad = `00${targetIdNum}`.slice(-3);
@@ -347,7 +401,7 @@ async function openAddModalHrPayroll() {
   const title = document.getElementById('hr-payroll-form-title');
   if (title) title.textContent = 'Add HR Payroll Entry';
 
-  // Preload staff cache
+  // Preload staff cache (force-refresh both lists so newly-added staff show up immediately)
   await preloadStaffCacheForPayroll();
 
   const modal = document.getElementById('hr-payroll-modal');
