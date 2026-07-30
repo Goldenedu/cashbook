@@ -20,10 +20,13 @@ var gPayrollSettings = {
 
 /**
  * 💡 Fetch Payroll Settings Directly from Google Sheet (FullTime!H1:U2)
+ * 🛡️ FIX: Always forceRefresh so this never serves a stale/incorrect 24h client cache
+ *     entry (e.g. an old response captured before the sheet had real values, or before
+ *     a past server-side range bug was fixed). Grade Matrix numbers must always be live.
  */
 async function fetchPayrollSettings() {
   try {
-    const res = await callApi('getPayrollSettings', {});
+    const res = await callApi('getPayrollSettings', { forceRefresh: true });
     const pData = (res && res.data) ? res.data : (res && res.grades ? res : null);
     if (pData) {
       gPayrollSettings = {
