@@ -1,455 +1,451 @@
 /**
- * GOLDEN ERP SYSTEM - CENTRAL API BRIDGE & UTILITIES
- * File: js/api.js 
- * 💡 SECURED: SWR In-Memory Caching, Background Prefetching (with Cashier Sync) & Formal Toast Engine
+ * GOLDEN ERP SYSTEM - MAIN SPA ROUTER & APPLICATION CONTROLLER
+ * File: js/app.js
+ * 💡 SECURED: 0ms Instant Router, Cashier Auto-Landing Redirect & Silent Background Sync
  */
 
-// 💡 Dynamic API URL from config
-const API_WORKER_URL = (typeof window !== 'undefined' && window.CONFIG?.API_URL) 
-  ? window.CONFIG.API_URL 
-  : "https://cashbook-api.goldeneduprivateschool.workers.dev/";
-
-// 💡 Global AppState
-window.AppState = window.AppState || {
-  currentUser: localStorage.getItem('golden_user_name') || null,
-  currentUserRole: localStorage.getItem('golden_user_role') || null,
-  authToken: localStorage.getItem('golden_auth_token') || null,
-  currentModule: 'dashboard'
-};
-
-// 💡 Global In-Memory Cache Store for 0ms Instant Navigation
-window.gDataCache = window.gDataCache || {};
+window.viewCache = window.viewCache || {};
 
 /**
- * 💡 Cache Helper Functions with localStorage Persistence
- * Critical data များကို localStorage တွင်လည်း သိမ်းဆည်းပြီး page refresh လုပ်လျှင် ပြန်ရအောင် လုပ်သည်
+ * 💡 Universal Category Badge Formatter Across the Entire App
+ * Matches Bank Loan, Cash Loan, Adv, Income, Transfer, Opening, Expense, etc. with rich colors
  */
-window.getApiCache = function(cacheKey) {
-  // First check in-memory cache
-  if (window.gDataCache[cacheKey]) {
-    return window.gDataCache[cacheKey];
+window.formatCategoryBadgeHtml = function(categoryStr) {
+  const cat = String(categoryStr || '-').trim();
+  if (!cat || cat === '-') return '<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-800 text-slate-400 border border-slate-700/60">-</span>';
+
+  const lower = cat.toLowerCase();
+
+  // 1. Red / Rose Accent (Bank Loan, Cash Loan, Adv, Advance, Expense, Liabilities)
+  if (lower.includes('loan') || lower.includes('adv') || lower.includes('expense') || lower.includes('liability')) {
+    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm shadow-rose-950/20"><i class="fa-solid fa-triangle-exclamation text-[9px] text-rose-400"></i> ${cat}</span>`;
   }
-  
-  // Then check localStorage persistence
-  try {
-    const persistedCache = localStorage.getItem('api_cache_' + cacheKey);
-    if (persistedCache) {
-      const parsed = JSON.parse(persistedCache);
-      // Check if cache is still valid (24 hours TTL)
-      const cacheAge = Date.now() - parsed.timestamp;
-      if (cacheAge < 24 * 60 * 60 * 1000) {
-        // Restore to in-memory cache
-        window.gDataCache[cacheKey] = parsed.data;
-        return parsed.data;
-      } else {
-        // Cache expired, remove from localStorage
-        localStorage.removeItem('api_cache_' + cacheKey);
-      }
-    }
-  } catch (e) {
-    console.warn('Failed to read from localStorage cache:', e);
+
+  // 2. Emerald / Green Accent (Income, Sales, Service, Fee, Tuition)
+  if (lower.includes('income') || lower.includes('sale') || lower.includes('service') || lower.includes('fee') || lower.includes('tuition')) {
+    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm shadow-emerald-950/20"><i class="fa-solid fa-circle-arrow-down text-[9px] text-emerald-400"></i> ${cat}</span>`;
   }
-  
-  return null;
+
+  // 3. Sky / Blue Accent (Transfer, Move)
+  if (lower.includes('transfer') || lower.includes('move')) {
+    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm shadow-sky-950/20"><i class="fa-solid fa-right-left text-[9px] text-sky-400"></i> ${cat}</span>`;
+  }
+
+  // 4. Amber / Gold Accent (Opening, Capital, Balance)
+  if (lower.includes('open') || lower.includes('balance') || lower.includes('capital')) {
+    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-950/20"><i class="fa-solid fa-vault text-[9px] text-amber-400"></i> ${cat}</span>`;
+  }
+
+  // 5. Purple / Indigo Accent (Payroll, Salary, Bonus, Fund, Staff)
+  if (lower.includes('payroll') || lower.includes('salary') || lower.includes('bonus') || lower.includes('fund') || lower.includes('staff')) {
+    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm shadow-purple-950/20"><i class="fa-solid fa-user-tag text-[9px] text-purple-400"></i> ${cat}</span>`;
+  }
+
+  // 6. Teal / Cyan Accent (Student, Boarder, Uniform, Inventory)
+  if (lower.includes('boarder') || lower.includes('student') || lower.includes('uniform') || lower.includes('stock')) {
+    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-sm shadow-teal-950/20"><i class="fa-solid fa-tag text-[9px] text-teal-400"></i> ${cat}</span>`;
+  }
+
+  // Default fallback badge
+  return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700/60">${cat}</span>`;
 };
 
-window.setApiCache = function(cacheKey, data) {
-  if (data && data.success) {
-    // Set in-memory cache
-    window.gDataCache[cacheKey] = data;
-    
-    // Also persist to localStorage for critical data
-    try {
-      const cacheEntry = {
-        timestamp: Date.now(),
-        data: data
-      };
-      localStorage.setItem('api_cache_' + cacheKey, JSON.stringify(cacheEntry));
-    } catch (e) {
-      console.warn('Failed to persist cache to localStorage:', e);
-    }
-  }
-};
+document.addEventListener('DOMContentLoaded', function () {
+  initApp();
+});
 
-window.clearAllApiCache = function() {
-  window.gDataCache = {};
-  
-  // Clear all persisted cache from localStorage
-  try {
-    const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      if (key.startsWith('api_cache_')) {
-        localStorage.removeItem(key);
-      }
-    });
-  } catch (e) {
-    console.warn('Failed to clear localStorage cache:', e);
-  }
-};
+/**
+ * 💡 Initialize ERP Application Shell with Cashier Auto-Landing Support
+ */
+function initApp() {
+  const token = localStorage.getItem('golden_auth_token');
+  const user = localStorage.getItem('golden_user_name') || 'User';
+  const role = (localStorage.getItem('golden_user_role') || '').trim();
 
-window.invalidateApiCache = function(actionPrefix = '') {
-  if (!actionPrefix) {
-    window.clearAllApiCache();
+  if (!token) {
+    console.log("[InitApp] User is not authenticated. Displaying login screen.");
+    document.documentElement.className = 'dark not-authed';
     return;
   }
-  
-  // Clear from in-memory cache
-  Object.keys(window.gDataCache).forEach(key => {
-    if (key.toLowerCase().includes(actionPrefix.toLowerCase())) {
-      delete window.gDataCache[key];
-    }
-  });
-  
-  // Also clear from localStorage persistence (selective invalidation)
-  try {
-    const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      if (key.startsWith('api_cache_') && key.toLowerCase().includes(actionPrefix.toLowerCase())) {
-        localStorage.removeItem(key);
-      }
-    });
-  } catch (e) {
-    console.warn('Failed to invalidate localStorage cache:', e);
-  }
-};
 
-/**
- * 💡 Enhanced Error Logging System
- * Error များကို detailed ဖြင့် log လုပ်ထားပြီး localStorage တွင် သိမ်းဆည်းသည်
- */
-window.ErrorLogger = {
-  maxLogs: 50,
-  
-  logError: function(context, error, additionalInfo = {}) {
-    const errorEntry = {
-      timestamp: new Date().toISOString(),
-      context: context,
-      errorMessage: error?.message || String(error),
-      errorStack: error?.stack || null,
-      additionalInfo: additionalInfo,
-      userAgent: navigator.userAgent,
-      url: window.location.href
-    };
-    
-    // Get existing logs
-    let logs = [];
-    try {
-      const storedLogs = localStorage.getItem('error_logs');
-      if (storedLogs) {
-        logs = JSON.parse(storedLogs);
-      }
-    } catch (e) {
-      console.warn('Failed to parse error logs:', e);
-    }
-    
-    // Add new error
-    logs.unshift(errorEntry);
-    
-    // Keep only last maxLogs entries
-    if (logs.length > this.maxLogs) {
-      logs = logs.slice(0, this.maxLogs);
-    }
-    
-    // Save to localStorage
-    try {
-      localStorage.setItem('error_logs', JSON.stringify(logs));
-    } catch (e) {
-      console.warn('Failed to save error logs:', e);
-    }
-    
-    // Also log to console for debugging
-    console.error(`[ErrorLogger] ${context}:`, error, additionalInfo);
-  },
-  
-  getLogs: function() {
-    try {
-      const storedLogs = localStorage.getItem('error_logs');
-      return storedLogs ? JSON.parse(storedLogs) : [];
-    } catch (e) {
-      console.warn('Failed to get error logs:', e);
-      return [];
-    }
-  },
-  
-  clearLogs: function() {
-    localStorage.removeItem('error_logs');
-  }
-};
+  document.documentElement.className = 'dark is-authed';
+  updateHeaderMetadata(user);
 
-/**
- * 💡 Storage ထဲမှ လတ်ဆတ်သော Token ကို ရယူပေးသည့် Helper
- */
-function getFreshAuthToken() {
-  const token = localStorage.getItem('golden_auth_token') || (window.AppState ? window.AppState.authToken : null) || '';
-  if (window.AppState) window.AppState.authToken = token;
-  return token;
+  // 💡 Trigger Background Prefetching for 0ms Instant Navigation
+  if (typeof window.prefetchCoreModules === 'function') {
+    window.prefetchCoreModules();
+  }
+
+  // 💡 CASHIER AUTO-LANDING REDIRECT: Redirect Cashier directly to 'cashier' tab
+  let currentTab = window.AppState ? window.AppState.currentModule : null;
+
+  if (!currentTab) {
+    if (role === 'Cashier' || role === 'Main Cashier') {
+      currentTab = 'cashier';
+    } else {
+      currentTab = 'dashboard';
+    }
+  }
+
+  switchTab(currentTab || 'dashboard');
 }
 
 /**
- * 💡 Global Loading Spinner Indicator Helper
+ * 💡 Update Header Metadata Badge Dynamically
+ * Format: "FY 2026-2027 | Sat | 11:34 AM | User: Admin"
  */
-window.toggleLoading = function(show) {
-  const overlay = document.getElementById('loading-overlay');
-  if (overlay) {
-    if (show) overlay.classList.remove('hidden');
-    else overlay.classList.add('hidden');
-  }
-};
+function updateHeaderMetadata(username) {
+  const metaEl = document.getElementById('live-metadata');
+  if (!metaEl) return;
+
+  const activeUser = username || localStorage.getItem('golden_user_name') || localStorage.getItem('golden_user_role') || 'Admin';
+
+  const d = new Date();
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayName = days[d.getDay()];
+
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const formattedHours = String(hours).padStart(2, '0');
+  const formattedTime = `${formattedHours}:${minutes} ${ampm}`;
+
+  metaEl.textContent = `FY 2026-2027 | ${dayName} | ${formattedTime} | User: ${activeUser}`;
+}
+
+// 💡 LIVE CLOCK AUTO-UPDATE ENGINE (Every 10 Seconds)
+if (!window.headerClockInterval) {
+  window.headerClockInterval = setInterval(() => {
+    const activeUser = localStorage.getItem('golden_user_name') || localStorage.getItem('golden_user_role') || 'Admin';
+    updateHeaderMetadata(activeUser);
+  }, 10000);
+}
 
 /**
- * 💡 Central API Fetch Engine with In-Memory SWR Caching
+ * 💡 Central Tab & View Router Engine (Instant 0ms Rendering)
  */
-window.callApi = async function(action, payload = {}, method = 'POST') {
-  try {
-    const currentToken = getFreshAuthToken();
-    const currentRole = localStorage.getItem('golden_user_role') || (window.AppState ? window.AppState.currentUserRole : '') || '';
+async function switchTab(tabId) {
+  const token = localStorage.getItem('golden_auth_token');
 
-    const isReadAction = action.startsWith('get') || action.startsWith('check');
-    const isWriteAction = action.startsWith('save') || action.startsWith('update') || action.startsWith('delete') || action.startsWith('trigger') || action.startsWith('backup');
-    const forceRefresh = payload.forceRefresh === true;
-
-    // Remove forceRefresh property from payload sent to server
-    const { forceRefresh: _, ...serverPayload } = payload;
-
-    const cacheKey = `${action}_${JSON.stringify(serverPayload)}`;
-
-    // 1. Check Cache for Read Actions (Instant 0ms Load)
-    if (isReadAction && !forceRefresh) {
-      const cachedRes = window.getApiCache(cacheKey);
-      if (cachedRes) {
-        return cachedRes;
-      }
-    }
-
-    const headers = {
-      'Content-Type': 'application/json'
-    };
-
-    if (currentToken) {
-      headers['Authorization'] = `Bearer ${currentToken}`;
-    }
-
-    const options = { method: method, headers: headers };
-    let url = API_WORKER_URL;
-
-    if (method === 'GET') {
-      const params = new URLSearchParams({
-        action: action,
-        token: currentToken,
-        role: currentRole,
-        ...serverPayload
-      });
-      url += `?${params.toString()}`;
-    } else {
-      options.body = JSON.stringify({
-        action: action,
-        token: currentToken,
-        authToken: currentToken,
-        role: currentRole,
-        ...serverPayload
-      });
-    }
-
-    const response = await fetch(url, options);
-
-    // 💡 401 Unauthorized Handling
-    if (response.status === 401) {
-      console.warn(`[API 401] Unauthorized access for action: ${action}`);
-
-      localStorage.removeItem('golden_auth_token');
-      localStorage.removeItem('golden_user_name');
-      localStorage.removeItem('golden_user_role');
-
-      if (window.AppState) {
-        window.AppState.authToken = null;
-        window.AppState.currentUser = null;
-        window.AppState.currentUserRole = null;
-      }
-
-      window.clearAllApiCache();
-      document.documentElement.className = 'dark not-authed';
-
-      const loginErrBox = document.getElementById('login-error');
-      if (loginErrBox) {
-        loginErrBox.textContent = "Session သက်တမ်း ကုန်ဆုံးသွားပါပြီ။ ပြန်လည် Login ဝင်ရောက်ပါ။";
-        loginErrBox.classList.remove('hidden');
-      }
-
-      throw new Error("HTTP Error: 401 (Session Expired)");
-    }
-
-    if (!response.ok) {
-      // 💡 Try to read the JSON error body so the real server-side reason
-      // (e.g. Google Drive/Sheets API failure detail) isn't swallowed and
-      // shown only as a bare "HTTP Error: 500" in the console/toast.
-      let serverMessage = '';
-      try {
-        const errData = await response.clone().json();
-        serverMessage = errData && (errData.detail || errData.message) ? (errData.detail || errData.message) : '';
-      } catch (parseErr) {
-        // Response body wasn't JSON (or already consumed) — ignore and fall back.
-      }
-      throw new Error(`HTTP Error: ${response.status}${serverMessage ? ` - ${serverMessage}` : ''}`);
-    }
-
-    const result = await response.json();
-
-    // 2. Cache successful Read Responses in Memory
-    if (isReadAction && result && result.success) {
-      window.setApiCache(cacheKey, result);
-    }
-
-    // 3. Clear Cache on Write Actions so next read fetches fresh data from Google Sheet
-    if (isWriteAction && result && result.success) {
-      window.clearAllApiCache();
-    }
-
-    return result;
-
-  } catch (err) {
-    // 💡 Enhanced error logging with detailed context
-    if (window.ErrorLogger) {
-      window.ErrorLogger.logError(`API_CALL_${action}`, err, {
-        action: action,
-        payload: serverPayload,
-        method: method,
-        url: url
-      });
-    }
-
-    console.error(`API Error [${action}]:`, err);
-
-    if (!err.message || !err.message.includes("401")) {
-      window.showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု မအောင်မြင်ပါ: " + err.message);
-    }
-
-    throw err;
-  }
-};
-
-/**
- * 💡 Enterprise Background Prefetching Engine (0ms Instant Navigation)
- * Login ပြီးသည်နှင့် စာမျက်နှာ HTML Templates များနှင့် Modules အားလုံး၏ ဒေတာများကို နောက်ကွယ်မှ ကြိုတင်ဆွဲယူမည်
- */
-window.prefetchCoreModules = function() {
-  // 1. Prefetch View HTML Templates into window.viewCache
-  window.viewCache = window.viewCache || {};
-  const views = [
-    'dashboard', 'bank-cash-kit', 'income', 'office', 'hr',
-    'cashier', 'student', 'uniform', 'promotion', 'reports',
-    'reports-fund', 'settings'
-  ];
-
-  views.forEach(v => {
-    if (!window.viewCache[v]) {
-      fetch(`views/${v}.html`)
-        .then(r => r.ok ? r.text() : '')
-        .then(html => { if (html) window.viewCache[v] = html; })
-        .catch(() => {});
-    }
-  });
-
-  // 2. Prefetch API Datasets silently into window.gDataCache
-  setTimeout(() => {
-    window.callApi('getDashboardData', {}).catch(() => {});
-    window.callApi('getBankCashData', { bookName: 'Bank Book', page: 1, limit: 30, searchVal: '' }).catch(() => {});
-    window.callApi('getBankCashData', { bookName: 'Cash Book', page: 1, limit: 30, searchVal: '' }).catch(() => {});
-    window.callApi('getIncomeData', { page: 1, limit: 50, searchVal: '' }).catch(() => {});
-    window.callApi('getExpenseData', { bookName: 'Office Exp Book', page: 1, limit: 30, searchVal: '' }).catch(() => {});
-    window.callApi('getExpenseData', { bookName: 'Kitchen Exp Book', page: 1, limit: 30, searchVal: '' }).catch(() => {});
-    window.callApi('getExpenseData', { bookName: 'HR Payroll Exp Book', page: 1, limit: 30, searchVal: '' }).catch(() => {});
-    window.callApi('getCashierData', { bookName: 'CACash' }).catch(() => {});
-    window.callApi('getCashierData', { bookName: 'CABank' }).catch(() => {});
-    window.callApi('getTodayIncomeForCashier', {}).catch(() => {});
-    window.callApi('getStudentData', { page: 1, limit: 50 }).catch(() => {});
-    window.callApi('getStaffData', { category: 'FullTime', page: 1, limit: 30, searchVal: '' }).catch(() => {});
-    window.callApi('getUniformData', { page: 1, limit: 1000 }).catch(() => {});
-    window.callApi('getPromotionData', {}).catch(() => {});
-    window.callApi('getFinancialReportData', {}).catch(() => {});
-    window.callApi('getFundReportData', {}).catch(() => {});
-    window.callApi('getSettingsData', {}).catch(() => {});
-  }, 100);
-};
-
-/**
- * 💡 Global Toast Stack Notification Engine (Formal Enterprise Corporate Tone)
- */
-window.showToast = function(type, message) {
-  if (document.documentElement.classList.contains('not-authed') && type === 'ERROR') {
+  if (!token) {
+    document.documentElement.className = 'dark not-authed';
     return;
   }
 
-  let toastContainer = document.getElementById('toast-container');
-  if (!toastContainer) return;
+  const viewMap = {
+    'dashboard': 'dashboard',
+    'bank': 'bank-cash',          // 🔧 FIXED: Changed from 'bank-cash-kit' (file doesn't exist)
+    'cash': 'bank-cash',          // 🔧 FIXED: Changed from 'bank-cash-kit' (file doesn't exist)
+    'income': 'income',
+    'office': 'office-kit',       // 🔧 FIXED: Changed from 'office' (file doesn't exist)
+    'kitchen': 'office-kit',      // 🔧 FIXED: Changed from 'office' to use office-kit
+    'hr': 'hr',
+    'cashier': 'cashier', // 💡 NEW: Cashier Sub-Ledger View
+    'student': 'student',
+    'uniform': 'uniform',
+    'promotion': 'promotion',
+    'report-financial': 'reports',
+    'report-in-detail': 'reports',
+    'report-in-rep': 'reports',
+    'report-student': 'reports',
+    'report-staff-fund': 'reports-fund',
+    'settings': 'settings'
+  };
 
-  let msg = String(message || "").trim();
-  if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
-    msg = "⚠️ အင်တာနက်လိုင်း နှေးကွေး/ပြတ်တောက်နေသဖြင့် ဆာဗာသို့ ချိတ်ဆက်၍ မရပါ။";
+  const titleMap = {
+    'dashboard': 'Home Dashboard',
+    'bank': 'Main Bank Book',
+    'cash': 'Main Cash Book',
+    'income': 'Main Income Book',
+    'office': 'Office Expense Book',
+    'kitchen': 'Kitchen Expense Book',
+    'hr': 'HR Payroll Group',
+    'cashier': 'Cashier Cash Book', // 💡 NEW: Cashier Title
+    'student': 'Student Directory List',
+    'uniform': 'Uniform Inventory Ledger',
+    'promotion': 'Promotion Fee Rate Matrix',
+    'report-financial': 'Financial Statement Report',
+    'report-in-detail': 'Income Detail Report (InDetail)',
+    'report-in-rep': 'Monthly Income Report (InRep)',
+    'report-student': 'Student Demographics Report',
+    'report-staff-fund': 'Staff Bonus & Fund Report',
+    'settings': 'System Settings & Controls'
+  };
+
+  const viewFileName = viewMap[tabId] || 'dashboard';
+
+  updateSidebarHighlight(tabId);
+
+  const titleEl = document.getElementById('page-title');
+  if (titleEl) {
+    titleEl.textContent = titleMap[tabId] || 'Home Dashboard';
   }
 
-  const toast = document.createElement('div');
-  toast.className = `p-4 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-bold transition-all transform translate-y-5 opacity-0 duration-300 pointer-events-auto bg-slate-900 border ${
-    type === 'SUCCESS' ? 'border-emerald-500 text-emerald-400' : 'border-rose-500 text-rose-400'
-  }`;
+  if (window.AppState) {
+    window.AppState.currentModule = tabId;
+  }
 
-  const icon = type === 'SUCCESS' ? '<i class="fa-solid fa-circle-check text-base"></i>' : '<i class="fa-solid fa-circle-exclamation text-base"></i>';
-  toast.innerHTML = `${icon} <span>${window.escapeHtml(msg)}</span>`;
-  toastContainer.appendChild(toast);
+  const isTemplateCached = !!window.viewCache[viewFileName];
 
-  setTimeout(() => { toast.classList.remove('translate-y-5', 'opacity-0'); }, 10);
-  setTimeout(() => {
-    toast.classList.add('translate-y-5', 'opacity-0');
-    setTimeout(() => { toast.remove(); }, 300);
-  }, 4000);
-};
+  try {
+    // Only show loading spinner if template is NOT cached yet
+    if (!isTemplateCached && typeof toggleLoading === 'function') {
+      toggleLoading(true);
+    }
+
+    let htmlContent = window.viewCache[viewFileName];
+
+    if (!htmlContent) {
+      const response = await fetch(`views/${viewFileName}.html`);
+      if (!response.ok) {
+        throw new Error(`Failed to load view template: views/${viewFileName}.html`);
+      }
+      htmlContent = await response.text();
+      window.viewCache[viewFileName] = htmlContent;
+    }
+
+    const container = document.getElementById('view-container');
+    if (container) {
+      container.innerHTML = htmlContent;
+    }
+
+    await triggerModuleInit(tabId);
+
+  } catch (err) {
+    console.error(`[SwitchTab Error] Tab '${tabId}':`, err);
+    if (typeof showToast === 'function') {
+      showToast("ERROR", "စာမျက်နှာ ခေါ်ယူခြင်း မအောင်မြင်ပါ: " + err.message);
+    }
+  } finally {
+    if (typeof toggleLoading === 'function') {
+      toggleLoading(false);
+    }
+  }
+}
 
 /**
- * 💡 Utility Functions
+ * 💡 Trigger Data Loading & Initialization for Specific Module
  */
-window.escapeHtml = function(str) {
-  if (!str) return "";
-  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-};
+async function triggerModuleInit(tabId) {
+  try {
+    switch (tabId) {
+      case 'dashboard':
+        await loadDashboardData(false, false);
+        break;
 
-window.cleanNumber = function(val) {
-  if (val === undefined || val === null || val === "") return 0;
-  var strVal = String(val).trim();
-  var isNegative = (strVal.includes("(") && strVal.includes(")")) || strVal.indexOf("-") === 0;
-  var cleaned = strVal.replace(/[^0-9.]/g, "");
-  var num = parseFloat(cleaned);
-  if (isNaN(num)) return 0;
-  return isNegative ? -num : num;
-};
+      case 'bank':
+      case 'cash':
+        if (typeof window.switchSubBook === 'function') {
+          window.switchSubBook(tabId === 'bank' ? 'Bank' : 'Cash');
+        } else if (typeof loadBankCashKitData === 'function') {
+          await loadBankCashKitData(false, false);
+        }
+        break;
 
-window.parseIsoDate = function(dStr) {
-  if (!dStr) return null;
-  var str = String(dStr).trim();
-  if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(str)) {
-    var parts = str.split(/[-/]/);
-    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      case 'cashier':
+        // 💡 CASHIER MODULE INITIALIZATION
+        if (typeof window.initCashierView === 'function') {
+          window.initCashierView('CACash', false);
+        } else if (typeof loadCashierData === 'function') {
+          await loadCashierData(false);
+        }
+        break;
+
+      case 'income':
+        if (typeof loadIncomeData === 'function') {
+          await loadIncomeData(false);
+        }
+        break;
+
+      case 'office':
+      case 'kitchen':
+        if (typeof window.switchExpenseBook === 'function') {
+          window.switchExpenseBook(tabId === 'office' ? 'Office' : 'Kitchen');
+        } else if (typeof loadOfficeData === 'function') {
+          await loadOfficeData(false);
+        }
+        break;
+
+      case 'hr':
+        if (typeof switchHrSubTab === 'function') {
+          switchHrSubTab('payroll');
+        } else if (typeof loadHrPayrollData === 'function') {
+          await loadHrPayrollData(false);
+        }
+        break;
+
+      case 'student':
+        if (typeof loadStudentData === 'function') {
+          await loadStudentData(false);
+        }
+        break;
+
+      case 'uniform':
+        if (typeof loadUniformData === 'function') {
+          await loadUniformData(false);
+        }
+        break;
+
+      case 'promotion':
+        if (typeof loadPromotionData === 'function') {
+          await loadPromotionData(false);
+        }
+        break;
+
+      case 'report-financial':
+        if (typeof showReportPanel === 'function') {
+          showReportPanel('panel-report-financial');
+        } else if (typeof loadReportFinancialData === 'function') {
+          await loadReportFinancialData(false);
+        }
+        break;
+
+      case 'report-in-detail':
+        if (typeof showReportPanel === 'function') {
+          showReportPanel('panel-report-income-detail');
+        }
+        break;
+
+      case 'report-in-rep':
+        if (typeof showReportPanel === 'function') {
+          showReportPanel('panel-report-monthly-income');
+        }
+        break;
+
+      case 'report-student':
+        if (typeof showReportPanel === 'function') {
+          showReportPanel('panel-report-student');
+        }
+        break;
+
+      case 'report-staff-fund':
+        if (typeof loadReportStaffFundData === 'function') {
+          await loadReportStaffFundData(false);
+        }
+        break;
+
+      case 'settings':
+        if (typeof loadSettingsData === 'function') {
+          await loadSettingsData(false);
+        }
+        break;
+
+      default:
+        break;
+    }
+  } catch (err) {
+    console.error(`[ModuleInit Error] Failed to initialize '${tabId}':`, err);
   }
-  if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}/.test(str)) {
-    var parts2 = str.split(/[-/]/);
-    return new Date(parseInt(parts2[2], 10), parseInt(parts2[1], 10) - 1, parseInt(parts2[0], 10));
-  }
-  var d = new Date(str);
-  return isNaN(d.getTime()) ? null : d;
-};
+}
 
-window.isDateInRange = function(rowDateStr, fromDateStr, toDateStr) {
-  if (!fromDateStr && !toDateStr) return true;
-  if (!rowDateStr) return false;
+/**
+ * 💡 Update Sidebar Active Button State
+ */
+function updateSidebarHighlight(activeTabId) {
+  const navBtns = document.querySelectorAll('.nav-btn');
+  navBtns.forEach(btn => {
+    btn.classList.remove('active');
+  });
 
-  var rowDate = window.parseIsoDate(rowDateStr);
-  if (!rowDate) return true;
+  const activeBtn = document.getElementById(`btn-${activeTabId}`);
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+  }
+}
 
-  if (fromDateStr) {
-    var fromDate = new Date(fromDateStr + 'T00:00:00');
-    if (rowDate < fromDate) return false;
+/**
+ * 💡 Load Home Dashboard Analytics Data
+ */
+async function loadDashboardData(isSilent = false, forceRefresh = false) {
+  const token = localStorage.getItem('golden_auth_token');
+  if (!token) return;
+
+  try {
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
+
+    const res = await callApi('getDashboardData', { forceRefresh: forceRefresh });
+
+    const d = (res && res.success && res.data) ? res.data : {
+      kpi: { totalIncome: 0, totalExpense: 0, netProfit: 0, totalEntries: 0 },
+      balances: { bank: 0, cash: 0, office: 0, kitchen: 0, payroll: 0, total: 0 },
+      liabilities: { bankLoan: 0, cashLoan: 0, officeLiabilities: 0, hrBonus: 0, hrFund: 0, total: 0 },
+      receivables: { advanceSnack: 0, advanceUniform: 0, otherAdvance: 0, total: 0 },
+      info: {
+        students: { male: 0, female: 0, total: 0 },
+        fullTime: { male: 0, female: 0, total: 0 },
+        partTime: { male: 0, female: 0, total: 0 }
+      }
+    };
+
+    // 1. KPI Top Cards
+    setElementText('db-total-income', formatMoney(d.kpi?.totalIncome) + ' MMK');
+    setElementText('db-total-expense', formatMoney(d.kpi?.totalExpense) + ' MMK');
+    setElementText('db-net-profit', formatMoney(d.kpi?.netProfit) + ' MMK');
+    setElementText('db-total-entries', formatNumber(d.kpi?.totalEntries));
+
+    // 2. Daily Balances
+    setElementText('db-bal-bank', formatMoney(d.balances?.bank) + ' MMK');
+    setElementText('db-bal-cash', formatMoney(d.balances?.cash) + ' MMK');
+    setElementText('db-bal-office', formatMoney(d.balances?.office) + ' MMK');
+    setElementText('db-bal-kitchen', formatMoney(d.balances?.kitchen) + ' MMK');
+    setElementText('db-bal-payroll', formatMoney(d.balances?.payroll) + ' MMK');
+    setElementText('db-bal-total', formatMoney(d.balances?.total) + ' MMK');
+
+    // 3. Liabilities
+    setElementText('db-lia-bank', formatMoney(d.liabilities?.bankLoan) + ' MMK');
+    setElementText('db-lia-cash', formatMoney(d.liabilities?.cashLoan) + ' MMK');
+    setElementText('db-lia-office', formatMoney(d.liabilities?.officeLiabilities) + ' MMK');
+    setElementText('db-lia-bonus', formatMoney(d.liabilities?.hrBonus) + ' MMK');
+    setElementText('db-lia-fund', formatMoney(d.liabilities?.hrFund) + ' MMK');
+    setElementText('db-lia-total', formatMoney(d.liabilities?.total) + ' MMK');
+
+    // 4. Receivables
+    setElementText('db-rec-snack', formatMoney(d.receivables?.advanceSnack) + ' MMK');
+    setElementText('db-rec-uniform', formatMoney(d.receivables?.advanceUniform) + ' MMK');
+    setElementText('db-rec-other', formatMoney(d.receivables?.otherAdvance) + ' MMK');
+    setElementText('db-rec-total', formatMoney(d.receivables?.total) + ' MMK');
+
+    // 5. Active Demographic Info
+    setElementText('db-stu-male', formatNumber(d.info?.students?.male));
+    setElementText('db-stu-female', formatNumber(d.info?.students?.female));
+    setElementText('db-stu-total', formatNumber(d.info?.students?.total));
+
+    setElementText('db-ft-male', formatNumber(d.info?.fullTime?.male));
+    setElementText('db-ft-female', formatNumber(d.info?.fullTime?.female));
+    setElementText('db-ft-total', formatNumber(d.info?.fullTime?.total));
+
+    setElementText('db-pt-male', formatNumber(d.info?.partTime?.male));
+    setElementText('db-pt-female', formatNumber(d.info?.partTime?.female));
+    setElementText('db-pt-total', formatNumber(d.info?.partTime?.total));
+
+    const grandMale = (d.info?.students?.male || 0) + (d.info?.fullTime?.male || 0) + (d.info?.partTime?.male || 0);
+    const grandFemale = (d.info?.students?.female || 0) + (d.info?.fullTime?.female || 0) + (d.info?.partTime?.female || 0);
+    const grandAll = (d.info?.students?.total || 0) + (d.info?.fullTime?.total || 0) + (d.info?.partTime?.total || 0);
+
+    setElementText('db-demo-tot-male', formatNumber(grandMale));
+    setElementText('db-demo-tot-female', formatNumber(grandFemale));
+    setElementText('db-demo-tot-all', formatNumber(grandAll));
+
+  } catch (err) {
+    console.warn("Dashboard loading fallback applied:", err.message);
+  } finally {
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(false);
   }
-  if (toDateStr) {
-    var toDate = new Date(toDateStr + 'T23:59:59');
-    if (rowDate > toDate) return false;
-  }
-  return true;
-};
+}
+
+function setElementText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+function formatMoney(val) {
+  const num = typeof cleanNumber === 'function' ? cleanNumber(val) : Number(val) || 0;
+  return num.toLocaleString('en-US');
+}
+
+function formatNumber(val) {
+  const num = typeof cleanNumber === 'function' ? cleanNumber(val) : Number(val) || 0;
+  return num.toLocaleString('en-US');
+}
