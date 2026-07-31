@@ -176,12 +176,12 @@ var APP_CONFIG = window.APP_CONFIG;
 window.DROPDOWNS = {
   // 💡 Master Books Dropdowns (Uniform Profit Added)
   bankBook: {
-    category: ["Non", "Opening", "Transfer", "Bank Loan", "Bank Fees", "Other Income", "Income", "Uniform Profit", "Closing"],
+    category: ["Non", "Opening", "Transfer", "Bank Loan", "Bank Fees", "Other Income", "Student Income", "Uniform Profit", "Closing"],
     method: ["Bank"],
     transfer: ["Cash Book", "Office Exp Book", "Kitchen Exp Book", "HR Payroll Exp Book"]
   },
   cashBook: {
-    category: ["Non", "Opening", "Transfer", "Cash Loan", "Other Income", "Income", "Uniform Profit", "Closing"],
+    category: ["Non", "Opening", "Transfer", "Cash Loan", "Other Income", "Student Income", "Uniform Profit", "Closing"],
     method: ["Cash"],
     transfer: ["Bank Book", "Office Exp Book", "Kitchen Exp Book", "HR Payroll Exp Book"]
   },
