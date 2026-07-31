@@ -247,7 +247,7 @@ async function triggerModuleInit(tabId) {
       case 'cashier':
         // 💡 CASHIER MODULE INITIALIZATION
         if (typeof window.initCashierView === 'function') {
-          window.initCashierView('CACash', false);
+          window.initCashierView('CABank', false);
         } else if (typeof loadCashierData === 'function') {
           await loadCashierData(false);
         }
