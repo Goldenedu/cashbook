@@ -16,7 +16,7 @@ var searchTimeoutCashier = null;
  * @param {string} bookName 
  * @param {boolean} useCache 
  */
-function initCashierView(bookName = 'CACash', useCache = true) {
+function initCashierView(bookName = 'CABank', useCache = true) {
   switchCashierSubTab(bookName, useCache);
 }
 
@@ -25,7 +25,7 @@ function initCashierView(bookName = 'CACash', useCache = true) {
  * @param {string} subTab 
  * @param {boolean} useCache 
  */
-function switchCashierSubTab(subTab = 'CACash', useCache = true) {
+function switchCashierSubTab(subTab = 'CABank', useCache = true) {
   currentCashierSubBook = subTab;
   currentCashierPage = 1;
 
