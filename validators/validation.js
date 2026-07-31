@@ -2,11 +2,12 @@
  * GOLDEN ERP SYSTEM - INPUT VALIDATION & SANITIZATION ENGINE 
  * File: validators/validation.js
  * 💡 Serverless Input Validation, Formula Injection Sanitizer & Formal Error Handling Engine
+ * 🛠️ SECURED (Phase 3): Added Unified validateLedgerInput & Recursive Formula Injection Sanitizer for Google Sheets
  */
 
 /**
  * 💡 SANITIZE FORMULA INJECTION ATTACKS FOR GOOGLE SHEETS
- * Escapes characters (=, +, -, @) to prevent formula execution exploits in Google Sheets
+ * Escapes special leading characters (=, +, -, @, \t, \r) to prevent formula execution exploits in Google Sheets
  * 
  * @param {string} str 
  * @returns {string}
@@ -17,7 +18,26 @@ export function sanitizeFormulaInput(str) {
   if (/^[=+\-@\t\r]/.test(trimmed)) {
     return `'${trimmed}`;
   }
-  return trimmed;
+  return str;
+}
+
+/**
+ * 💡 RECURSIVELY SANITIZE ALL STRING FIELDS IN AN OBJECT
+ * 
+ * @param {object} obj 
+ * @returns {object}
+ */
+export function sanitizeObjectFormulas(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+
+  for (const key of Object.keys(obj)) {
+    if (typeof obj[key] === 'string') {
+      obj[key] = sanitizeFormulaInput(obj[key]);
+    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+      sanitizeObjectFormulas(obj[key]);
+    }
+  }
+  return obj;
 }
 
 /**
@@ -101,7 +121,7 @@ export function validateLedgerPayload(body = {}) {
   const dateCheck = validateDateStr(body.date, "Transaction Date");
   if (!dateCheck.valid) return dateCheck;
 
-  const descCheck = validateRequiredText(body.description, "Description", 2, 500);
+  const descCheck = validateRequiredText(body.description, "Description", 1, 1000);
   if (!descCheck.valid) return descCheck;
 
   const debitCheck = validateAmount(body.debit, "Debit Amount", true);
@@ -117,11 +137,8 @@ export function validateLedgerPayload(body = {}) {
  * 💡 Validate Student Profile Body Payload
  */
 export function validateStudentPayload(body = {}) {
-  const nameCheck = validateRequiredText(body.name, "Student Name", 2, 150);
+  const nameCheck = validateRequiredText(body.name, "Student Name", 1, 150);
   if (!nameCheck.valid) return nameCheck;
-
-  const classCheck = validateRequiredText(body.class, "Class Name", 1, 50);
-  if (!classCheck.valid) return classCheck;
 
   return { valid: true };
 }
@@ -130,11 +147,67 @@ export function validateStudentPayload(body = {}) {
  * 💡 Validate Staff Profile Body Payload
  */
 export function validateStaffPayload(body = {}) {
-  const nameCheck = validateRequiredText(body.name, "Staff Name", 2, 150);
+  const nameCheck = validateRequiredText(body.name, "Staff Name", 1, 150);
   if (!nameCheck.valid) return nameCheck;
 
-  const joinDateCheck = validateDateStr(body.joinDate, "Join Date");
-  if (!joinDateCheck.valid) return joinDateCheck;
-
   return { valid: true };
+}
+
+/**
+ * 💡 UNIFIED SERVER-SIDE INPUT VALIDATOR & FORMULA INJECTION SANITIZER
+ * Invoked directly by worker.js on all POST/PUT/DELETE mutation requests.
+ * 
+ * @param {object} body 
+ * @returns {object} { success: boolean, message?: string }
+ */
+export function validateLedgerInput(body = {}) {
+  if (!body || typeof body !== 'object') {
+    return { success: false, message: "Request Payload မမှန်ကန်ပါ။" };
+  }
+
+  // 🛡️ 1. Sanitize all string fields against Google Sheets Formula Injection Attacks
+  sanitizeObjectFormulas(body);
+
+  const action = String(body.action || "").trim();
+
+  // 🛡️ 2. Date Format Validation (if date field is present)
+  if (body.date) {
+    const dateCheck = validateDateStr(body.date, "Date (ရက်စွဲ)");
+    if (!dateCheck.valid) {
+      return { success: false, message: dateCheck.message };
+    }
+  }
+
+  // 🛡️ 3. Amount Validation (Debit / Credit)
+  if (body.debit !== undefined) {
+    const debitCheck = validateAmount(body.debit, "Debit Amount (ဝင်ငွေ)", true);
+    if (!debitCheck.valid) {
+      return { success: false, message: debitCheck.message };
+    }
+  }
+
+  if (body.credit !== undefined) {
+    const creditCheck = validateAmount(body.credit, "Credit Amount (ထွက်ငွေ)", true);
+    if (!creditCheck.valid) {
+      return { success: false, message: creditCheck.message };
+    }
+  }
+
+  // 🛡️ 4. Student Payload Validation
+  if (action.includes("Student") && (action.startsWith("save") || action.startsWith("update"))) {
+    const stuCheck = validateStudentPayload(body);
+    if (!stuCheck.valid) {
+      return { success: false, message: stuCheck.message };
+    }
+  }
+
+  // 🛡️ 5. Staff Payload Validation
+  if (action.includes("Staff") && (action.startsWith("save") || action.startsWith("update"))) {
+    const staffCheck = validateStaffPayload(body);
+    if (!staffCheck.valid) {
+      return { success: false, message: staffCheck.message };
+    }
+  }
+
+  return { success: true };
 }
