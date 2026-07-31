@@ -4,7 +4,7 @@
  * 💡 SECURED: Uses callApi(), 19-Column Income Match, RESPONSIBILITY PERSON, Strict Search, 2-Decimal Formatting & Invoice Print Engine
  */
 
-var currentCashierSubBook = 'CACash'; // 'CACash' | 'CABank' | 'CAOffice' | 'CAKitchen' | 'CAPayroll' | 'todayIncome'
+var currentCashierSubBook = 'CABank'; // 'CABank' | 'CACash' | 'CAOffice' | 'CAKitchen' | 'CAPayroll' | 'todayIncome'
 var allCashierData = [];
 var filteredCashierData = [];
 var currentCashierPage = 1;
@@ -30,9 +30,9 @@ function switchCashierSubTab(subTab = 'CACash', useCache = true) {
   currentCashierPage = 1;
 
   // Tab thematic color map (Active vs Inactive)
-  const tabThemes = {
-    'CACash':      { active: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 ring-2 ring-emerald-500/30 opacity-100 shadow-emerald-950/40', inactive: 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400/60 opacity-60 hover:opacity-100' },
+  const tabThemes = 
     'CABank':      { active: 'bg-amber-500/25 text-amber-300 border-amber-400/60 ring-2 ring-amber-500/30 opacity-100 shadow-amber-950/40', inactive: 'bg-amber-950/20 border-amber-500/20 text-amber-400/60 opacity-60 hover:opacity-100' },
+    'CACash':      { active: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 ring-2 ring-emerald-500/30 opacity-100 shadow-emerald-950/40', inactive: 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400/60 opacity-60 hover:opacity-100' },
     'CAOffice':    { active: 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 ring-2 ring-cyan-500/30 opacity-100 shadow-cyan-950/40', inactive: 'bg-cyan-950/20 border-cyan-500/20 text-cyan-400/60 opacity-60 hover:opacity-100' },
     'CAKitchen':   { active: 'bg-rose-500/25 text-rose-300 border-rose-400/60 ring-2 ring-rose-500/30 opacity-100 shadow-rose-950/40', inactive: 'bg-rose-950/20 border-rose-500/20 text-rose-400/60 opacity-60 hover:opacity-100' },
     'CAPayroll':   { active: 'bg-purple-500/25 text-purple-300 border-purple-400/60 ring-2 ring-purple-500/30 opacity-100 shadow-purple-950/40', inactive: 'bg-purple-950/20 border-purple-500/20 text-purple-400/60 opacity-60 hover:opacity-100' },
