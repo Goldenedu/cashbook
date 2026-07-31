@@ -63,17 +63,8 @@
       <form id="login-form" onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs text-left">
         <div>
           <label class="block font-bold text-[11px] text-slate-300 uppercase tracking-widest mb-1.5">Username</label>
-          <input type="text" id="login-username" list="username-list" required placeholder="Type username or select account..." class="w-full p-3 bg-[#070a12]/80 border border-slate-700/60 rounded-xl text-xs text-slate-100 placeholder:text-slate-600 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all duration-300">
-          <datalist id="username-list">
-            <option value="Owner"></option>
-            <option value="Admin"></option>
-            <option value="Finance"></option>
-            <option value="HRStaff"></option>
-            <option value="Accountant"></option>
-            <option value="Staff"></option>
-            <option value="Cashier"></option>
-            <option value="Viewer"></option>
-          </datalist>
+          <!-- 🛠️ SECURED: Removed list="username-list" attribute & client-side datalists -->
+          <input type="text" id="login-username" required placeholder="Type username..." class="w-full p-3 bg-[#070a12]/80 border border-slate-700/60 rounded-xl text-xs text-slate-100 placeholder:text-slate-600 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all duration-300">
         </div>
 
         <div>
@@ -206,16 +197,7 @@
 
   <div id="toast-container" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- 💡 CANONICAL SHARED SALARY GRADE MATRIX MODAL (Range H1:U2 & Grade A to L)
-       🛠️ SINGLE SOURCE OF TRUTH: This is the ONLY copy of #grade-modal in the whole app.
-       It used to be duplicated in views/hr.html and views/staff.html as well, which meant
-       three elements shared the same id="grade-modal" / id="grade-A".."grade-L" / id="grade-bonus"
-       / id="grade-fund" at the same time once a view was injected into #view-container.
-       document.getElementById() always returns the FIRST match in DOM order, so openGradeModal()/
-       saveGradeForm() could silently read from or write to the WRONG (invisible) copy depending on
-       where the view happened to sit in the page — a classic duplicate-ID bug. Both duplicates have
-       been removed from views/hr.html and views/staff.html; this is now the only instance,
-       triggered identically from both the Staff page and the HR page via openGradeModal(). -->
+  <!-- 💡 CANONICAL SHARED SALARY GRADE MATRIX MODAL (Range H1:U2 & Grade A to L) -->
   <div id="grade-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-[#0c1322] border border-slate-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
       <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-[#0e172a] shrink-0">
@@ -456,15 +438,6 @@
     </div>
   </div>
 
-  <!--
-    💡 2026-07-30 FIX: index.html was loading only the stale js/app.bundle.js, which was
-    built BEFORE the Kitchen Exp Book fix (getExpenseBookContext / kitchenExpBook dropdowns /
-    dynamic "Add Kitchen Entry" button label) was written into the individual source files
-    below. Because the bundle was never regenerated, the browser only ever ran the old
-    hardcoded "Office"-only logic, so Kitchen Exp Book entries were shown/saved as Office
-    Exp Book entries with Office's category list. Loading the real, current source files
-    (which already contain the fix) instead of the outdated bundle resolves this.
-  -->
   <script src="js/config.js?v=20260730" defer></script>
   <script src="js/api.js?v=20260730" defer></script>
   <script src="js/auth.js?v=20260730" defer></script>
@@ -483,4 +456,5 @@
   <!-- 💡 EOY Drive Backup & Reset controller — split out of settings.js, self-wires into loadSettingsData() above -->
   <script src="js/settings-eoy.js?v=20260730" defer></script>
 </body>
-</html>
+</html
+  
