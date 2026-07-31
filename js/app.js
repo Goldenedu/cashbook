@@ -136,11 +136,11 @@ async function switchTab(tabId) {
 
   const viewMap = {
     'dashboard': 'dashboard',
-    'bank': 'bank-cash-kit',
-    'cash': 'bank-cash-kit',
+    'bank': 'bank-cash',          // 🔧 FIXED: Changed from 'bank-cash-kit' (file doesn't exist)
+    'cash': 'bank-cash',          // 🔧 FIXED: Changed from 'bank-cash-kit' (file doesn't exist)
     'income': 'income',
-    'office': 'office',
-    'kitchen': 'office',
+    'office': 'office-kit',       // 🔧 FIXED: Changed from 'office' (file doesn't exist)
+    'kitchen': 'office-kit',      // 🔧 FIXED: Changed from 'office' to use office-kit
     'hr': 'hr',
     'cashier': 'cashier', // 💡 NEW: Cashier Sub-Ledger View
     'student': 'student',
