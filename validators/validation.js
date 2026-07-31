@@ -1,13 +1,14 @@
 /**
  * GOLDEN ERP SYSTEM - INPUT VALIDATION & SANITIZATION ENGINE 
- * File: validators/validation.js
+ * File: validation.js (or validators/validation.js)
  * 💡 Serverless Input Validation, Formula Injection Sanitizer & Formal Error Handling Engine
- * 🛠️ SECURED (Phase 3): Added Unified validateLedgerInput & Recursive Formula Injection Sanitizer for Google Sheets
+ * 🛠️ SECURED (Phase 3): Added Pure Number Exemption for Formula Sanitizer & ISO Date Split
  */
 
 /**
  * 💡 SANITIZE FORMULA INJECTION ATTACKS FOR GOOGLE SHEETS
- * Escapes special leading characters (=, +, -, @, \t, \r) to prevent formula execution exploits in Google Sheets
+ * Escapes special leading characters (=, +, -, @, \t, \r) to prevent formula execution exploits in Google Sheets.
+ * Exempts pure numbers (e.g. "-1000", "+50") so numeric amounts are not incorrectly converted to text strings.
  * 
  * @param {string} str 
  * @returns {string}
@@ -15,6 +16,13 @@
 export function sanitizeFormulaInput(str) {
   if (typeof str !== 'string') return str;
   const trimmed = str.trim();
+
+  // 🛡️ 1. Pure numbers (e.g., "-1000", "+50", "125.50") are NOT formula injections
+  if (!isNaN(Number(trimmed))) {
+    return str;
+  }
+
+  // 🛡️ 2. Escape formula execution triggers
   if (/^[=+\-@\t\r]/.test(trimmed)) {
     return `'${trimmed}`;
   }
@@ -52,12 +60,15 @@ export function validateDateStr(dateStr, fieldName = "Date") {
     return { valid: false, message: `${fieldName} ဖြည့်သွင်းရန် လိုအပ်ပါသည်။` };
   }
 
+  // 🛡️ Handles ISO DateTime strings (e.g., "2026-07-31T00:00:00.000Z" -> "2026-07-31")
+  const cleanDateStr = dateStr.trim().split('T')[0];
+
   const regex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!regex.test(dateStr.trim())) {
+  if (!regex.test(cleanDateStr)) {
     return { valid: false, message: `${fieldName} ၏ ပုံစံမှာ YYYY-MM-DD ဖြစ်ရပါမည်။ (ဥပမာ - 2026-07-26)` };
   }
 
-  const d = new Date(dateStr.trim());
+  const d = new Date(cleanDateStr);
   if (isNaN(d.getTime())) {
     return { valid: false, message: `မမှန်ကန်သော ${fieldName} ဖြစ်နေပါသည်။` };
   }
