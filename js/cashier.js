@@ -30,7 +30,7 @@ function switchCashierSubTab(subTab = 'CABank', useCache = true) {
   currentCashierPage = 1;
 
   // Tab thematic color map (Active vs Inactive)
-  const tabThemes = 
+  const tabThemes = {
     'CABank':      { active: 'bg-amber-500/25 text-amber-300 border-amber-400/60 ring-2 ring-amber-500/30 opacity-100 shadow-amber-950/40', inactive: 'bg-amber-950/20 border-amber-500/20 text-amber-400/60 opacity-60 hover:opacity-100' },
     'CACash':      { active: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 ring-2 ring-emerald-500/30 opacity-100 shadow-emerald-950/40', inactive: 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400/60 opacity-60 hover:opacity-100' },
     'CAOffice':    { active: 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 ring-2 ring-cyan-500/30 opacity-100 shadow-cyan-950/40', inactive: 'bg-cyan-950/20 border-cyan-500/20 text-cyan-400/60 opacity-60 hover:opacity-100' },
