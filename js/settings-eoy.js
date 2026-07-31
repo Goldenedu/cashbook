@@ -141,7 +141,25 @@ async function confirmAndExecuteEoySheetReset() {
     if (res && res.success) {
       closeEoyResetModal();
 
-      if (typeof Swal !== 'undefined') {
+      // 💡 Distinguish "fully done" from "cleared, but the Home→Row6 opening
+      // balance copy didn't fully complete" — don't silently show green success
+      // for the latter, since Row 6 may now be genuinely empty for some sheets.
+      const hasIssues = res.hasOpeningBalanceIssues || (Array.isArray(res.openingBalanceMissing) && res.openingBalanceMissing.length > 0);
+
+      if (hasIssues) {
+        const missingList = (res.openingBalanceMissing || []).join(', ');
+        const errDetail = Array.isArray(res.errors) && res.errors.length > 0 ? '\n\n' + res.errors.join('\n') : '';
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Row ဖျက်ပြီးပါပြီ — Opening Balance ကူးထည့်ခြင်း မပြည့်စုံပါ',
+            text: (res.message || '') + errDetail,
+            confirmButtonColor: '#d97706'
+          });
+        } else {
+          alert(`⚠️ (${missingList}) Sheet အတွက် Opening Balance ကူးထည့်ခြင်း မအောင်မြင်ပါ။\n\n${res.message || ''}${errDetail}`);
+        }
+      } else if (typeof Swal !== 'undefined') {
         Swal.fire({
           icon: 'success',
           title: 'ဒေတာ ရှင်းလင်းခြင်း အောင်မြင်ပါသည်',
