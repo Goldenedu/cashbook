@@ -1,136 +1,362 @@
 /**
- * GOLDEN ERP SYSTEM - UNIFORM INVENTORY D1 SQL HANDLER MODULE
- * File: handlers-uniform.js
- * 💡 Features: Integer NO, Strict D1 Property Mapping & Stock Value Auto-Calculations
+ * GOLDEN ERP SYSTEM - UNIFORM INVENTORY LEDGER MODULE (D1 DATABASE COMPATIBLE)
+ * File: js/uniform.js
+ * 💡 Features: D1 Compatible Property Mapping, Bulletproof Edit/Delete, Integer NO & Auto PID Engine
  */
 
-export async function getUniformData(db, body) {
-  const search = String(body.searchVal || "").trim();
-  let query = `SELECT * FROM uniform_ledger`;
-  let params = [];
+window.UniformState = {
+  page: 1,
+  limit: 30,
+  totalRows: 0,
+  activeData: [],
+  searchVal: '',
+  stats: { sellingUnit: 0, currentQty: 0, totalStockValue: 0, totalProduct: 0 }
+};
 
-  if (search) {
-    query += ` WHERE product_id LIKE ? OR product_name LIKE ? OR type LIKE ? OR size LIKE ?`;
-    params = [`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`];
+function filterUniformData(list = [], searchVal = '') {
+  if (!searchVal || !searchVal.trim()) return list;
+  const q = searchVal.trim().toLowerCase();
+
+  return list.filter(row => {
+    const pidMatch = String(row.product_id || row.productId || '').toLowerCase().includes(q);
+    const nameMatch = String(row.product_name || row.productName || '').toLowerCase().includes(q);
+    const typeMatch = String(row.type || '').toLowerCase().includes(q);
+    const sizeMatch = String(row.size || '').toLowerCase().includes(q);
+
+    return pidMatch || nameMatch || typeMatch || sizeMatch;
+  });
+}
+
+async function loadUniformData(isSilent = false) {
+  if (!isSilent && typeof toggleLoading === 'function') toggleLoading(true);
+
+  const state = window.UniformState;
+
+  try {
+    const response = await callApi('getUniformData', {
+      page: state.page,
+      limit: state.limit,
+      searchVal: state.searchVal,
+      forceRefresh: true
+    }, 'GET');
+
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(false);
+
+    if (response && response.data) {
+      state.activeData = response.data;
+      state.totalRows = response.totalRows || response.data.length || 0;
+
+      let sUnit = 0;
+      let cQty = 0;
+      let stockVal = 0;
+
+      response.data.forEach(item => {
+        sUnit += Number(item.selling_unit ?? item.sellingUnit ?? 0);
+        cQty += Number(item.current_qty ?? item.currentQty ?? 0);
+        stockVal += Number(item.total_stock_value ?? item.totalStockValue ?? 0);
+      });
+
+      state.stats = {
+        sellingUnit: sUnit,
+        currentQty: cQty,
+        totalStockValue: stockVal,
+        totalProduct: response.data.length
+      };
+
+      updateStatsUniform();
+      renderUniformTable();
+      updatePaginationUniform();
+    }
+  } catch (err) {
+    if (!isSilent && typeof toggleLoading === 'function') toggleLoading(false);
+    console.error("Error loading Uniform data:", err);
+  }
+}
+
+function updateStatsUniform() {
+  const stats = window.UniformState.stats;
+
+  const sUnitEl = document.getElementById('uni-selling-unit');
+  if (sUnitEl) sUnitEl.innerText = Number(stats.sellingUnit || 0).toLocaleString('en-US');
+
+  const cQtyEl = document.getElementById('uni-current-qty');
+  if (cQtyEl) cQtyEl.innerText = Number(stats.currentQty || 0).toLocaleString('en-US');
+
+  const valEl = document.getElementById('uni-stock-value');
+  if (valEl) valEl.innerText = Number(stats.totalStockValue || 0).toLocaleString('en-US') + " MMK";
+
+  const countEl = document.getElementById('uni-total-products');
+  if (countEl) countEl.innerText = window.UniformState.totalRows.toLocaleString('en-US');
+}
+
+function renderUniformTable() {
+  const tableBody = document.getElementById('uniform-table-body');
+  if (!tableBody) return;
+
+  const rawData = window.UniformState.activeData || [];
+  const searchInput = document.getElementById('uniform-search');
+  const searchVal = searchInput ? searchInput.value.trim() : (window.UniformState.searchVal || '');
+
+  const data = filterUniformData(rawData, searchVal);
+
+  if (!data || data.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-slate-500 font-bold">ရှာဖွေမှုနှင့် ကိုက်ညီသော ယူနီဖောင်း ပစ္စည်း မရှိပါ။</td></tr>`;
+    return;
   }
 
-  query += ` ORDER BY id DESC LIMIT 500`;
-  const rows = await db.prepare(query).bind(...params).all();
-  const list = rows.results || [];
+  const isViewer = (window.AppState ? window.AppState.currentUserRole : '') === "Viewer";
 
-  let sellingUnit = 0;
-  let currentQty = 0;
-  let totalStockValue = 0;
+  tableBody.innerHTML = data.map((row, idx) => {
+    const uid = row.uniqueid || row.uniqueId || '';
+    const rowId = row.id || '';
+    const pid = row.product_id || row.productId || '-';
+    const pname = row.product_name || row.productName || '-';
+    const openStock = Number(row.opening_stock ?? row.openingStock ?? 0);
+    const unitPrice = Number(row.unit_price ?? row.unitPrice ?? 0);
+    const totalAmt = Number(row.total_amount ?? row.totalAmount ?? (openStock * unitPrice));
+    const sellPrice = Number(row.selling_price ?? row.sellingPrice ?? 0);
+    const profitAmt = Number(row.profit_amount ?? row.profitAmount ?? (sellPrice - unitPrice));
+    const sellUnit = Number(row.selling_unit ?? row.sellingUnit ?? 0);
+    const curQty = Number(row.current_qty ?? row.currentQty ?? (openStock - sellUnit));
+    const totStockVal = Number(row.total_stock_value ?? row.totalStockValue ?? (curQty * unitPrice));
 
-  list.forEach(item => {
-    sellingUnit += Number(item.selling_unit ?? item.sellingUnit ?? 0);
-    currentQty += Number(item.current_qty ?? item.currentQty ?? 0);
-    totalStockValue += Number(item.total_stock_value ?? item.totalStockValue ?? 0);
+    // 💡 Integer NO (Ensure clean integer display 1, 2, 3)
+    const rawNo = row.no !== undefined && row.no !== null && row.no !== "" ? row.no : (idx + 1);
+    const displayNo = parseInt(rawNo, 10) || (idx + 1);
+
+    return `
+      <tr class="hover:bg-slate-800/20 text-slate-300">
+        <td class="text-center font-bold text-slate-400 py-3">${displayNo}</td>
+        <td class="font-bold text-slate-200">${escapeHtml(pid)}</td>
+        <td class="font-bold text-slate-300">${escapeHtml(pname)}</td>
+        <td><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">${escapeHtml(row.type || '-')}</span></td>
+        <td class="font-mono font-semibold">${escapeHtml(row.size || '-')}</td>
+        <td class="text-right font-medium">${openStock}</td>
+        <td class="text-right text-rose-400">${unitPrice.toLocaleString('en-US')}</td>
+        <td class="text-right">${totalAmt.toLocaleString('en-US')}</td>
+        <td class="text-right text-emerald-400">${sellPrice.toLocaleString('en-US')}</td>
+        <td class="text-right text-emerald-400 font-bold">${profitAmt.toLocaleString('en-US')}</td>
+        <td class="text-right text-teal-400 font-bold">${sellUnit}</td>
+        <td class="text-right font-bold text-slate-200">${curQty}</td>
+        <td class="text-right font-bold text-indigo-400">${totStockVal.toLocaleString('en-US')}</td>
+        <td class="right-0 sticky bg-[#0c1322] border-l border-slate-800 shadow-lg text-center">
+          <div class="flex items-center justify-center gap-3 ${isViewer ? 'hidden' : ''}">
+            <button onclick="editUniformEntry('${uid}', '${rowId}')" class="text-indigo-400 hover:text-indigo-300 transition" title="Edit Product"><i class="fa-solid fa-pen-to-square"></i></button>
+            <button onclick="deleteUniformEntry('${uid}', '${rowId}')" class="text-rose-400 hover:text-rose-300 transition" title="Delete Product"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function updatePaginationUniform() {
+  const state = window.UniformState;
+  const info = document.getElementById('uni-pagination-info');
+  if (info) {
+    const start = state.totalRows === 0 ? 0 : (state.page - 1) * state.limit + 1;
+    const end = Math.min(state.page * state.limit, state.totalRows);
+    info.innerHTML = `Showing <span class="text-indigo-400 font-extrabold">${start}</span> to <span class="text-indigo-400 font-extrabold">${end}</span> of <span class="text-indigo-400 font-extrabold">${state.totalRows}</span> entries`;
+  }
+}
+
+function changePageUniform(dir) {
+  const state = window.UniformState;
+  if (dir === -1 && state.page > 1) {
+    state.page--;
+    loadUniformData(false);
+  } else if (dir === 1 && (state.page * state.limit) < state.totalRows) {
+    state.page++;
+    loadUniformData(false);
+  }
+}
+
+var searchTimeoutUniform;
+function onSearchInputUniform() {
+  clearTimeout(searchTimeoutUniform);
+  searchTimeoutUniform = setTimeout(() => {
+    const input = document.getElementById('uniform-search');
+    window.UniformState.searchVal = input ? input.value.trim() : '';
+    renderUniformTable();
+  }, 200);
+}
+
+function openAddModalUniform() {
+  const form = document.getElementById('uniform-form');
+  if (form) form.reset();
+
+  const uidEl = document.getElementById('uni-uniqueId');
+  if (uidEl) uidEl.value = "";
+
+  let maxSeq = 0;
+  if (window.UniformState.activeData) {
+    window.UniformState.activeData.forEach(row => {
+      const pid = String(row.product_id || row.productId || "").trim();
+      let num = parseInt(pid.replace(/[^\d]/g, ""), 10);
+      if (!isNaN(num) && num > maxSeq) {
+        maxSeq = num;
+      }
+    });
+  }
+  const nextId = "PID " + String(maxSeq + 1).padStart(3, '0');
+  const pidEl = document.getElementById('uni-pid');
+  if (pidEl) pidEl.value = nextId;
+
+  const titleEl = document.getElementById('uni-form-title');
+  if (titleEl) titleEl.innerText = "Add New Uniform Product";
+
+  const modalEl = document.getElementById('uniform-modal');
+  if (modalEl) modalEl.classList.remove('hidden');
+}
+
+function closeUniformModal() {
+  const modalEl = document.getElementById('uniform-modal');
+  if (modalEl) modalEl.classList.add('hidden');
+}
+
+async function saveUniformForm(e) {
+  if (e && e.preventDefault) e.preventDefault();
+
+  const uniqueId = document.getElementById('uni-uniqueId')?.value || '';
+  const isAdd = (!uniqueId);
+
+  const entry = {
+    uniqueId: uniqueId,
+    productId: document.getElementById('uni-pid')?.value || '',
+    productName: document.getElementById('uni-name')?.value || '',
+    type: document.getElementById('uni-type')?.value || '',
+    size: document.getElementById('uni-size')?.value || '',
+    openingStock: parseFloat(document.getElementById('uni-stock')?.value) || 0,
+    unitPrice: parseFloat(document.getElementById('uni-price')?.value) || 0,
+    sellingPrice: parseFloat(document.getElementById('uni-sellprice')?.value) || 0,
+    createdBy: (window.AppState ? window.AppState.currentUser : '') || "System"
+  };
+
+  closeUniformModal();
+
+  const action = isAdd ? 'saveUniformEntry' : 'updateUniformEntry';
+  if (typeof showToast === 'function') showToast("SUCCESS", "ကုန်ပစ္စည်း အချက်အလက်များ သိမ်းဆည်းနေပါသည်...");
+
+  try {
+    const response = await callApi(action, entry);
+    if (response && response.success) {
+      if (typeof showToast === 'function') {
+        showToast("SUCCESS", isAdd ? "ကုန်ပစ္စည်း သစ် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။" : "ကုန်ပစ္စည်း အချက်အလက်များ ပြင်ဆင်ပြီးပါပြီ။");
+      }
+      if (typeof clearAllApiCache === 'function') clearAllApiCache();
+      loadUniformData(false);
+    } else {
+      if (typeof showToast === 'function') showToast("ERROR", "သိမ်းဆည်းမှု မအောင်မြင်ပါ: " + (response ? response.message : ""));
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
+  }
+}
+
+function editUniformEntry(uniqueId, rowId) {
+  const row = window.UniformState.activeData.find(item => 
+    (uniqueId && (item.uniqueid === uniqueId || item.uniqueId === uniqueId)) ||
+    (rowId && String(item.id) === String(rowId))
+  );
+
+  if (!row) {
+    if (typeof showToast === 'function') showToast("ERROR", "မူရင်း အချက်အလက် ရှာမတွေ့ပါ။");
+    return;
+  }
+
+  openAddModalUniform();
+
+  const uidEl = document.getElementById('uni-uniqueId');
+  if (uidEl) uidEl.value = row.uniqueid || row.uniqueId || '';
+
+  const pidEl = document.getElementById('uni-pid');
+  if (pidEl) pidEl.value = row.product_id || row.productId || '';
+
+  const nameEl = document.getElementById('uni-name');
+  if (nameEl) nameEl.value = row.product_name || row.productName || '';
+
+  const typeEl = document.getElementById('uni-type');
+  if (typeEl) typeEl.value = row.type || '';
+
+  const sizeEl = document.getElementById('uni-size');
+  if (sizeEl) sizeEl.value = row.size || '';
+
+  const stockEl = document.getElementById('uni-stock');
+  if (stockEl) stockEl.value = row.opening_stock ?? row.openingStock ?? 0;
+
+  const priceEl = document.getElementById('uni-price');
+  if (priceEl) priceEl.value = row.unit_price ?? row.unitPrice ?? 0;
+
+  const sellPriceEl = document.getElementById('uni-sellprice');
+  if (sellPriceEl) sellPriceEl.value = row.selling_price ?? row.sellingPrice ?? 0;
+
+  const titleEl = document.getElementById('uni-form-title');
+  if (titleEl) titleEl.innerText = "Edit Uniform Product";
+}
+
+async function deleteUniformEntry(uniqueId, rowId) {
+  if (confirm("ဤ ကုန်ပစ္စည်း မှတ်တမ်းအား အပြီးတိုင် ဖျက်သိမ်းလိုပါသလား။")) {
+    if (typeof showToast === 'function') showToast("SUCCESS", "မှတ်တမ်းအား ဖျက်သိမ်းနေပါသည်...");
+    try {
+      const response = await callApi('deleteUniformEntry', { uniqueId, id: rowId });
+      if (response && response.success) {
+        if (typeof showToast === 'function') showToast("SUCCESS", "ကုန်ပစ္စည်း မှတ်တမ်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။");
+        if (typeof clearAllApiCache === 'function') clearAllApiCache();
+        loadUniformData(false);
+      } else {
+        if (typeof showToast === 'function') showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response ? response.message : ""));
+      }
+    } catch (err) {
+      if (typeof showToast === 'function') showToast("ERROR", "ဆာဗာ ချိတ်ဆက်မှု အမှား: " + err.message);
+    }
+  }
+}
+
+function exportToCSVUniform() {
+  const data = window.UniformState.activeData;
+  if (!data || data.length === 0) {
+    if (typeof showToast === 'function') showToast("ERROR", "ထုတ်ယူရန် မည်သည့် စာရင်းမျှ မရှိပါ။");
+    return;
+  }
+
+  let csv = "NO,PRODUCT ID,PRODUCT NAME,TYPE,SIZE,OPENING STOCK,UNIT PRICE,TOTAL AMOUNT,SELLING PRICE,PROFIT AMOUNT,SELLING UNIT,CURRENT QTY,TOTAL STOCK VALUE,UNIQUEID\n";
+  data.forEach((row, idx) => {
+    let name = `"${(row.product_name || row.productName || '').replace(/"/g, '""')}"`;
+    let type = `"${(row.type || '').replace(/"/g, '""')}"`;
+    let size = `"${(row.size || '').replace(/"/g, '""')}"`;
+    const openStock = row.opening_stock ?? row.openingStock ?? 0;
+    const unitPrice = row.unit_price ?? row.unitPrice ?? 0;
+    const totalAmt = row.total_amount ?? row.totalAmount ?? 0;
+    const sellPrice = row.selling_price ?? row.sellingPrice ?? 0;
+    const profitAmt = row.profit_amount ?? row.profitAmount ?? 0;
+    const sellUnit = row.selling_unit ?? row.sellingUnit ?? 0;
+    const curQty = row.current_qty ?? row.currentQty ?? 0;
+    const totStockVal = row.total_stock_value ?? row.totalStockValue ?? 0;
+
+    const rawNo = row.no !== undefined && row.no !== null && row.no !== "" ? row.no : (idx + 1);
+    const displayNo = parseInt(rawNo, 10) || (idx + 1);
+
+    csv += `${displayNo},${row.product_id || row.productId || ''},${name},${type},${size},${openStock},${unitPrice},${totalAmt},${sellPrice},${profitAmt},${sellUnit},${curQty},${totStockVal},${row.uniqueid || row.uniqueId || ''}\n`;
   });
 
-  return {
-    success: true,
-    data: list,
-    totalRows: list.length,
-    stats: {
-      sellingUnit,
-      currentQty,
-      totalStockValue,
-      totalProduct: list.length
-    }
-  };
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", `uniform_ledger_${new Date().toISOString().slice(0,10)}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
-export async function saveUniformEntry(db, userSession, body) {
-  const uniqueid = body.uniqueId || body.uniqueid || `UNI_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-
-  // 💡 Integer NO Resolution
-  const maxNoRow = await db.prepare("SELECT MAX(CAST(no AS INTEGER)) as max_no FROM uniform_ledger").first();
-  const currentMax = maxNoRow && maxNoRow.max_no ? parseInt(maxNoRow.max_no, 10) : 0;
-  const nextNo = currentMax + 1;
-
-  const openingStock = parseFloat(body.openingStock || 0);
-  const unitPrice = parseFloat(body.unitPrice || 0);
-  const sellingPrice = parseFloat(body.sellingPrice || 0);
-  
-  const totalAmount = openingStock * unitPrice;
-  const profitAmount = sellingPrice - unitPrice;
-  const sellingUnit = parseFloat(body.sellingUnit || 0);
-  const currentQty = openingStock - sellingUnit;
-  const totalStockValue = currentQty * unitPrice;
-
-  const stmt = `INSERT INTO uniform_ledger (
-    no, product_id, product_name, type, size, opening_stock, unit_price,
-    total_amount, selling_price, profit_amount, selling_unit, current_qty,
-    total_stock_value, created_by, created_at, uniqueid
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
-  await db.prepare(stmt).bind(
-    nextNo,
-    body.productId || `PID ${String(nextNo).padStart(3, '0')}`,
-    body.productName || '',
-    body.type || '',
-    body.size || '',
-    openingStock,
-    unitPrice,
-    totalAmount,
-    sellingPrice,
-    profitAmount,
-    sellingUnit,
-    currentQty,
-    totalStockValue,
-    userSession?.name || 'Admin',
-    new Date().toISOString(),
-    uniqueid
-  ).run();
-
-  return { success: true, message: "Uniform product saved successfully", uniqueId: uniqueid };
-}
-
-export async function updateUniformEntry(db, userSession, body) {
-  const uniqueid = body.uniqueId || body.uniqueid;
-  if (!uniqueid) {
-    return { success: false, message: "Unique ID required" };
-  }
-
-  const openingStock = parseFloat(body.openingStock || 0);
-  const unitPrice = parseFloat(body.unitPrice || 0);
-  const sellingPrice = parseFloat(body.sellingPrice || 0);
-  const sellingUnit = parseFloat(body.sellingUnit || 0);
-
-  const totalAmount = openingStock * unitPrice;
-  const profitAmount = sellingPrice - unitPrice;
-  const currentQty = openingStock - sellingUnit;
-  const totalStockValue = currentQty * unitPrice;
-
-  await db.prepare(`UPDATE uniform_ledger SET 
-    product_name = ?, type = ?, size = ?, opening_stock = ?, unit_price = ?, 
-    total_amount = ?, selling_price = ?, profit_amount = ?, selling_unit = ?, 
-    current_qty = ?, total_stock_value = ? 
-    WHERE uniqueid = ?`).bind(
-    body.productName || '',
-    body.type || '',
-    body.size || '',
-    openingStock,
-    unitPrice,
-    totalAmount,
-    sellingPrice,
-    profitAmount,
-    sellingUnit,
-    currentQty,
-    totalStockValue,
-    uniqueid
-  ).run();
-
-  return { success: true, message: "Uniform product updated successfully" };
-}
-
-export async function deleteUniformEntry(db, userSession, body) {
-  const uniqueid = body.uniqueId || body.uniqueid;
-  if (!uniqueid) {
-    return { success: false, message: "Unique ID required" };
-  }
-
-  await db.prepare("DELETE FROM uniform_ledger WHERE uniqueid = ?").bind(uniqueid).run();
-  return { success: true, message: "Uniform product deleted successfully" };
-}
+// Global Scope
+window.loadUniformData = loadUniformData;
+window.openAddModalUniform = openAddModalUniform;
+window.closeUniformModal = closeUniformModal;
+window.saveUniformForm = saveUniformForm;
+window.editUniformEntry = editUniformEntry;
+window.deleteUniformEntry = deleteUniformEntry;
+window.exportToCSVUniform = exportToCSVUniform;
+window.onSearchInputUniform = onSearchInputUniform;
+window.changePageUniform = changePageUniform;
