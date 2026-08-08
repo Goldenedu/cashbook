@@ -120,7 +120,6 @@ function renderUniformTable() {
     const curQty = Number(row.current_qty ?? row.currentQty ?? (openStock - sellUnit));
     const totStockVal = Number(row.total_stock_value ?? row.totalStockValue ?? (curQty * unitPrice));
 
-    // 💡 Integer NO (Ensure clean integer display 1, 2, 3)
     const rawNo = row.no !== undefined && row.no !== null && row.no !== "" ? row.no : (idx + 1);
     const displayNo = parseInt(rawNo, 10) || (idx + 1);
 
@@ -244,7 +243,7 @@ async function saveUniformForm(e) {
         showToast("SUCCESS", isAdd ? "ကုန်ပစ္စည်း သစ် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။" : "ကုန်ပစ္စည်း အချက်အလက်များ ပြင်ဆင်ပြီးပါပြီ။");
       }
       if (typeof clearAllApiCache === 'function') clearAllApiCache();
-      loadUniformData(false);
+      loadUniformData(true);
     } else {
       if (typeof showToast === 'function') showToast("ERROR", "သိမ်းဆည်းမှု မအောင်မြင်ပါ: " + (response ? response.message : ""));
     }
@@ -302,7 +301,7 @@ async function deleteUniformEntry(uniqueId, rowId) {
       if (response && response.success) {
         if (typeof showToast === 'function') showToast("SUCCESS", "ကုန်ပစ္စည်း မှတ်တမ်းအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ။");
         if (typeof clearAllApiCache === 'function') clearAllApiCache();
-        loadUniformData(false);
+        loadUniformData(true);
       } else {
         if (typeof showToast === 'function') showToast("ERROR", "ဖျက်သိမ်းမှု မအောင်မြင်ပါ: " + (response ? response.message : ""));
       }
